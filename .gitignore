@@ -1,0 +1,10 @@
+*.swp
+*.mod
+*.o
+*.vtk
+tea_leaf
+tea.out
+tea.in.tmp
+tea.visit
+_kernel_strings.cpp
+ocl_kernel_hdr.hpp
