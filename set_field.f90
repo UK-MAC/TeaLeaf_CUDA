@@ -49,7 +49,7 @@ SUBROUTINE set_field()
                               chunks(c)%field%energy0,   &
                               chunks(c)%field%energy1)
       ELSEIF(use_opencl_kernels)THEN
-        CALL set_field_kernel_ocl()
+        CALL set_field_kernel_cuda()
       ELSEIF(use_C_kernels)THEN
         CALL set_field_kernel_c(chunks(c)%field%x_min,   &
                               chunks(c)%field%x_max,     &

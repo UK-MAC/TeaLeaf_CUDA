@@ -96,12 +96,14 @@ num_blocks((((*in_x_max)+6)*((*in_y_max)+6))/BLOCK_SZ)
     CUDA_ARRAY_ALLOC(work_array_3, BUFSZ2D(1, 1));
     CUDA_ARRAY_ALLOC(work_array_4, BUFSZ2D(1, 1));
     CUDA_ARRAY_ALLOC(work_array_5, BUFSZ2D(1, 1));
+    CUDA_ARRAY_ALLOC(work_array_6, BUFSZ2D(1, 1));
 
     reduce_ptr_1 = thrust::device_ptr< double >(work_array_1);
     reduce_ptr_2 = thrust::device_ptr< double >(work_array_2);
     reduce_ptr_3 = thrust::device_ptr< double >(work_array_3);
     reduce_ptr_4 = thrust::device_ptr< double >(work_array_4);
     reduce_ptr_5 = thrust::device_ptr< double >(work_array_5);
+    reduce_ptr_6 = thrust::device_ptr< double >(work_array_6);
 
     CUDA_ARRAY_ALLOC(pdv_reduce_array, num_blocks*sizeof(int));
     reduce_pdv = thrust::device_ptr< int >(pdv_reduce_array);

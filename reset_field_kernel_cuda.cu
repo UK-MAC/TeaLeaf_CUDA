@@ -24,6 +24,7 @@
  */
 
 #include "cuda_common.hpp"
+#include "kernel_files/reset_field_kernel.cuknl"
 
 extern "C" void reset_field_kernel_cuda_
 (void)

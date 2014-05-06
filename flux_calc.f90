@@ -54,7 +54,7 @@ SUBROUTINE flux_calc()
                             chunks(c)%field%vol_flux_x,      &
                             chunks(c)%field%vol_flux_y       )
       ELSEIF(use_opencl_kernels)THEN
-        CALL flux_calc_kernel_ocl(dt)
+        CALL flux_calc_kernel_cuda(dt)
       ELSEIF(use_C_kernels)THEN
         CALL flux_calc_kernel_c(chunks(c)%field%x_min,       &
                             chunks(c)%field%x_max,           &

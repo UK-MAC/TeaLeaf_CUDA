@@ -26,8 +26,7 @@
  */
 
 #include "cuda_common.hpp"
-
-#include "thrust/extrema.h"
+#include "kernel_files/PdV_kernel.cuknl"
 
 extern "C" void pdv_kernel_cuda_
 (int *error_condition, int *prdct, double *dtbyt)

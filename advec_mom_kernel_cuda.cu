@@ -23,6 +23,7 @@
  */
 
 #include "cuda_common.hpp"
+#include "kernel_files/advec_mom_kernel.cuknl"
 
 extern "C" void advec_mom_kernel_cuda_
 (int *whch_vl,

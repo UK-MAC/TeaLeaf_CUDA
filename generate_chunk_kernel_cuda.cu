@@ -23,8 +23,7 @@
  */
 
 #include "cuda_common.hpp"
-
-#include "thrust/copy.h"
+#include "kernel_files/generate_chunk_kernel.cuknl"
 
 extern "C" void generate_chunk_kernel_cuda_
 (const int* number_of_states,

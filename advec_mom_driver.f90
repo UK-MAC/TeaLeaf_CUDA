@@ -61,7 +61,7 @@ SUBROUTINE advec_mom_driver(chunk,which_vel,direction,sweep_number)
                           direction,                              &
                           use_vector_loops                        )
     ELSEIF(use_opencl_kernels)THEN
-      CALL advec_mom_kernel_ocl(which_vel, sweep_number, direction)
+      CALL advec_mom_kernel_cuda(which_vel, sweep_number, direction)
     ELSEIF(use_C_kernels)THEN
       IF(use_vector_loops) THEN
         vector=1

@@ -24,6 +24,7 @@
  */
 
 #include "cuda_common.hpp"
+#include "kernel_files/ideal_gas_kernel.cuknl"
 
 extern "C" void ideal_gas_kernel_cuda_predict_
 (void)

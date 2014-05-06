@@ -76,7 +76,7 @@ const double * __restrict const yvel1)
         density1[THARR2D(0, 0, 0)] = density0[THARR2D(0, 0, 0)] * volume_change;
     }
 
-    Reduce< BLOCK_SZ/2 >::run(err_condition_shared, error_condition, max_func);
+    Reduce< int, BLOCK_SZ/2 >::run(err_condition_shared, error_condition, max);
 }
 
 __global__ void device_PdV_cuda_kernel_not_predict
@@ -155,6 +155,6 @@ const double * __restrict const yvel1)
         density1[THARR2D(0, 0, 0)] = density0[THARR2D(0, 0, 0)] * volume_change;
     }
 
-    Reduce< BLOCK_SZ/2 >::run(err_condition_shared, error_condition, max_func);
+    Reduce< int, BLOCK_SZ/2 >::run(err_condition_shared, error_condition, max);
 }
 

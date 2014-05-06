@@ -23,10 +23,11 @@
  */
 
 #include "cuda_common.hpp"
+#include "kernel_files/advec_cell_kernel.cuknl"
 
 extern "C" void advec_cell_kernel_cuda_
 (const int* dr,
-const int* swp_nmbr)
+ const int* swp_nmbr)
 {
     chunk.advec_cell_kernel(*dr, *swp_nmbr);
 }

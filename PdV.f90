@@ -79,7 +79,7 @@ SUBROUTINE PdV(predict)
           prdct=0
         ENDIF
 
-        CALL PdV_kernel_ocl(error_condition, prdct, dt)
+        CALL PdV_kernel_cuda(error_condition, prdct, dt)
       ELSEIF(use_C_kernels)THEN
 
         IF(predict) THEN

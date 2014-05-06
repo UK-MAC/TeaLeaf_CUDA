@@ -42,7 +42,7 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
        profiler_int=0
      ENDIF
 
-     call initialise_ocl(chunks(chunk)%field%x_min, &
+     call initialise_cuda(chunks(chunk)%field%x_min, &
                          chunks(chunk)%field%x_max, &
                          chunks(chunk)%field%y_min, &
                          chunks(chunk)%field%y_max, &

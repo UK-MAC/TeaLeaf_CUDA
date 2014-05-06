@@ -25,8 +25,7 @@
  */
 
 #include "cuda_common.hpp"
-
-#include "thrust/extrema.h"
+#include "kernel_files/calc_dt_kernel.cuknl"
 
 extern "C" void calc_dt_kernel_cuda_
 (double* g_small,

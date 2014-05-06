@@ -23,6 +23,7 @@
  */
 
 #include "cuda_common.hpp"
+#include "kernel_files/flux_calc_kernel.cuknl"
 
 extern "C" void flux_calc_kernel_cuda_
 (double *dbyt)

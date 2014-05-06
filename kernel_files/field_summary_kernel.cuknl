@@ -11,7 +11,8 @@ const double* __restrict const yvel0,
       double* __restrict const mass,
       double* __restrict const ie,
       double* __restrict const ke,
-      double* __restrict const press)
+      double* __restrict const press,
+      double* __restrict const temp)
 {
     __kernel_indexes;
 

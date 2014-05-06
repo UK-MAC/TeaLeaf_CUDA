@@ -23,6 +23,7 @@
  */
 
 #include "cuda_common.hpp"
+#include "kernel_files/initialise_chunk_kernel.cuknl"
 
 extern "C" void initialise_chunk_kernel_cuda_
 (double* d_xmin, double* d_ymin, double* d_dx, double* d_dy)

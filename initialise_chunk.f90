@@ -55,7 +55,7 @@ SUBROUTINE initialise_chunk(chunk)
                                  chunks(chunk)%field%xarea,    &
                                  chunks(chunk)%field%yarea     )
   ELSEIF(use_opencl_kernels)THEN
-    CALL initialise_chunk_kernel_ocl(xmin,ymin,dx,dy)
+    CALL initialise_chunk_kernel_cuda(xmin,ymin,dx,dy)
   ELSEIF(use_C_kernels)THEN
     CALL initialise_chunk_kernel_c(chunks(chunk)%field%x_min,      &
                                    chunks(chunk)%field%x_max,      &

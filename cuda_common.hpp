@@ -30,22 +30,41 @@
 #include "kernel_files/cuda_kernel_header.hpp"
 
 // used in update_halo and for copying back to host for mpi transfers
-#define FIELD_density0      0
-#define FIELD_density1      1
-#define FIELD_energy0       2
-#define FIELD_energy1       3
-#define FIELD_pressure      4
-#define FIELD_viscosity     5
-#define FIELD_soundspeed    6
-#define FIELD_xvel0         7
-#define FIELD_xvel1         8
-#define FIELD_yvel0         9
-#define FIELD_yvel1         10
-#define FIELD_vol_flux_x    11
-#define FIELD_vol_flux_y    12
-#define FIELD_mass_flux_x   13
-#define FIELD_mass_flux_y   14
-#define NUM_FIELDS          15
+#define FIELD_density0      1
+#define FIELD_density1      2
+#define FIELD_energy0       3
+#define FIELD_energy1       4
+#define FIELD_pressure      5
+#define FIELD_viscosity     6
+#define FIELD_soundspeed    7
+#define FIELD_xvel0         8
+#define FIELD_xvel1         9
+#define FIELD_yvel0         10
+#define FIELD_yvel1         11
+#define FIELD_vol_flux_x    12
+#define FIELD_vol_flux_y    13
+#define FIELD_mass_flux_x   14
+#define FIELD_mass_flux_y   15
+#define FIELD_u             16
+#define FIELD_p             17
+#define NUM_FIELDS          17
+#define FIELD_work_array_1 FIELD_p
+
+// which side to pack - keep the same as in fortran file
+#define CHUNK_LEFT 1
+#define CHUNK_left 1
+#define CHUNK_RIGHT 2
+#define CHUNK_right 2
+#define CHUNK_BOTTOM 3
+#define CHUNK_bottom 3
+#define CHUNK_TOP 4
+#define CHUNK_top 4
+#define EXTERNAL_FACE       (-1)
+
+#define CELL_DATA   1
+#define VERTEX_DATA 2
+#define X_FACE_DATA 3
+#define Y_FACE_DATA 4
 
 #define INITIALISE_ARGS \
     /* values used to control operation */\
@@ -54,8 +73,6 @@
     int* in_y_min, \
     int* in_y_max, \
     bool* in_profiler_on
-
-enum {CELL_DATA, VERTEX_DATA, X_FACE_DATA, Y_FACE_DATA};
 
 /*******************/
 
@@ -271,6 +288,7 @@ private:
     double* work_array_3;
     double* work_array_4;
     double* work_array_5;
+    double* work_array_6;
 
     // buffers used in mpi transfers
     double* dev_left_send_buffer;
@@ -288,6 +306,7 @@ private:
     thrust::device_ptr< double > reduce_ptr_3;
     thrust::device_ptr< double > reduce_ptr_4;
     thrust::device_ptr< double > reduce_ptr_5;
+    thrust::device_ptr< double > reduce_ptr_6;
 
     // number of blocks for work space
     unsigned int num_blocks;
@@ -304,14 +323,23 @@ private:
 
     // if being profiled
     bool profiler_on;
+
+    // mpi packing
+    #define PACK_ARGS                                       \
+        int chunk_1, int chunk_2, int external_face,        \
+        int x_inc, int y_inc, int depth, int which_field,   \
+        double *buffer_1, double *buffer_2
+    int getBufferSize
+    (int edge, int depth, int x_inc, int y_inc);
 public:
+    // kernels
     void calc_dt_kernel(double g_small, double g_big, double dtmin,
         double dtc_safe, double dtu_safe, double dtv_safe,
         double dtdiv_safe, double* dt_min_val, int* dtl_control,
         double* xl_pos, double* yl_pos, int* jldt, int* kldt, int* small);
 
     void field_summary_kernel(double* vol, double* mass,
-        double* ie, double* ke, double* press);
+        double* ie, double* ke, double* press, double* temp);
 
     void PdV_kernel(int* error_condition, int predict, double dbyt);
 
@@ -341,29 +369,32 @@ public:
 
     void revert_kernel();
 
+    void set_field_kernel();
     void reset_field_kernel();
 
     void viscosity_kernel();
 
-    // mpi functions
-    void packBuffer (const int which_array, const int which_side,
-        double* buffer, const int buffer_size, const int depth);
-    void unpackBuffer (const int which_array, const int which_side,
-        double* buffer, const int buffer_size, const int depth);
+    // Tea leaf
+    void tea_leaf_init_jacobi(int, double, double*, double*);
+    void tea_leaf_kernel_jacobi(double, double, double*);
 
-    void packRect
-    (double* host_buffer, cudaMemcpyKind direction,
-     int x_inc, int y_inc, int edge, int dest,
-     int which_field, int depth);
+    void tea_leaf_init_cg(int, double, double*, double*, double*);
+    void tea_leaf_kernel_cg_calc_w(double rx, double ry, double* pw);
+    void tea_leaf_kernel_cg_calc_ur(double alpha, double* rrn);
+    void tea_leaf_kernel_cg_calc_p(double beta);
 
-    int getBufferSize
-    (int edge, int depth, int x_inc, int y_inc);
+    void tea_leaf_cheby_copy_u
+    (double* rro);
+    void tea_leaf_calc_2norm_kernel
+    (int norm_array, double* norm);
+    void tea_leaf_kernel_cheby_init
+    (const double * ch_alphas, const double * ch_betas, int n_coefs,
+     const double rx, const double ry, const double theta, double* error);
+    void tea_leaf_kernel_cheby_iterate
+    (const double * ch_alphas, const double * ch_betas, int n_coefs,
+     const double rx, const double ry, const int cheby_calc_steps);
 
-    // mpi packing
-    #define PACK_ARGS                                       \
-        int chunk_1, int chunk_2, int external_face,        \
-        int x_inc, int y_inc, int depth, int which_field,   \
-        double *buffer_1, double *buffer_2
+    void tea_leaf_finalise();
 
     void pack_left_right(PACK_ARGS);
     void unpack_left_right(PACK_ARGS);

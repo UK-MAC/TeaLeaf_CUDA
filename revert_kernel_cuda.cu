@@ -26,6 +26,7 @@
  */
 
 #include "cuda_common.hpp"
+#include "kernel_files/revert_kernel.cuknl"
 
 extern "C" void revert_kernel_cuda_
 (void)

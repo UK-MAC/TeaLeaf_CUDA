@@ -73,7 +73,7 @@ SUBROUTINE update_halo(fields,depth)
                                 fields,                         &
                                 depth                           )
       ELSEIF(use_opencl_kernels)THEN
-        CALL update_halo_kernel_ocl(chunks(c)%chunk_neighbours,     &
+        CALL update_halo_kernel_cuda(chunks(c)%chunk_neighbours,     &
                                     fields,                         &
                                     depth                           )
       ELSEIF(use_C_kernels)THEN

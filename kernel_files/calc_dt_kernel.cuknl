@@ -89,7 +89,7 @@ const double* __restrict const yvel0,
         jk_ctrl_shared[threadIdx.x] = (column + (x_max * (row - 1))) + 0.4;
     }
 
-    Reduce< BLOCK_SZ/2 >::run(dt_min_shared, dt_min_out, min_func);
-    Reduce< BLOCK_SZ/2 >::run(jk_ctrl_shared, jk_ctrl_out, max_func);
+    Reduce< double, BLOCK_SZ/2 >::run(dt_min_shared, dt_min_out, min);
+    Reduce< double, BLOCK_SZ/2 >::run(jk_ctrl_shared, jk_ctrl_out, max);
 }
 

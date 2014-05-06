@@ -26,13 +26,7 @@
  */
 
 #include "cuda_common.hpp"
-
-#define CHUNK_left          0
-#define CHUNK_right         1
-#define CHUNK_bottom        2
-#define CHUNK_top           3
-
-#define EXTERNAL_FACE       (-1)
+#include "kernel_files/update_halo_kernel.cuknl"
 
 void update_array
 (int x_min, int x_max, int y_min, int y_max,

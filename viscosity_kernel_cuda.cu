@@ -25,6 +25,7 @@
  */
 
 #include "cuda_common.hpp"
+#include "kernel_files/viscosity_kernel.cuknl"
 
 extern "C" void viscosity_kernel_cuda_
 (void)

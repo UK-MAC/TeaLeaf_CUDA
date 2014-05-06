@@ -23,8 +23,6 @@
  *  with directional splitting.
  */         
 
-#include "cuda_common.cu"
-
 #define _SHARED_KERNEL_ARGS_                    \
     const int x_min,                            \
     const int x_max,                            \

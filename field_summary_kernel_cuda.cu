@@ -24,17 +24,16 @@
  */
 
 #include "cuda_common.hpp"
-
-#include "thrust/extrema.h"
+#include "kernel_files/field_summary_kernel.cuknl"
 
 extern "C" void field_summary_kernel_cuda_
-(double* vol, double* mass, double* ie, double* ke, double* press)
+(double* vol, double* mass, double* ie, double* ke, double* press, double* temp)
 {
-    chunk.field_summary_kernel(vol, mass, ie, ke, press);
+    chunk.field_summary_kernel(vol, mass, ie, ke, press, temp);
 }
 
 void CloverleafCudaChunk::field_summary_kernel
-(double* vol, double* mass, double* ie, double* ke, double* press)
+(double* vol, double* mass, double* ie, double* ke, double* press, double* temp)
 {
     CUDA_BEGIN_PROFILE;
 
@@ -42,7 +41,7 @@ void CloverleafCudaChunk::field_summary_kernel
     (x_min, x_max, y_min, y_max, volume, density0,
         energy0, pressure, xvel0, yvel0,
         work_array_1, work_array_2, work_array_3,
-        work_array_4, work_array_5);
+        work_array_4, work_array_5, work_array_6);
     CUDA_ERR_CHECK;
 
     *vol = thrust::reduce(reduce_ptr_1,
@@ -63,6 +62,10 @@ void CloverleafCudaChunk::field_summary_kernel
 
     *press = thrust::reduce(reduce_ptr_5,
                             reduce_ptr_5 + num_blocks,
+                            0.0);
+
+    *press = thrust::reduce(reduce_ptr_6,
+                            reduce_ptr_6 + num_blocks,
                             0.0);
 
     CUDA_END_PROFILE;

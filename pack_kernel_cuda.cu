@@ -23,10 +23,9 @@
  */
 
 #include "cuda_common.hpp"
+#include "kernel_files/pack_kernel.cuknl"
 
 #include <numeric>
-
-#include "pack_buffer_kernels.cu"
 
 #define CHUNK_LEFT 1
 #define CHUNK_RIGHT 2

@@ -223,8 +223,7 @@ CUDA_FILES= \
 	ideal_gas_kernel_cuda.o \
 	init_cuda.o \
 	initialise_chunk_kernel_cuda.o \
-	mpi_transfers_cuda.o \
-	pack_buffer_kernels.o \
+	pack_kernel_cuda.o \
 	PdV_kernel_cuda.o \
 	reset_field_kernel_cuda.o \
 	revert_kernel_cuda.o \
