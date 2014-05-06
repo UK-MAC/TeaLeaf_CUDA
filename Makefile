@@ -201,10 +201,30 @@ FORTRAN_FILES=\
 	visit.o			\
 	tea_leaf.o
 
-tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES)
+CUDA_FILES= \
+	accelerate_kernel_cuda.o \
+	advec_cell_kernel_cuda.o \
+	advec_mom_kernel_cuda.o \
+	calc_dt_kernel_cuda.o \
+	field_summary_kernel_cuda.o \
+	flux_calc_kernel_cuda.o \
+	generate_chunk_kernel_cuda.o \
+	ideal_gas_kernel_cuda.o \
+	init_cuda.o \
+	initialise_chunk_kernel_cuda.o \
+	mpi_transfers_cuda.o \
+	pack_buffer_kernels.o \
+	PdV_kernel_cuda.o \
+	reset_field_kernel_cuda.o \
+	revert_kernel_cuda.o \
+	update_halo_kernel_cuda.o \
+	viscosity_kernel_cuda.o
+
+tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES) $(CUDA_FILES)
 	$(MPI_COMPILER) $(FLAGS)	\
 	$(FORTRAN_FILES)	\
 	$(C_FILES)	\
+	$(CUDA_FILES) \
 	$(LDFLAGS) \
 	$(LDLIBS) \
 	-o tea_leaf
@@ -212,8 +232,8 @@ tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES)
 
 include make.deps
 
-%.o: %.cpp Makefile make.deps
-	$(CXX_MPI_COMPILER) $(CXXFLAGS) -c $< -o $*.o
+%.o: %.cu Makefile make.deps
+	nvcc -Xcompiler "$(CXXFLAGS)" -c $< -o $*.o
 %.mod %_module.mod %_leaf_module.mod: %.f90 %.o
 	@true
 %.o: %.f90 Makefile make.deps
