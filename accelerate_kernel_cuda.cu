@@ -24,6 +24,7 @@
  */
 
 #include "cuda_common.hpp"
+#include "kernel_files/accelerate_kernel.cuknl"
 
 extern "C" void accelerate_kernel_cuda_
 (double *dbyt)

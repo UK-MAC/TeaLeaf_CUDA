@@ -118,7 +118,13 @@ ifdef IEEE
   I3E=$(I3E_$(COMPILER))
 endif
 
-LDLIBS+=-lstdc++
+# flags for nvcc
+# set NV_ARCH to select the correct one
+NV_ARCH=KEPLER
+CODE_GEN_FERMI=-gencode arch=compute_20,code=sm_21
+CODE_GEN_KEPLER=-gencode arch=compute_35,code=sm_35
+
+LDLIBS+=-lstdc++ -lcudart
 
 FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS)
 CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c
@@ -127,6 +133,11 @@ C_MPI_COMPILER=mpicc
 CXX_MPI_COMPILER=mpiCC
 
 CXXFLAGS+=$(CFLAGS)
+
+# requires CUDA_HOME to be set - not the same on all machines
+NV_FLAGS=-O2 -I$(CUDA_HOME)/include $(CODE_GEN_$(NV_ARCH)) -restrict -Xcompiler "$(CXXFLAGS)"
+NV_FLAGS+=-DNO_ERR_CHK
+#NV_FLAGS+=-DTIME_KERNELS
 
 C_FILES=\
 	accelerate_kernel_c.o           \
@@ -233,7 +244,7 @@ tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES) $(CUDA_FILES)
 include make.deps
 
 %.o: %.cu Makefile make.deps
-	nvcc -Xcompiler "$(CXXFLAGS)" -c $< -o $*.o
+	nvcc $(NV_FLAGS) -c $< -o $*.o
 %.mod %_module.mod %_leaf_module.mod: %.f90 %.o
 	@true
 %.o: %.f90 Makefile make.deps
