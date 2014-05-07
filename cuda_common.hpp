@@ -186,6 +186,9 @@ private:
     double* vertexdx;
     double* vertexdy;
 
+    double* u;
+    double* u0;
+
     // used in calc_dt to retrieve values
     thrust::device_ptr< double > thr_cellx;
     thrust::device_ptr< double > thr_celly;

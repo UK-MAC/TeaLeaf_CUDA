@@ -72,7 +72,7 @@ OMP_PATHSCALE = -mp
 OMP_XL        = -qsmp=omp -qthreaded
 OMP=$(OMP_$(COMPILER))
 
-FLAGS_INTEL     = -O3 -ipo -no-prec-div
+FLAGS_INTEL     = -O3 -no-prec-div -xhost
 FLAGS_SUN       = -fast -xipo=2 -Xlistv4
 FLAGS_GNU       = -O3 -march=native -funroll-loops
 FLAGS_CRAY      = -em -ra -h acc_model=fast_addr:no_deep_copy:auto_async_all
@@ -80,7 +80,7 @@ FLAGS_PGI       = -fastsse -gopt -Mipa=fast -Mlist
 FLAGS_PATHSCALE = -O3
 FLAGS_XL       = -O5 -qipa=partition=large -g -qfullpath -Q -qsigtrap -qextname=flush:ideal_gas_kernel_c:viscosity_kernel_c:pdv_kernel_c:revert_kernel_c:accelerate_kernel_c:flux_calc_kernel_c:advec_cell_kernel_c:advec_mom_kernel_c:reset_field_kernel_c:timer_c:unpack_top_bottom_buffers_c:pack_top_bottom_buffers_c:unpack_left_right_buffers_c:pack_left_right_buffers_c:field_summary_kernel_c:update_halo_kernel_c:generate_chunk_kernel_c:initialise_chunk_kernel_c:calc_dt_kernel_c -qlistopt -qattr=full -qlist -qreport -qxref=full -qsource -qsuppress=1506-224:1500-036
 FLAGS_          = -O3
-CFLAGS_INTEL     = -O3 -ipo -no-prec-div -restrict -fno-alias
+CFLAGS_INTEL     = -O3 -no-prec-div -restrict -fno-alias -xhost
 CFLAGS_SUN       = -fast -xipo=2
 CFLAGS_GNU       = -O3 -march=native -funroll-loops
 CFLAGS_CRAY      = -em -h list=a
@@ -135,7 +135,7 @@ CXX_MPI_COMPILER=mpiCC
 CXXFLAGS+=$(CFLAGS)
 
 # requires CUDA_HOME to be set - not the same on all machines
-NV_FLAGS=-O2 -I$(CUDA_HOME)/include $(CODE_GEN_$(NV_ARCH)) -restrict -Xcompiler "$(CXXFLAGS)"
+NV_FLAGS=-O2 -I$(CUDA_HOME)/include $(CODE_GEN_$(NV_ARCH)) -restrict -Xcompiler "$(CFLAGS_GNU)"
 NV_FLAGS+=-DNO_ERR_CHK
 #NV_FLAGS+=-DTIME_KERNELS
 
@@ -229,6 +229,7 @@ CUDA_FILES= \
 	reset_field_kernel_cuda.o \
 	revert_kernel_cuda.o \
 	set_field_kernel_cuda.o \
+	tea_leaf_kernel_cuda.o \
 	update_halo_kernel_cuda.o \
 	viscosity_kernel_cuda.o
 
