@@ -19,9 +19,7 @@
   end_time=100.0
   end_step=10
 
-  opencl_vendor=nvidia
-  opencl_type=gpu
-  opencl_device=0
+  cuda_device=0
   use_opencl_kernels
 
   tl_max_iters=1000
