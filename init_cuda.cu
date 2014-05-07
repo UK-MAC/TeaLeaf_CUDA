@@ -24,6 +24,10 @@
 
 #include "cuda_common.hpp"
 
+#include <sstream>
+#include <cstdio>
+#include <cassert>
+
 CloverleafCudaChunk chunk;
 
 extern "C" void initialise_cuda_
@@ -42,6 +46,68 @@ CloverleafCudaChunk::CloverleafCudaChunk
     ;
 }
 
+std::string matchParam
+(FILE * input,
+ const char* param_name)
+{
+    std::string param_string;
+    static char name_buf[101];
+    rewind(input);
+    /* read in line from file */
+    while (NULL != fgets(name_buf, 100, input))
+    {
+        /* if it has the parameter name, its the line we want */
+        if (NULL != strstr(name_buf, param_name))
+        {
+            if (NULL != strstr(name_buf, "="))
+            {
+                *(strstr(name_buf, "=")) = ' ';
+                char param_buf[100];
+                sscanf(name_buf, "%*s %s", param_buf);
+                param_string = std::string(param_buf);
+                break;
+            }
+            else
+            {
+                param_string = std::string("NO_SETTING");
+                break;
+            }
+        }
+    }
+
+    return param_string;
+}
+
+int preferredDevice
+(void)
+{
+    FILE* input;
+    assert(input = fopen("tea.in", "r"));
+
+    std::string param_string = matchParam(input, "cuda_device");
+
+    int preferred_device;
+
+    if (param_string.size() == 0)
+    {
+        // not found in file
+        preferred_device = -1;
+    }
+    else
+    {
+        std::stringstream converter(param_string);
+
+        if (!(converter >> preferred_device))
+        {
+            preferred_device = -1;
+        }
+    }
+
+    fclose(input);
+
+    return preferred_device;
+}
+
 CloverleafCudaChunk::CloverleafCudaChunk
 (INITIALISE_ARGS)
 :x_min(*in_x_min),
@@ -49,8 +115,20 @@ x_max(*in_x_max),
 y_min(*in_y_min),
 y_max(*in_y_max),
 profiler_on(*in_profiler_on),
-num_blocks((((*in_x_max)+6)*((*in_y_max)+6))/BLOCK_SZ)
+num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
 {
+    // FIXME (and opencl really)
+    // make a better platform agnostic way of selecting devices
+
+    // choose device 0 unless specified
+    cudaThreadExit();
+    int device_id = preferredDevice();
+    cudaSetDevice(device_id); 
+
+    struct cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, device_id);
+    std::cout << "CUDA using " << prop.name << std::endl;
+
     #define CUDA_ARRAY_ALLOC(arr, size)     \
             cudaMalloc((void**) &arr, size);\
             cudaDeviceSynchronize();        \
