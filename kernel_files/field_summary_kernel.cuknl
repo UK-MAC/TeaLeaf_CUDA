@@ -75,6 +75,5 @@ const double* __restrict const yvel0,
     ie[blockIdx.x] = ie_shared[0];
     ke[blockIdx.x] = ke_shared[0];
     press[blockIdx.x] = press_shared[0];
-
 }
 

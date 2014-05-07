@@ -36,6 +36,7 @@
 #define __kernel_indexes                    \
     const int glob_id = threadIdx.x         \
         + blockIdx.x * blockDim.x;          \
+    __attribute__((__unused__)) const int lid = threadIdx.x;            \
     const int row = glob_id / (x_max + 4);  \
     const int column = glob_id % (x_max + 4);
 

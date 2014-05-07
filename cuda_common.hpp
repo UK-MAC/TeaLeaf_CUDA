@@ -90,10 +90,10 @@
 
 #define CUDA_ERR_CHECK errorHandler(__LINE__, __FILE__);
 
+#endif //NO_ERR_CHK
+
 void errorHandler
 (int line_num, std::string const& file);
-
-#endif //NO_ERR_CHK
 
 // whether to time kernel run times
 #ifdef TIME_KERNELS
@@ -219,6 +219,14 @@ private:
     double* dev_top_recv_buffer;
     double* dev_bottom_recv_buffer;
 
+    // holding temporary stuff like post_vol etc.
+    double* reduce_buf_1;
+    double* reduce_buf_2;
+    double* reduce_buf_3;
+    double* reduce_buf_4;
+    double* reduce_buf_5;
+    double* reduce_buf_6;
+
     // used for reductions in calc dt, pdv, field summary
     thrust::device_ptr< double > reduce_ptr_1;
     thrust::device_ptr< double > reduce_ptr_2;
@@ -264,6 +272,13 @@ private:
     double* buffer,
     const int buffer_size,
     const int depth);
+
+    // tolerance specified in tea.in
+    float tolerance;
+
+    // calculate rx/ry to pass back to fortran
+    void calcrxry
+    (double dt, double * rx, double * ry);
 
     void errorHandler
     (int line_num, const char* file);

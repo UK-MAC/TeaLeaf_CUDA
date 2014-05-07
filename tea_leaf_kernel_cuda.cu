@@ -1,9 +1,40 @@
 #include "cuda_common.hpp"
-#include "kernel_files/tea_leaf_kernel.cuknl"
+#include "kernel_files/tea_leaf_common.cuknl"
+#include "kernel_files/tea_leaf_jacobi.cuknl"
+#include "kernel_files/tea_leaf_cg.cuknl"
+#include "kernel_files/tea_leaf_cheby.cuknl"
+
+#include <cassert>
 
 // same as in fortran
 #define CONDUCTIVITY 1
 #define RECIP_CONDUCTIVITY 2
+
+// copy back dx/dy and calculate rx/ry
+void CloverleafCudaChunk::calcrxry
+(double dt, double * rx, double * ry)
+{
+    static int initd = 0;
+    if (!initd)
+    {
+        // make sure intialise chunk has finished
+        cudaDeviceSynchronize();
+        // celldx doesnt change after that so check once
+        initd = 1;
+    }
+
+    double dx, dy;
+
+    cudaMemcpy(&dx, celldx, sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&dy, celldy, sizeof(double), cudaMemcpyDeviceToHost);
+
+    CUDA_ERR_CHECK;
+
+    *rx = dt/(dx*dx);
+    *ry = dt/(dy*dy);
+}
+
+/********************/
 
 // Chebyshev solver
 extern "C" void tea_leaf_kernel_cheby_copy_u_cuda_
@@ -45,30 +76,31 @@ void CloverleafCudaChunk::tea_leaf_cheby_copy_u
 void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel
 (int norm_array, double* norm)
 {
-    // TODO
+    #if 0
     if (norm_array == 0)
     {
         // norm of u0
-        tea_leaf_cheby_solve_calc_resid_device.setArg(0, u0);
+        // TODO
     }
     else if (norm_array == 1)
     {
         // norm of r
-        tea_leaf_cheby_solve_calc_resid_device.setArg(0, work_array_2);
+        // TODO
     }
     else
     {
         DIE("Invalid value '%d' for norm_array passed, should be [1, 2]", norm_array);
     }
 
-    ENQUEUE(tea_leaf_cheby_solve_calc_resid_device);
-    *norm = reduceValue<double>(sum_red_kernels_double, reduce_buf_1);
+    *norm = *thrust::reduce(reduce_ptr_1, reduce_ptr_1 + num_blocks, 0.0);
+    #endif
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
 (const double * ch_alphas, const double * ch_betas, int n_coefs,
  const double rx, const double ry, const double theta, double* error)
 {
+    #if 0
     // TODO
     size_t ch_buf_sz = n_coefs*sizeof(double);
 
@@ -92,12 +124,14 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
 
     // then correct p
     ENQUEUE(tea_leaf_cheby_solve_init_p_device);
+    #endif
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
 (const double * ch_alphas, const double * ch_betas, int n_coefs,
  const double rx, const double ry, const int cheby_calc_step)
 {
+    #if 0
     // TODO
     tea_leaf_cheby_solve_calc_p_device.setArg(11, cheby_calc_step-1);
 
@@ -105,6 +139,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
     ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_u_device);
     //ENQUEUE(tea_leaf_cheby_solve_calc_p_device);
     ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_p_device);
+    #endif
 }
 
 /********************/
@@ -132,46 +167,12 @@ extern "C" void tea_leaf_kernel_solve_cg_cuda_calc_p_
     chunk.tea_leaf_kernel_cg_calc_p(*beta);
 }
 
-// copy back dx/dy and calculate rx/ry
-void CloverleafCudaChunk::calcrxry
-(double dt, double * rx, double * ry)
-{
-    static int initd = 0;
-    if (!initd)
-    {
-        // make sure intialise chunk has finished
-        queue.finish();
-        // celldx doesnt change after that so check once
-        initd = 1;
-    }
-
-    double dx, dy;
-
-    try
-    {
-        // TODO
-        // celldx/celldy never change, but done for consistency with fortran
-        queue.enqueueReadBuffer(celldx, CL_TRUE,
-            sizeof(double)*x_min, sizeof(double), &dx);
-        queue.enqueueReadBuffer(celldy, CL_TRUE,
-            sizeof(double)*y_min, sizeof(double), &dy);
-    }
-    catch (cl::Error e)
-    {
-        DIE("Error in copying back value from celldx/celldy (%d - %s)\n",
-            e.err(), e.what());
-    }
-
-    *rx = dt/(dx*dx);
-    *ry = dt/(dy*dy);
-}
-
 /********************/
-#include <cassert>
 
 void CloverleafCudaChunk::tea_leaf_init_cg
 (int coefficient, double dt, double * rx, double * ry, double * rro)
 {
+    #if 0
     if (coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY)
     {
         DIE("Unknown coefficient %d passed to tea leaf\n", coefficient);
@@ -208,36 +209,43 @@ void CloverleafCudaChunk::tea_leaf_init_cg
     ENQUEUE_OFFSET(tea_leaf_cg_init_others_device);
 
     *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_2);
+    #endif
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_w
 (double rx, double ry, double* pw)
 {
+    #if 0
     // TODO
     //ENQUEUE(tea_leaf_cg_solve_calc_w_device);
     ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_w_device);
     *pw = reduceValue<double>(sum_red_kernels_double, reduce_buf_3);
+    #endif
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
 (double alpha, double* rrn)
 {
+    #if 0
     // TODO
     tea_leaf_cg_solve_calc_ur_device.setArg(0, alpha);
 
     //ENQUEUE(tea_leaf_cg_solve_calc_ur_device);
     ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
     *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_4);
+    #endif
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_p
 (double beta)
 {
+    #if 0
     // TODO
     tea_leaf_cg_solve_calc_p_device.setArg(0, beta);
 
     ENQUEUE(tea_leaf_cg_solve_calc_p_device);
     //ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_p_device);
+    #endif
 }
 
 /********************/
@@ -266,25 +274,22 @@ void CloverleafCudaChunk::tea_leaf_init_jacobi
 
     calcrxry(dt, rx, ry);
 
-    // TODO
-    tea_leaf_jacobi_init_device.setArg(6, coefficient);
-    //ENQUEUE(tea_leaf_jacobi_init_device);
-    ENQUEUE_OFFSET(tea_leaf_jacobi_init_device);
-
-    tea_leaf_jacobi_solve_device.setArg(0, *rx);
-    tea_leaf_jacobi_solve_device.setArg(1, *ry);
+    device_tea_leaf_jacobi_init<<< num_blocks, BLOCK_SZ >>>
+    (x_min, x_max, y_min, y_max, density1, energy1,
+        work_array_1, work_array_2, work_array_3, u, coefficient);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_jacobi
 (double rx, double ry, double* error)
 {
-    // TODO
-    //ENQUEUE(tea_leaf_jacobi_copy_u_device);
-    ENQUEUE_OFFSET(tea_leaf_jacobi_copy_u_device);
-    //ENQUEUE(tea_leaf_jacobi_solve_device);
-    ENQUEUE_OFFSET(tea_leaf_jacobi_solve_device);
+    device_tea_leaf_jacobi_copy_u<<< num_blocks, BLOCK_SZ >>>
+    (x_min, x_max, y_min, y_max, u, work_array_4);
 
-    *error = reduceValue<double>(max_red_kernels_double, reduce_buf_1);
+    device_tea_leaf_jacobi_solve<<< num_blocks, BLOCK_SZ >>>
+    (x_min, x_max, y_min, y_max, rx, ry, work_array_1, work_array_2,
+        work_array_3, u, work_array_4, reduce_buf_1);
+
+    *error = thrust::reduce(reduce_ptr_1, reduce_ptr_1 + num_blocks, 0.0);
 }
 
 /********************/
@@ -300,8 +305,7 @@ extern "C" void tea_leaf_kernel_finalise_cuda_
 void CloverleafCudaChunk::tea_leaf_finalise
 (void)
 {
-    // TODO
-    //ENQUEUE(tea_leaf_finalise_device);
-    ENQUEUE_OFFSET(tea_leaf_finalise_device);
+    device_tea_leaf_finalise<<< num_blocks, BLOCK_SZ >>>
+    (x_min, x_max, y_min, y_max, density1, u, energy1);
 }
 
