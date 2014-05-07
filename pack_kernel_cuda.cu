@@ -27,12 +27,6 @@
 
 #include <numeric>
 
-#define CHUNK_LEFT 1
-#define CHUNK_RIGHT 2
-#define CHUNK_BOTTOM 3
-#define CHUNK_TOP 4
-#define EXTERNAL_FACE (-1)
-
 extern CloverleafCudaChunk chunk;
 
 /**********************/
@@ -89,10 +83,8 @@ const int depth)
             case CHUNK_TOP:\
                 CALL_PACK(dev_ptr, type, top, x);\
             default: \
-                std::cout << "Invalid side passed to buffer packing in " << __FILE__ << std::endl; \
-                exit(1); \
+                DIE("Invalid side passed to buffer packing") \
         }
-        // FIXME change to an exception or something
 
     switch(which_array)
     {
@@ -111,8 +103,7 @@ const int depth)
         case FIELD_vol_flux_y: PACK_CUDA_BUFFERS(vol_flux_y, Y_FACE); break;
         case FIELD_mass_flux_x: PACK_CUDA_BUFFERS(mass_flux_x, X_FACE); break;
         case FIELD_mass_flux_y: PACK_CUDA_BUFFERS(mass_flux_y, Y_FACE); break;
-        // FIXME change to an exception or something
-        default: std::cerr << "Invalid which_array identifier passed to CUDA for MPI transfer" << std::endl; exit(1);
+        default: DIE("Invalid which_array identifier passed to CUDA");
     }
 
 }
@@ -149,10 +140,8 @@ const int depth)
             case CHUNK_TOP:\
                 CALL_UNPACK(dev_ptr, type, top, x);\
             default: \
-                std::cout << "Invalid side passed to buffer packing in " << __FILE__ << std::endl; \
-                exit(1); \
+                DIE("Invalid side passed to buffer unpacking") \
         }
-        // FIXME change to an exception or something
 
     switch(which_array)
     {
@@ -171,10 +160,8 @@ const int depth)
         case FIELD_vol_flux_y: UNPACK_CUDA_BUFFERS(vol_flux_y, Y_FACE); break;
         case FIELD_mass_flux_x: UNPACK_CUDA_BUFFERS(mass_flux_x, X_FACE); break;
         case FIELD_mass_flux_y: UNPACK_CUDA_BUFFERS(mass_flux_y, Y_FACE); break;
-        // FIXME change to an exception or something
-        default: std::cerr << "Invalid which_array identifier passed to CUDA for MPI transfer" << std::endl; exit(1);
+        default: DIE("Invalid which_array identifier passed to CUDA");
     }
-
 }
 
 int CloverleafCudaChunk::getBufferSize
@@ -204,9 +191,7 @@ int CloverleafCudaChunk::getBufferSize
         region[1] = depth;
         break;
     default:
-        std::cerr << "Invalid face identifier " << edge << " passed to left/right pack buffer" << std::endl;
-        // FIXME change to an exception or something
-        exit(1);
+        DIE("Invalid face identifier (%d) passed to getBufferSize\n");
     }
 
     return region[0]*region[1];

@@ -217,6 +217,7 @@ CUDA_FILES= \
 	advec_cell_kernel_cuda.o \
 	advec_mom_kernel_cuda.o \
 	calc_dt_kernel_cuda.o \
+	cuda_errors.o \
 	field_summary_kernel_cuda.o \
 	flux_calc_kernel_cuda.o \
 	generate_chunk_kernel_cuda.o \

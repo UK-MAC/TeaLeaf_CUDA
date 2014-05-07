@@ -1,29 +1,50 @@
-accelerate_kernel_ocl.o: accelerate_kernel_ocl.cpp ocl_common.hpp
-advec_cell_kernel_ocl.o: advec_cell_kernel_ocl.cpp ocl_common.hpp
-advec_mom_kernel_ocl.o: advec_mom_kernel_ocl.cpp ocl_common.hpp
-calc_dt_kernel_ocl.o: calc_dt_kernel_ocl.cpp ocl_common.hpp \
- ocl_reduction.hpp
-field_summary_kernel_ocl.o: field_summary_kernel_ocl.cpp ocl_common.hpp \
- ocl_reduction.hpp
-flux_calc_kernel_ocl.o: flux_calc_kernel_ocl.cpp ocl_common.hpp
-generate_chunk_kernel_ocl.o: generate_chunk_kernel_ocl.cpp ocl_common.hpp
-ideal_gas_kernel_ocl.o: ideal_gas_kernel_ocl.cpp ocl_common.hpp
-initialise_chunk_kernel_ocl.o: initialise_chunk_kernel_ocl.cpp \
- ocl_common.hpp
-ocl_buffers.o: ocl_buffers.cpp ocl_common.hpp
-ocl_errors.o: ocl_errors.cpp ocl_common.hpp
-ocl_init.o: ocl_init.cpp ocl_common.hpp ocl_strings.hpp
-ocl_kernels.o: ocl_kernels.cpp ocl_common.hpp ocl_kernel_hdr.hpp
-ocl_pack.o: ocl_pack.cpp ocl_common.hpp
-ocl_reduction.o: ocl_reduction.cpp ocl_common.hpp ocl_kernel_hdr.hpp
-ocl_strings.o: ocl_strings.cpp ocl_strings.hpp ocl_common.hpp
-PdV_kernel_ocl.o: PdV_kernel_ocl.cpp ocl_common.hpp ocl_reduction.hpp
-reset_field_kernel_ocl.o: reset_field_kernel_ocl.cpp ocl_common.hpp
-revert_kernel_ocl.o: revert_kernel_ocl.cpp ocl_common.hpp
-set_field_kernel_ocl.o: set_field_kernel_ocl.cpp ocl_common.hpp
-tea_leaf_kernel_ocl.o: tea_leaf_kernel_ocl.cpp ocl_common.hpp
-update_halo_kernel_ocl.o: update_halo_kernel_ocl.cpp ocl_common.hpp
-viscosity_kernel_ocl.o: viscosity_kernel_ocl.cpp ocl_common.hpp
+accelerate_kernel_cuda.o: accelerate_kernel_cuda.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
+ kernel_files/accelerate_kernel.cuknl
+advec_cell_kernel_cuda.o: advec_cell_kernel_cuda.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
+ kernel_files/advec_cell_kernel.cuknl
+advec_mom_kernel_cuda.o: advec_mom_kernel_cuda.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
+ kernel_files/advec_mom_kernel.cuknl
+calc_dt_kernel_cuda.o: calc_dt_kernel_cuda.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
+ kernel_files/calc_dt_kernel.cuknl
+field_summary_kernel_cuda.o: field_summary_kernel_cuda.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
+ kernel_files/field_summary_kernel.cuknl
+flux_calc_kernel_cuda.o: flux_calc_kernel_cuda.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
+ kernel_files/flux_calc_kernel.cuknl
+generate_chunk_kernel_cuda.o: generate_chunk_kernel_cuda.cu \
+ cuda_common.hpp kernel_files/cuda_kernel_header.hpp \
+ kernel_files/../ftocmacros.h kernel_files/generate_chunk_kernel.cuknl
+ideal_gas_kernel_cuda.o: ideal_gas_kernel_cuda.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
+ kernel_files/ideal_gas_kernel.cuknl
+init_cuda.o: init_cuda.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h
+initialise_chunk_kernel_cuda.o: initialise_chunk_kernel_cuda.cu \
+ cuda_common.hpp kernel_files/cuda_kernel_header.hpp \
+ kernel_files/../ftocmacros.h kernel_files/initialise_chunk_kernel.cuknl
+pack_kernel_cuda.o: pack_kernel_cuda.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
+ kernel_files/pack_kernel.cuknl
+PdV_kernel_cuda.o: PdV_kernel_cuda.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
+ kernel_files/PdV_kernel.cuknl
+reset_field_kernel_cuda.o: reset_field_kernel_cuda.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
+ kernel_files/reset_field_kernel.cuknl
+revert_kernel_cuda.o: revert_kernel_cuda.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
+ kernel_files/revert_kernel.cuknl
+update_halo_kernel_cuda.o: update_halo_kernel_cuda.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
+ kernel_files/update_halo_kernel.cuknl
+viscosity_kernel_cuda.o: viscosity_kernel_cuda.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
+ kernel_files/viscosity_kernel.cuknl
 accelerate.o accelerate_module.mod: accelerate.f90 clover_module.mod \
  accelerate_kernel_module.mod
 accelerate_kernel.o accelerate_kernel_module.mod: accelerate_kernel.f90
