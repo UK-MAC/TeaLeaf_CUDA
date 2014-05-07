@@ -10,6 +10,8 @@ advec_mom_kernel_cuda.o: advec_mom_kernel_cuda.cu cuda_common.hpp \
 calc_dt_kernel_cuda.o: calc_dt_kernel_cuda.cu cuda_common.hpp \
  kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
  kernel_files/calc_dt_kernel.cuknl
+cuda_errors.o: cuda_errors.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h
 field_summary_kernel_cuda.o: field_summary_kernel_cuda.cu cuda_common.hpp \
  kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
  kernel_files/field_summary_kernel.cuknl
@@ -39,6 +41,9 @@ reset_field_kernel_cuda.o: reset_field_kernel_cuda.cu cuda_common.hpp \
 revert_kernel_cuda.o: revert_kernel_cuda.cu cuda_common.hpp \
  kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
  kernel_files/revert_kernel.cuknl
+set_field_kernel_cuda.o: set_field_kernel_cuda.cu cuda_common.hpp \
+ kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
+ kernel_files/set_field_kernel.cuknl
 update_halo_kernel_cuda.o: update_halo_kernel_cuda.cu cuda_common.hpp \
  kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
  kernel_files/update_halo_kernel.cuknl

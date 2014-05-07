@@ -228,6 +228,7 @@ CUDA_FILES= \
 	PdV_kernel_cuda.o \
 	reset_field_kernel_cuda.o \
 	revert_kernel_cuda.o \
+	set_field_kernel_cuda.o \
 	update_halo_kernel_cuda.o \
 	viscosity_kernel_cuda.o
 
