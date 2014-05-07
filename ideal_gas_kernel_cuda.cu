@@ -26,13 +26,13 @@
 #include "cuda_common.hpp"
 #include "kernel_files/ideal_gas_kernel.cuknl"
 
-extern "C" void ideal_gas_kernel_cuda_predict_
+extern "C" void ideal_gas_kernel_predict_cuda_
 (void)
 {
     chunk.ideal_gas_kernel(1);
 }
 
-extern "C" void ideal_gas_kernel_cuda_nopredict_
+extern "C" void ideal_gas_kernel_nopredict_cuda_
 (void)
 {
     chunk.ideal_gas_kernel(0);

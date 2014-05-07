@@ -1,4 +1,6 @@
 #include "cuda_common.hpp"
+#include <cstdarg>
+#include <cstdio>
 
 static const char* errorCodes
 (int err_code)
@@ -73,8 +75,8 @@ static const char* errorCodes
     }
 }
 
-void errorHandler
-(int line_num, std::string const& file)
+void CloverleafCudaChunk::errorHandler
+(int line_num, const char* file)
 {
     cudaDeviceSynchronize();
     int l_e = cudaGetLastError();

@@ -28,6 +28,8 @@
 #include "thrust/device_allocator.h"
 #include "thrust/extrema.h"
 #include "kernel_files/cuda_kernel_header.hpp"
+#include <map>
+#include <vector>
 
 // used in update_halo and for copying back to host for mpi transfers
 #define FIELD_density0      1
@@ -246,6 +248,23 @@ private:
     int getBufferSize
     (int edge, int depth, int x_inc, int y_inc);
 
+    void unpackBuffer
+    (const int which_array,
+    const int which_side,
+    double* buffer,
+    const int buffer_size,
+    const int depth);
+
+    void packBuffer
+    (const int which_array,
+    const int which_side,
+    double* buffer,
+    const int buffer_size,
+    const int depth);
+
+    void errorHandler
+    (int line_num, const char* file);
+
     // this function gets called when something goes wrong
     #define DIE(...) cloverDie(__LINE__, __FILE__, __VA_ARGS__)
     void cloverDie
@@ -314,6 +333,16 @@ public:
      const double rx, const double ry, const int cheby_calc_steps);
 
     void tea_leaf_finalise();
+
+    std::map<std::string, double*> arr_names;
+    std::vector<double> dumpArray
+    (const std::string& arr_name, int x_extra, int y_extra);
+
+    typedef enum {PACK, UNPACK} dir_t;
+    void packRect
+    (double* host_buffer, dir_t direction,
+     int x_inc, int y_inc, int edge, int dest,
+     int which_field, int depth);
 
     void pack_left_right(PACK_ARGS);
     void unpack_left_right(PACK_ARGS);

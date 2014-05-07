@@ -41,7 +41,7 @@ extern "C" void operation##_##dir##_buffers_cuda_                    \
 {                                                                   \
     chunk.operation##_##dir(*chunk_1, *chunk_2, *external_face,     \
                             *x_inc, *y_inc, *depth,                 \
-                            (*which_field)-1, buffer_1, buffer_2);  \
+                            (*which_field), buffer_1, buffer_2);  \
 }
 
 C_PACK_INTERFACE(pack, left_right)
@@ -50,6 +50,15 @@ C_PACK_INTERFACE(pack, top_bottom)
 C_PACK_INTERFACE(unpack, top_bottom)
 
 /*****************************/
+
+void CloverleafCudaChunk::packRect
+(double* host_buffer, dir_t direction,
+ int x_inc, int y_inc, int edge, int dest,
+ int which_field, int depth)
+{
+    // TODO just call packBuffer/unpackBuffer from this
+    // TODO remove unnecesary synchronisations below
+}
 
 void CloverleafCudaChunk::packBuffer
 (const int which_array,
@@ -83,7 +92,7 @@ const int depth)
             case CHUNK_TOP:\
                 CALL_PACK(dev_ptr, type, top, x);\
             default: \
-                DIE("Invalid side passed to buffer packing") \
+                DIE("Invalid side passed to buffer packing"); \
         }
 
     switch(which_array)
@@ -140,7 +149,7 @@ const int depth)
             case CHUNK_TOP:\
                 CALL_UNPACK(dev_ptr, type, top, x);\
             default: \
-                DIE("Invalid side passed to buffer unpacking") \
+                DIE("Invalid side passed to buffer unpacking"); \
         }
 
     switch(which_array)
