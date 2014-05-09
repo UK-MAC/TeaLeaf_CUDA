@@ -92,9 +92,6 @@
 
 #endif //NO_ERR_CHK
 
-void errorHandler
-(int line_num, std::string const& file);
-
 // whether to time kernel run times
 #ifdef TIME_KERNELS
 

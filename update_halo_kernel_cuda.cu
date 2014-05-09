@@ -28,6 +28,14 @@
 #include "cuda_common.hpp"
 #include "kernel_files/update_halo_kernel.cuknl"
 
+extern "C" void update_halo_kernel_cuda_
+(const int* chunk_neighbours,
+const int* fields,
+const int* depth)
+{
+    cuda_chunk.update_halo_kernel(fields, *depth, chunk_neighbours);
+}
+
 void update_array
 (int x_min, int x_max, int y_min, int y_max,
 cell_info_t const& grid_type,
@@ -43,7 +51,6 @@ int depth)
         device_update_halo_kernel_##face##_cuda                     \
         <<< launch_sz, BLOCK_SZ >>>                                 \
         (x_min, x_max, y_min, y_max, grid_type, cur_array_d, depth);\
-        CUDA_ERR_CHECK;                                             \
     }
 
     CHECK_LAUNCH(bottom, x);
@@ -54,14 +61,6 @@ int depth)
     #undef CHECK_LAUNCH
 }
 
-extern "C" void update_halo_kernel_cuda_
-(const int* chunk_neighbours,
-const int* fields,
-const int* depth)
-{
-    cuda_chunk.update_halo_kernel(fields, *depth, chunk_neighbours);
-}
-
 void CloverleafCudaChunk::update_halo_kernel
 (const int* fields,
 const int depth,
@@ -70,10 +69,11 @@ const int* chunk_neighbours)
     CUDA_BEGIN_PROFILE;
 
     #define HALO_UPDATE_RESIDENT(arr, grid_type)        \
-    {if (1 == fields[FIELD_ ## arr])                    \
+    {if (1 == fields[FIELD_##arr - 1])                  \
     {                                                   \
         update_array(x_min, x_max, y_min, y_max,        \
             grid_type, chunk_neighbours, arr, depth);   \
+        CUDA_ERR_CHECK;                                 \
     }}
 
     HALO_UPDATE_RESIDENT(density0, CELL);
@@ -94,6 +94,9 @@ const int* chunk_neighbours)
 
     HALO_UPDATE_RESIDENT(vol_flux_y, Y_FACE);
     HALO_UPDATE_RESIDENT(mass_flux_y, Y_FACE);
+
+    HALO_UPDATE_RESIDENT(u, CELL);
+    HALO_UPDATE_RESIDENT(work_array_1, CELL);
 
     #undef HALO_UPDATE_RESIDENT
 
