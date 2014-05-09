@@ -27,8 +27,6 @@
 
 #include <numeric>
 
-extern CloverleafCudaChunk chunk;
-
 /**********************/
 
 // define a generic interface for fortran
