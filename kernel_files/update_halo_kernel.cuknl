@@ -5,8 +5,8 @@ cell_info_t grid_type,
 double* cur_array,
 int depth)
 {
-    int x_extra = grid_type.x_e;
-    int y_invert = grid_type.y_i;
+    int x_extra = grid_type.x_extra;
+    int y_invert = grid_type.y_invert;
     __kernel_indexes;
 
     // offset by 1 if it is anything but a CELL grid
@@ -34,10 +34,10 @@ cell_info_t grid_type,
 double* cur_array,
 int depth)
 {
-    int x_extra = grid_type.x_e;
-    int y_extra = grid_type.y_e;
-    int y_invert = grid_type.y_i;
-    int x_face = grid_type.x_f;
+    int x_extra = grid_type.x_extra;
+    int y_extra = grid_type.y_extra;
+    int y_invert = grid_type.y_invert;
+    int x_face = grid_type.x_face;
     __kernel_indexes;
 
     // if x face data, offset source/dest by - 1
@@ -61,9 +61,9 @@ cell_info_t grid_type,
 double* cur_array,
 int depth)
 {
-    int x_extra = grid_type.x_e;
-    int y_extra = grid_type.y_e;
-    int x_invert = grid_type.x_i;
+    int x_extra = grid_type.x_extra;
+    int y_extra = grid_type.y_extra;
+    int x_invert = grid_type.x_invert;
 
     // offset by 1 if it is anything but a CELL grid
     int l_offset = (grid_type.grid_type != CELL_DATA) ? 1 : 0;
@@ -88,10 +88,10 @@ cell_info_t grid_type,
 double* cur_array,
 int depth)
 {
-    int x_extra = grid_type.x_e;
-    int y_extra = grid_type.y_e;
-    int x_invert = grid_type.x_i;
-    int y_face = grid_type.y_f;
+    int x_extra = grid_type.x_extra;
+    int y_extra = grid_type.y_extra;
+    int x_invert = grid_type.x_invert;
+    int y_face = grid_type.y_face;
 
     // offset source by -1 if its a y face
     int y_f_offset = (y_face) ? 1 : 0;
