@@ -146,6 +146,9 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     CUDA_ARRAY_ALLOC(energy0, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(energy1, BUFSZ2D(0, 0));
 
+    CUDA_ARRAY_ALLOC(u, BUFSZ2D(0, 0));
+    CUDA_ARRAY_ALLOC(u0, BUFSZ2D(0, 0));
+
     CUDA_ARRAY_ALLOC(xvel0, BUFSZ2D(1, 1));
     CUDA_ARRAY_ALLOC(xvel1, BUFSZ2D(1, 1));
     CUDA_ARRAY_ALLOC(yvel0, BUFSZ2D(1, 1));
