@@ -91,7 +91,8 @@ int preferredDevice
     if (param_string.size() == 0)
     {
         // not found in file
-        preferred_device = -1;
+        preferred_device = 0;
+        std::cout << "CUDA device not specifiefd in file - using 0" << std::endl;
     }
     else
     {
