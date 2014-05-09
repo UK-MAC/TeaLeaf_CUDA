@@ -37,7 +37,7 @@ extern "C" void operation##_##dir##_buffers_cuda_                    \
  int *x_inc, int *y_inc, int *depth, int *which_field,              \
  double *field_ptr, double *buffer_1, double *buffer_2)             \
 {                                                                   \
-    chunk.operation##_##dir(*chunk_1, *chunk_2, *external_face,     \
+    cuda_chunk.operation##_##dir(*chunk_1, *chunk_2, *external_face,     \
                             *x_inc, *y_inc, *depth,                 \
                             (*which_field), buffer_1, buffer_2);  \
 }

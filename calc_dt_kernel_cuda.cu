@@ -43,7 +43,7 @@ int* jldt,
 int* kldt,
 int* small)
 {
-    chunk.calc_dt_kernel(*g_small, *g_big, *dtmin, *dtc_safe, *dtu_safe,
+    cuda_chunk.calc_dt_kernel(*g_small, *g_big, *dtmin, *dtc_safe, *dtu_safe,
         *dtv_safe, *dtdiv_safe, dt_min_val, dtl_control, xl_pos, yl_pos,
         jldt, kldt, small);
 }

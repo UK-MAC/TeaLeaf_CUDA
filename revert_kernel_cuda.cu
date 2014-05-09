@@ -31,7 +31,7 @@
 extern "C" void revert_kernel_cuda_
 (void)
 {
-    chunk.revert_kernel();
+    cuda_chunk.revert_kernel();
 }
 
 void CloverleafCudaChunk::revert_kernel

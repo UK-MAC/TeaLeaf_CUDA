@@ -59,7 +59,7 @@ extern "C" void update_halo_kernel_cuda_
 const int* fields,
 const int* depth)
 {
-    chunk.update_halo_kernel(fields, *depth, chunk_neighbours);
+    cuda_chunk.update_halo_kernel(fields, *depth, chunk_neighbours);
 }
 
 void CloverleafCudaChunk::update_halo_kernel

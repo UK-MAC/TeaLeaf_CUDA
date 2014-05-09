@@ -29,7 +29,7 @@
 extern "C" void field_summary_kernel_cuda_
 (double* vol, double* mass, double* ie, double* ke, double* press, double* temp)
 {
-    chunk.field_summary_kernel(vol, mass, ie, ke, press, temp);
+    cuda_chunk.field_summary_kernel(vol, mass, ie, ke, press, temp);
 }
 
 void CloverleafCudaChunk::field_summary_kernel

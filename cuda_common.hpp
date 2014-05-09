@@ -374,7 +374,7 @@ public:
     (void);
 };
 
-extern CloverleafCudaChunk chunk;
+extern CloverleafCudaChunk cuda_chunk;
 
 #endif
 

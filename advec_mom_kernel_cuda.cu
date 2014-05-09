@@ -30,7 +30,7 @@ extern "C" void advec_mom_kernel_cuda_
 int *swp_nmbr,
 int *drctn)
 {
-    chunk.advec_mom_kernel(*whch_vl, *swp_nmbr, *drctn);
+    cuda_chunk.advec_mom_kernel(*whch_vl, *swp_nmbr, *drctn);
 }
 
 void CloverleafCudaChunk::advec_mom_kernel

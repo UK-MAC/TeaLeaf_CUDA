@@ -28,12 +28,12 @@
 #include <cstdio>
 #include <cassert>
 
-CloverleafCudaChunk chunk;
+CloverleafCudaChunk cuda_chunk;
 
 extern "C" void initialise_cuda_
 (INITIALISE_ARGS)
 {
-    chunk = CloverleafCudaChunk(in_x_min,
+    cuda_chunk = CloverleafCudaChunk(in_x_min,
                                 in_x_max,
                                 in_y_min,
                                 in_y_max,
@@ -46,7 +46,7 @@ CloverleafCudaChunk::CloverleafCudaChunk
     ;
 }
 
-std::string matchParam
+static std::string matchParam
 (FILE * input,
  const char* param_name)
 {

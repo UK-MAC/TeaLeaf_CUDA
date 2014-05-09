@@ -29,7 +29,7 @@ extern "C" void advec_cell_kernel_cuda_
 (const int* dr,
  const int* swp_nmbr)
 {
-    chunk.advec_cell_kernel(*dr, *swp_nmbr);
+    cuda_chunk.advec_cell_kernel(*dr, *swp_nmbr);
 }
 
 void CloverleafCudaChunk::advec_cell_kernel
