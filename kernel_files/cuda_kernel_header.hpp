@@ -40,6 +40,8 @@
     const int row = glob_id / (x_max + 4);  \
     const int column = glob_id % (x_max + 4);
 
+__device__ inline double SUM(double a, double b){return a+b;}
+
 template < typename T, int offset >
 class Reduce
 {

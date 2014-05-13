@@ -17,6 +17,7 @@ void CloverleafCudaChunk::calcrxry
     static int initd = 0;
     if (!initd)
     {
+        // FIXME remove this check - only relaly done once, one sync doesnt do much anyway
         // make sure intialise chunk has finished
         cudaDeviceSynchronize();
         // celldx doesnt change after that so check once
