@@ -46,7 +46,7 @@ int depth)
     #define CHECK_LAUNCH(face, dir)                                 \
     if (EXTERNAL_FACE == chunk_neighbours[CHUNK_ ## face])          \
     {                                                               \
-        const int launch_sz = (ceil((dir##_max+4+grid_type.dir##_extra) \
+        const int launch_sz = (ceil((dir##_max+5+grid_type.dir##_extra) \
             /static_cast<float>(BLOCK_SZ))) * depth;                \
         device_update_halo_kernel_##face##_cuda                     \
         <<< launch_sz, BLOCK_SZ >>>                                 \

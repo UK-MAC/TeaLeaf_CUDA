@@ -89,7 +89,21 @@ void CloverleafCudaChunk::errorHandler
 std::vector<double> CloverleafCudaChunk::dumpArray
 (const std::string& arr_name, int x_extra, int y_extra)
 {
-    std::vector<double> host_arr;
+    std::vector<double> host_arr(BUFSZ2D(x_extra, y_extra)/sizeof(double));
+
+    cudaDeviceSynchronize();
+
+    try
+    {
+        cudaMemcpy(&host_arr.front(), arr_names.at(arr_name),
+            BUFSZ2D(x_extra, y_extra), cudaMemcpyDeviceToHost);
+    }
+    catch (std::out_of_range e)
+    {
+        DIE("Error - %s was not in the arr_names map\n", arr_name.c_str());
+    }
+
+    errorHandler(__LINE__, __FILE__);
 
     // TODO
 

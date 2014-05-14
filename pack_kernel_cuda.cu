@@ -39,7 +39,7 @@ extern "C" void operation##_##dir##_buffers_cuda_                    \
 {                                                                   \
     cuda_chunk.operation##_##dir(*chunk_1, *chunk_2, *external_face,     \
                             *x_inc, *y_inc, *depth,                 \
-                            (*which_field), buffer_1, buffer_2);  \
+                            (*which_field)-1, buffer_1, buffer_2);  \
 }
 
 C_PACK_INTERFACE(pack, left_right)
