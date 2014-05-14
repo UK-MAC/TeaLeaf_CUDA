@@ -27,6 +27,7 @@
 #include <sstream>
 #include <cstdio>
 #include <cassert>
+#include <cuda_strings.hpp>
 
 CloverleafCudaChunk cuda_chunk;
 
@@ -46,69 +47,6 @@ CloverleafCudaChunk::CloverleafCudaChunk
     ;
 }
 
-std::string matchParam
-(FILE * input,
- const char* param_name)
-{
-    std::string param_string;
-    static char name_buf[101];
-    rewind(input);
-    /* read in line from file */
-    while (NULL != fgets(name_buf, 100, input))
-    {
-        /* if it has the parameter name, its the line we want */
-        if (NULL != strstr(name_buf, param_name))
-        {
-            if (NULL != strstr(name_buf, "="))
-            {
-                *(strstr(name_buf, "=")) = ' ';
-                char param_buf[100];
-                sscanf(name_buf, "%*s %s", param_buf);
-                param_string = std::string(param_buf);
-                break;
-            }
-            else
-            {
-                param_string = std::string("NO_SETTING");
-                break;
-            }
-        }
-    }
-
-    return param_string;
-}
-
-int preferredDevice
-(void)
-{
-    FILE* input;
-    assert(input = fopen("tea.in", "r"));
-
-    std::string param_string = matchParam(input, "cuda_device");
-
-    int preferred_device;
-
-    if (param_string.size() == 0)
-    {
-        // not found in file
-        preferred_device = 0;
-        std::cout << "CUDA device not specifiefd in file - using 0" << std::endl;
-    }
-    else
-    {
-        std::stringstream converter(param_string);
-
-        if (!(converter >> preferred_device))
-        {
-            preferred_device = -1;
-        }
-    }
-
-    fclose(input);
-
-    return preferred_device;
-}
-
 CloverleafCudaChunk::CloverleafCudaChunk
 (INITIALISE_ARGS)
 :x_min(*in_x_min),
@@ -123,7 +61,19 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
 
     // choose device 0 unless specified
     cudaThreadExit();
-    int device_id = preferredDevice();
+
+    // Read in from file - easier than passing in from fortran
+    FILE* input = fopen("tea.in", "r");
+    if (NULL == input)
+    {
+        // should never happen
+        DIE("Input file not found\n");
+    }
+
+    int device_id = preferredDevice(input);
+
+    fclose(input);
+
     cudaSetDevice(device_id); 
 
     struct cudaDeviceProp prop;
