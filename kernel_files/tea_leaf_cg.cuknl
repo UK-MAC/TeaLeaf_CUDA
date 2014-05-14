@@ -1,0 +1,201 @@
+/*
+ *  Kernels used for conjugate gradient method
+ */
+
+#define CONDUCTIVITY 1
+#define RECIP_CONDUCTIVITY 2
+
+__global__ void device_tea_leaf_cg_init_u
+(int x_min, int x_max, int y_min, int y_max,
+ const double * __restrict const density1,
+ const double * __restrict const energy1,
+       double * __restrict const u,
+       double * __restrict const p,
+       double * __restrict const r,
+       double * __restrict const d,
+ const int coefficient)
+{
+    __kernel_indexes;
+
+    if (row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
+    && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2)
+    {
+        p[THARR2D(0, 0, 0)] = 0.0;
+        r[THARR2D(0, 0, 0)] = 0.0;
+
+        u[THARR2D(0, 0, 0)] = energy1[THARR2D(0, 0, 0)]*density1[THARR2D(0, 0, 0)];
+
+        if (CONDUCTIVITY == coefficient)
+        {
+            d[THARR2D(0, 0, 0)] = density1[THARR2D(0, 0, 0)];
+        }
+        else
+        {
+            d[THARR2D(0, 0, 0)] = 1.0/density1[THARR2D(0, 0, 0)];
+        }
+    }
+}
+
+__global__ void device_tea_leaf_cg_init_directions
+(int x_min, int x_max, int y_min, int y_max,
+ const double * __restrict const d,
+       double * __restrict const Kx,
+       double * __restrict const Ky)
+{
+    __kernel_indexes;
+
+    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 1
+    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 1)
+    {
+        Kx[THARR2D(0, 0, 0)] = (d[THARR2D(-1, 0, 0)] + d[THARR2D(0, 0, 0)])
+            /(2.0*d[THARR2D(-1, 0, 0)]*d[THARR2D(0, 0, 0)]);
+        Ky[THARR2D(0, 0, 0)] = (d[THARR2D(0, -1, 0)] + d[THARR2D(0, 0, 0)])
+            /(2.0*d[THARR2D(0, -1, 0)]*d[THARR2D(0, 0, 0)]);
+    }
+}
+
+__global__ void device_tea_leaf_cg_init_others
+(int x_min, int x_max, int y_min, int y_max,
+       double * __restrict const rro,
+ const double * __restrict const u,
+       double * __restrict const p,
+       double * __restrict const r,
+       double * __restrict const w,
+       double * __restrict const Mi,
+ const double * __restrict const Kx,
+ const double * __restrict const Ky,
+ double rx, double ry,
+       double * __restrict const z)
+{
+    __kernel_indexes;
+
+    __shared__ double rro_shared[BLOCK_SZ];
+    rro_shared[lid] = 0.0;
+
+    // used to make ifdefs for reductions less messy
+    double rro_val;
+
+    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
+    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    {
+        w[THARR2D(0, 0, 0)] = (1.0
+            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
+            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*u[THARR2D(0, 0, 0)]
+            - (Ky[THARR2D(0, 1, 0)]*u[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*u[THARR2D(0, -1, 0)])
+            - (Kx[THARR2D(1, 0, 0)]*u[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*u[THARR2D(-1, 0, 0)]);
+
+        r[THARR2D(0, 0, 0)] = u[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
+
+#if defined(CG_DO_PRECONDITION)
+        Mi[THARR2D(0, 0, 0)] = (1.0
+            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
+            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]));
+        Mi[THARR2D(0, 0, 0)] = 1.0/Mi[THARR2D(0, 0, 0)];
+
+        z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+        p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)];
+        rro_val = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
+#else
+        p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)];
+        rro_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+#endif
+
+        rro_shared[lid] = rro_val;
+    }
+
+    Reduce< double, BLOCK_SZ/2 >::run(rro_shared, rro, SUM);
+}
+
+/* reduce rro */
+
+__global__ void device_tea_leaf_cg_solve_calc_w
+(int x_min, int x_max, int y_min, int y_max,
+       double * __restrict const pw,
+ const double * __restrict const p,
+       double * __restrict const w,
+ const double * __restrict const Kx,
+ const double * __restrict const Ky,
+ double rx, double ry)
+{
+    __kernel_indexes;
+
+    __shared__ double pw_shared[BLOCK_SZ];
+    pw_shared[lid] = 0.0;
+
+    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
+    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    {
+        w[THARR2D(0, 0, 0)] = (1.0
+            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
+            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*p[THARR2D(0, 0, 0)]
+            - (Ky[THARR2D(0, 1, 0)]*p[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*p[THARR2D(0, -1, 0)])
+            - (Kx[THARR2D(1, 0, 0)]*p[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*p[THARR2D(-1, 0, 0)]);
+        
+        pw_shared[lid] = p[THARR2D(0, 0, 0)]*w[THARR2D(0, 0, 0)];
+    }
+
+    Reduce< double, BLOCK_SZ/2 >::run(pw_shared, pw, SUM);
+}
+
+/* reduce pw */
+
+__global__ void device_tea_leaf_cg_solve_calc_ur
+(int x_min, int x_max, int y_min, int y_max,
+ double alpha,
+       double * __restrict const rrn,
+       double * __restrict const u,
+ const double * __restrict const p,
+       double * __restrict const r,
+ const double * __restrict const w,
+       double * __restrict const z,
+ const double * __restrict const Mi)
+{
+    __kernel_indexes;
+
+    __shared__ double rrn_shared[BLOCK_SZ];
+    rrn_shared[lid] = 0.0;
+
+    // as above
+    double rrn_val;
+
+    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
+    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    {
+        u[THARR2D(0, 0, 0)] += alpha*p[THARR2D(0, 0, 0)];
+        r[THARR2D(0, 0, 0)] -= alpha*w[THARR2D(0, 0, 0)];
+#ifdef CG_DO_PRECONDITION
+        z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+        rrn_val = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
+#else
+        rrn_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+#endif
+
+        rrn_shared[lid] = rrn_val;
+    }
+
+    Reduce< double, BLOCK_SZ/2 >::run(rrn_shared, rrn, SUM);
+}
+
+/* reduce rrn */
+
+__global__ void device_tea_leaf_cg_solve_calc_p
+(int x_min, int x_max, int y_min, int y_max,
+ double beta,
+       double * __restrict const p,
+ const double * __restrict const r,
+ const double * __restrict const z)
+{
+    __kernel_indexes;
+
+    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
+    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    {
+#ifdef CG_DO_PRECONDITION
+        p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)] + beta*p[THARR2D(0, 0, 0)];
+#else
+        p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)] + beta*p[THARR2D(0, 0, 0)];
+#endif
+    }
+}
+
+
