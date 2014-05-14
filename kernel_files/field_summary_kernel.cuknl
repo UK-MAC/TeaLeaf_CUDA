@@ -69,6 +69,7 @@ const double* __restrict const u,
             ie_shared[lid] += ie_shared[lid + offset];
             ke_shared[lid] += ke_shared[lid + offset];
             press_shared[lid] += press_shared[lid + offset];
+            temp_shared[lid] += temp_shared[lid + offset];
         }
         __syncthreads();
     }

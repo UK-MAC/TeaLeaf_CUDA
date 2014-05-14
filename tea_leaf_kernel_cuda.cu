@@ -196,7 +196,9 @@ void CloverleafCudaChunk::tea_leaf_init_cg
 
     // get initial guess in w, r, etc
     device_tea_leaf_cg_init_others<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, reduce_buf_2, u, work_array_1, work_array_2, work_array_3, work_array_4, work_array_5, work_array_6, *rx, *ry, z);
+    (x_min, x_max, y_min, y_max, reduce_buf_2, u, work_array_1,
+        work_array_2, work_array_3, work_array_4, work_array_5,
+        work_array_6, *rx, *ry, z);
 
     *rro = thrust::reduce(reduce_ptr_2, reduce_ptr_2 + num_blocks, 0.0);
 }

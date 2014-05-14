@@ -22,6 +22,10 @@
  *  @details Initialises CUDA devices and global storage
  */
 
+#if defined(MPI_HDR)
+#include "mpi.h"
+#endif
+
 #include "cuda_common.hpp"
 
 #include <sstream>
@@ -62,6 +66,13 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     // choose device 0 unless specified
     cudaThreadExit();
 
+    int rank;
+#if defined(MPI_HDR)
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#else
+    rank = 0;
+#endif
+
     // Read in from file - easier than passing in from fortran
     FILE* input = fopen("tea.in", "r");
     if (NULL == input)
@@ -70,7 +81,36 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
         DIE("Input file not found\n");
     }
 
-    int device_id = preferredDevice(input);
+    int device_id = clover::preferredDevice(input);
+    // find out which solver to use
+    bool tl_use_jacobi = clover::paramEnabled(input, "tl_use_jacobi");
+    bool tl_use_cg = clover::paramEnabled(input, "tl_use_cg");
+    bool tl_use_chebyshev = clover::paramEnabled(input, "tl_use_chebyshev");
+
+    // use first device whatever happens (ignore MPI rank) for running across different platforms
+    bool usefirst = clover::paramEnabled(input, "opencl_usefirst");
+
+    if(!rank)fprintf(stdout, "Solver to use: ");
+    if (tl_use_chebyshev)
+    {
+        tea_solver = TEA_ENUM_CHEBYSHEV;
+        if(!rank)fprintf(stdout, "Chebyshev + CG\n");
+    }
+    else if (tl_use_cg)
+    {
+        tea_solver = TEA_ENUM_CG;
+        if(!rank)fprintf(stdout, "Conjugate gradient\n");
+    }
+    else if (tl_use_jacobi)
+    {
+        tea_solver = TEA_ENUM_JACOBI;
+        if(!rank)fprintf(stdout, "Jacobi\n");
+    }
+    else
+    {
+        tea_solver = TEA_ENUM_JACOBI;
+        if(!rank)fprintf(stdout, "Jacobi (no solver specified in tea.in)\n");
+    }
 
     fclose(input);
 

@@ -1,6 +1,9 @@
 #include <cstdio>
 #include <string>
 
+namespace clover
+{
+
 /*
  *  Find if tl_use_cg is in the input file
  */
@@ -19,4 +22,6 @@ int preferredDevice
 std::string matchParam
 (FILE * input,
  const char* param_name);
+
+}
 

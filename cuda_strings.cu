@@ -4,6 +4,8 @@
 #include <cstring>
 #include <sstream>
 
+namespace clover{
+
 std::string matchParam
 (FILE * input,
  const char* param_name)
@@ -68,3 +70,4 @@ int preferredDevice
     return preferred_device;
 }
 
+}
