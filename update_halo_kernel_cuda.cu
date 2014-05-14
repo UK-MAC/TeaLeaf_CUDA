@@ -44,7 +44,7 @@ double* cur_array_d,
 int depth)
 {
     #define CHECK_LAUNCH(face, dir)                                 \
-    if (EXTERNAL_FACE == chunk_neighbours[CHUNK_ ## face])          \
+    if (EXTERNAL_FACE == chunk_neighbours[CHUNK_ ## face - 1])      \
     {                                                               \
         const int launch_sz = (ceil((dir##_max+5+grid_type.dir##_extra) \
             /static_cast<float>(BLOCK_SZ))) * depth;                \
