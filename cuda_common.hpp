@@ -184,6 +184,7 @@ private:
     double* vertexdy;
 
     double* u;
+    double* z;
     double* u0;
 
     // used in calc_dt to retrieve values
@@ -346,6 +347,8 @@ public:
     void tea_leaf_kernel_cheby_iterate
     (const double * ch_alphas, const double * ch_betas, int n_coefs,
      const double rx, const double ry, const int cheby_calc_steps);
+
+    int tea_solver;
 
     void tea_leaf_finalise();
 

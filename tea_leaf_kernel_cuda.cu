@@ -173,7 +173,6 @@ extern "C" void tea_leaf_kernel_solve_cg_cuda_calc_p_
 void CloverleafCudaChunk::tea_leaf_init_cg
 (int coefficient, double dt, double * rx, double * ry, double * rro)
 {
-    #if 0
     if (coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY)
     {
         DIE("Unknown coefficient %d passed to tea leaf\n", coefficient);
@@ -183,70 +182,48 @@ void CloverleafCudaChunk::tea_leaf_init_cg
 
     calcrxry(dt, rx, ry);
 
-    // TODO
-    // only needs to be set once
-    tea_leaf_cg_solve_calc_w_device.setArg(5, *rx);
-    tea_leaf_cg_solve_calc_w_device.setArg(6, *ry);
-    tea_leaf_cg_init_others_device.setArg(8, *rx);
-    tea_leaf_cg_init_others_device.setArg(9, *ry);
-    tea_leaf_init_diag_device.setArg(2, *rx);
-    tea_leaf_init_diag_device.setArg(3, *ry);
-
-    // copy u, get density value modified by coefficient
-    tea_leaf_cg_init_u_device.setArg(6, coefficient);
-    //ENQUEUE(tea_leaf_cg_init_u_device);
-    ENQUEUE_OFFSET(tea_leaf_cg_init_u_device);
+    device_tea_leaf_cg_init_u<<< num_blocks, BLOCK_SZ >>>
+    (x_min, x_max, y_min, y_max, density1, energy1, u,
+        work_array_1, work_array_2, work_array_3, coefficient);
 
     // init Kx, Ky
-    //ENQUEUE(tea_leaf_cg_init_directions_device);
-    ENQUEUE_OFFSET(tea_leaf_cg_init_directions_device);
+    device_tea_leaf_cg_init_directions<<< num_blocks, BLOCK_SZ >>>
+    (x_min, x_max, y_min, y_max, work_array_3, work_array_5, work_array_6);
 
     // premultiply Kx/Ky
-    //ENQUEUE(tea_leaf_init_diag_device);
-    ENQUEUE_OFFSET(tea_leaf_init_diag_device);
+    device_tea_leaf_init_diag<<< num_blocks, BLOCK_SZ >>>
+    (x_min, x_max, y_min, y_max, work_array_5, work_array_6, *rx, *ry);
 
     // get initial guess in w, r, etc
-    //ENQUEUE(tea_leaf_cg_init_others_device);
-    ENQUEUE_OFFSET(tea_leaf_cg_init_others_device);
+    device_tea_leaf_cg_init_others<<< num_blocks, BLOCK_SZ >>>
+    (x_min, x_max, y_min, y_max, reduce_buf_2, u, work_array_1, work_array_2, work_array_3, work_array_4, work_array_5, work_array_6, *rx, *ry, z);
 
-    *rro = reduceValue<double>(sum_red_kernels_double, reduce_buf_2);
-    #endif
+    *rro = thrust::reduce(reduce_ptr_2, reduce_ptr_2 + num_blocks, 0.0);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_w
 (double rx, double ry, double* pw)
 {
-    #if 0
-    // TODO
-    //ENQUEUE(tea_leaf_cg_solve_calc_w_device);
-    ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_w_device);
-    *pw = reduceValue<double>(sum_red_kernels_double, reduce_buf_3);
-    #endif
+    device_tea_leaf_cg_solve_calc_w<<< num_blocks, BLOCK_SZ >>>
+    (x_min, x_max, y_min, y_max, reduce_buf_3,
+        work_array_1, work_array_3, work_array_5, work_array_6, rx, ry);
+    *pw = thrust::reduce(reduce_ptr_3, reduce_ptr_3 + num_blocks, 0.0);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
 (double alpha, double* rrn)
 {
-    #if 0
-    // TODO
-    tea_leaf_cg_solve_calc_ur_device.setArg(0, alpha);
-
-    //ENQUEUE(tea_leaf_cg_solve_calc_ur_device);
-    ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_ur_device);
-    *rrn = reduceValue<double>(sum_red_kernels_double, reduce_buf_4);
-    #endif
+    device_tea_leaf_cg_solve_calc_ur<<< num_blocks, BLOCK_SZ >>>
+    (x_min, x_max, y_min, y_max, alpha, reduce_buf_4, u, work_array_1,
+        work_array_2, work_array_3, z, work_array_4);
+    *rrn = thrust::reduce(reduce_ptr_4, reduce_ptr_4 + num_blocks, 0.0);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_p
 (double beta)
 {
-    #if 0
-    // TODO
-    tea_leaf_cg_solve_calc_p_device.setArg(0, beta);
-
-    ENQUEUE(tea_leaf_cg_solve_calc_p_device);
-    //ENQUEUE_OFFSET(tea_leaf_cg_solve_calc_p_device);
-    #endif
+    device_tea_leaf_cg_solve_calc_p<<< num_blocks, BLOCK_SZ >>>
+    (x_min, x_max, y_min, y_max, beta, work_array_1, work_array_2, z);
 }
 
 /********************/
