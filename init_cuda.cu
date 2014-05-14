@@ -28,12 +28,12 @@
 #include <cstdio>
 #include <cassert>
 
-CloverleafCudaChunk chunk;
+CloverleafCudaChunk cuda_chunk;
 
 extern "C" void initialise_cuda_
 (INITIALISE_ARGS)
 {
-    chunk = CloverleafCudaChunk(in_x_min,
+    cuda_chunk = CloverleafCudaChunk(in_x_min,
                                 in_x_max,
                                 in_y_min,
                                 in_y_max,
@@ -46,7 +46,7 @@ CloverleafCudaChunk::CloverleafCudaChunk
     ;
 }
 
-std::string matchParam
+static std::string matchParam
 (FILE * input,
  const char* param_name)
 {
@@ -91,7 +91,8 @@ int preferredDevice
     if (param_string.size() == 0)
     {
         // not found in file
-        preferred_device = -1;
+        preferred_device = 0;
+        std::cout << "CUDA device not specifiefd in file - using 0" << std::endl;
     }
     else
     {
@@ -145,6 +146,9 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     CUDA_ARRAY_ALLOC(density1, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(energy0, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(energy1, BUFSZ2D(0, 0));
+
+    CUDA_ARRAY_ALLOC(u, BUFSZ2D(0, 0));
+    CUDA_ARRAY_ALLOC(u0, BUFSZ2D(0, 0));
 
     CUDA_ARRAY_ALLOC(xvel0, BUFSZ2D(1, 1));
     CUDA_ARRAY_ALLOC(xvel1, BUFSZ2D(1, 1));

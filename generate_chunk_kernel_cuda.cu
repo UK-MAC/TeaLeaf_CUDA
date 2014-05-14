@@ -41,7 +41,7 @@ const int* g_rect,
 const int* g_circ,
 const int* g_point)
 {
-    chunk.generate_chunk_kernel(
+    cuda_chunk.generate_chunk_kernel(
         *number_of_states, state_density, state_energy, state_xvel,
         state_yvel, state_xmin, state_xmax, state_ymin, state_ymax,
         state_radius, state_geometry, *g_rect, *g_circ, *g_point);

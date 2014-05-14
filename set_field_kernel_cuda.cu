@@ -4,7 +4,7 @@
 extern "C" void set_field_kernel_cuda_
 (void)
 {
-    chunk.set_field_kernel();
+    cuda_chunk.set_field_kernel();
 }
 
 void CloverleafCudaChunk::set_field_kernel

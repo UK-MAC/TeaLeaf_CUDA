@@ -29,7 +29,7 @@
 extern "C" void field_summary_kernel_cuda_
 (double* vol, double* mass, double* ie, double* ke, double* press, double* temp)
 {
-    chunk.field_summary_kernel(vol, mass, ie, ke, press, temp);
+    cuda_chunk.field_summary_kernel(vol, mass, ie, ke, press, temp);
 }
 
 void CloverleafCudaChunk::field_summary_kernel
@@ -39,9 +39,9 @@ void CloverleafCudaChunk::field_summary_kernel
 
     device_field_summary_kernel_cuda<<< num_blocks, BLOCK_SZ >>>
     (x_min, x_max, y_min, y_max, volume, density0,
-        energy0, pressure, xvel0, yvel0,
-        work_array_1, work_array_2, work_array_3,
-        work_array_4, work_array_5, work_array_6);
+        energy0, pressure, xvel0, yvel0, u,
+        reduce_buf_1, reduce_buf_2, reduce_buf_3,
+        reduce_buf_4, reduce_buf_5, reduce_buf_6);
     CUDA_ERR_CHECK;
 
     *vol = thrust::reduce(reduce_ptr_1,
@@ -64,9 +64,9 @@ void CloverleafCudaChunk::field_summary_kernel
                             reduce_ptr_5 + num_blocks,
                             0.0);
 
-    *press = thrust::reduce(reduce_ptr_6,
-                            reduce_ptr_6 + num_blocks,
-                            0.0);
+    *temp = thrust::reduce(reduce_ptr_6,
+                           reduce_ptr_6 + num_blocks,
+                           0.0);
 
     CUDA_END_PROFILE;
 }

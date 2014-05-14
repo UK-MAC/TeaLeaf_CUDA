@@ -92,9 +92,6 @@
 
 #endif //NO_ERR_CHK
 
-void errorHandler
-(int line_num, std::string const& file);
-
 // whether to time kernel run times
 #ifdef TIME_KERNELS
 
@@ -123,23 +120,23 @@ extern "C" void timer_c_(double*);
 #endif // TIME_KERNELS
 
 typedef struct cell_info {
-    const int x_e;
-    const int y_e;
-    const int x_i;
-    const int y_i;
-    const int x_f;
-    const int y_f;
+    const int x_extra;
+    const int y_extra;
+    const int x_invert;
+    const int y_invert;
+    const int x_face;
+    const int y_face;
     const int grid_type;
 
     cell_info
-    (int x_extra, int y_extra,
-    int x_invert, int y_invert,
-    int x_face, int y_face,
-    int in_type)
-    :x_e(x_extra), y_e(y_extra),
-    x_i(x_invert), y_i(y_invert),
-    x_f(x_face), y_f(y_face),
-    grid_type(in_type)
+    (int in_x_extra, int in_y_extra,
+    int in_x_invert, int in_y_invert,
+    int in_x_face, int in_y_face,
+    int in_grid_type)
+    :x_extra(in_x_extra), y_extra(in_y_extra),
+    x_invert(in_x_invert), y_invert(in_y_invert),
+    x_face(in_x_face), y_face(in_y_face),
+    grid_type(in_grid_type)
     {
         ;
     }
@@ -374,7 +371,7 @@ public:
     (void);
 };
 
-extern CloverleafCudaChunk chunk;
+extern CloverleafCudaChunk cuda_chunk;
 
 #endif
 

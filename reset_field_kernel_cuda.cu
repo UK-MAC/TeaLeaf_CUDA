@@ -29,7 +29,7 @@
 extern "C" void reset_field_kernel_cuda_
 (void)
 {
-    chunk.reset_field_kernel();
+    cuda_chunk.reset_field_kernel();
 }
 
 void CloverleafCudaChunk::reset_field_kernel

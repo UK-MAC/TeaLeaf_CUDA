@@ -43,7 +43,7 @@ int* jldt,
 int* kldt,
 int* small)
 {
-    chunk.calc_dt_kernel(*g_small, *g_big, *dtmin, *dtc_safe, *dtu_safe,
+    cuda_chunk.calc_dt_kernel(*g_small, *g_big, *dtmin, *dtc_safe, *dtu_safe,
         *dtv_safe, *dtdiv_safe, dt_min_val, dtl_control, xl_pos, yl_pos,
         jldt, kldt, small);
 }
@@ -65,7 +65,7 @@ int* small)
     (x_min, x_max, y_min, y_max, g_small, g_big, dtmin, dtc_safe,
         dtu_safe, dtv_safe, dtdiv_safe, xarea, yarea, celldx, celldy,
         volume, density0, viscosity, soundspeed, xvel0, yvel0,
-        work_array_1, work_array_2);
+        reduce_buf_1, reduce_buf_2);
     CUDA_ERR_CHECK;
 
     // reduce_ptr 2 is a thrust wrapper around work_array_2

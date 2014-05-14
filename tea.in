@@ -19,16 +19,16 @@
   end_time=100.0
   end_step=10
 
-  cuda_device=0
+  cuda_device=1
   use_opencl_kernels
 
   tl_max_iters=1000
   test_problem 1
   tl_eps=0.00000000001
-  tl_use_chebyshev
+  tl_use_jacobi
   tl_chebyshev_steps=100
 
-  hydro_off
-  tea_leaf_on
+  hydro_on
+  tea_leaf_off
 
 *endtea

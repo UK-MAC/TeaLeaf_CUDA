@@ -86,6 +86,16 @@ void CloverleafCudaChunk::errorHandler
     }
 }
 
+std::vector<double> CloverleafCudaChunk::dumpArray
+(const std::string& arr_name, int x_extra, int y_extra)
+{
+    std::vector<double> host_arr;
+
+    // TODO
+
+    return host_arr;
+}
+
 // called when something goes wrong
 void CloverleafCudaChunk::cloverDie
 (int line, const char* filename, const char* format, ...)

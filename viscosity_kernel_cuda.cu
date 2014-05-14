@@ -30,7 +30,7 @@
 extern "C" void viscosity_kernel_cuda_
 (void)
 {
-    chunk.viscosity_kernel();
+    cuda_chunk.viscosity_kernel();
 }
 
 void CloverleafCudaChunk::viscosity_kernel

@@ -29,13 +29,13 @@
 extern "C" void ideal_gas_kernel_predict_cuda_
 (void)
 {
-    chunk.ideal_gas_kernel(1);
+    cuda_chunk.ideal_gas_kernel(1);
 }
 
 extern "C" void ideal_gas_kernel_nopredict_cuda_
 (void)
 {
-    chunk.ideal_gas_kernel(0);
+    cuda_chunk.ideal_gas_kernel(0);
 }
 
 void CloverleafCudaChunk::ideal_gas_kernel

@@ -7,6 +7,7 @@ const double* __restrict const energy0,
 const double* __restrict const pressure,
 const double* __restrict const xvel0,
 const double* __restrict const yvel0,
+const double* __restrict const u,
       double* __restrict const vol,
       double* __restrict const mass,
       double* __restrict const ie,
@@ -21,11 +22,13 @@ const double* __restrict const yvel0,
     __shared__ double ie_shared[BLOCK_SZ];
     __shared__ double ke_shared[BLOCK_SZ];
     __shared__ double press_shared[BLOCK_SZ];
-    vol_shared[threadIdx.x] = 0.0;
-    mass_shared[threadIdx.x] = 0.0;
-    ie_shared[threadIdx.x] = 0.0;
-    ke_shared[threadIdx.x] = 0.0;
-    press_shared[threadIdx.x] = 0.0;
+    __shared__ double temp_shared[BLOCK_SZ];
+    vol_shared[lid] = 0.0;
+    mass_shared[lid] = 0.0;
+    ie_shared[lid] = 0.0;
+    ke_shared[lid] = 0.0;
+    press_shared[lid] = 0.0;
+    temp_shared[lid] = 0.0;
 
     if (row >= (y_min + 1) && row <= (y_max + 1)
     && column >= (x_min + 1) && column <= (x_max + 1))
@@ -48,24 +51,24 @@ const double* __restrict const yvel0,
         double cell_vol = volume[THARR2D(0, 0, 0)];
         double cell_mass = cell_vol * density0[THARR2D(0, 0, 0)];
 
-        vol_shared[threadIdx.x] = cell_vol;
-        mass_shared[threadIdx.x] = cell_mass;
-        ie_shared[threadIdx.x] = cell_mass * energy0[THARR2D(0, 0, 0)];
-        ke_shared[threadIdx.x] = cell_mass * 0.5 * vsqrd;
-        press_shared[threadIdx.x] = cell_vol * pressure[THARR2D(0, 0, 0)];
-
+        vol_shared[lid] = cell_vol;
+        mass_shared[lid] = cell_mass;
+        ie_shared[lid] = cell_mass * energy0[THARR2D(0, 0, 0)];
+        ke_shared[lid] = cell_mass * 0.5 * vsqrd;
+        press_shared[lid] = cell_vol * pressure[THARR2D(0, 0, 0)];
+        temp_shared[lid] = cell_mass*u[THARR2D(0, 0, 0)];
     }
 
     __syncthreads();
     for (int offset = BLOCK_SZ / 2; offset > 0; offset /= 2)
     {
-        if (threadIdx.x < offset)
+        if (lid < offset)
         {
-            vol_shared[threadIdx.x] += vol_shared[threadIdx.x + offset];
-            mass_shared[threadIdx.x] += mass_shared[threadIdx.x + offset];
-            ie_shared[threadIdx.x] += ie_shared[threadIdx.x + offset];
-            ke_shared[threadIdx.x] += ke_shared[threadIdx.x + offset];
-            press_shared[threadIdx.x] += press_shared[threadIdx.x + offset];
+            vol_shared[lid] += vol_shared[lid + offset];
+            mass_shared[lid] += mass_shared[lid + offset];
+            ie_shared[lid] += ie_shared[lid + offset];
+            ke_shared[lid] += ke_shared[lid + offset];
+            press_shared[lid] += press_shared[lid + offset];
         }
         __syncthreads();
     }
@@ -75,5 +78,6 @@ const double* __restrict const yvel0,
     ie[blockIdx.x] = ie_shared[0];
     ke[blockIdx.x] = ke_shared[0];
     press[blockIdx.x] = press_shared[0];
+    temp[blockIdx.x] = temp_shared[0];
 }
 

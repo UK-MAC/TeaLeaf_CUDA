@@ -41,20 +41,20 @@ void CloverleafCudaChunk::calcrxry
 extern "C" void tea_leaf_kernel_cheby_copy_u_cuda_
 (double* rro)
 {
-    chunk.tea_leaf_cheby_copy_u(rro);
+    cuda_chunk.tea_leaf_cheby_copy_u(rro);
 }
 
 extern "C" void tea_leaf_calc_2norm_kernel_cuda_
 (int* norm_array, double* norm)
 {
-    chunk.tea_leaf_calc_2norm_kernel(*norm_array, norm);
+    cuda_chunk.tea_leaf_calc_2norm_kernel(*norm_array, norm);
 }
 
 extern "C" void tea_leaf_kernel_cheby_init_cuda_
 (const double * ch_alphas, const double * ch_betas, int* n_coefs,
  const double * rx, const double * ry, const double * theta, double* error)
 {
-    chunk.tea_leaf_kernel_cheby_init(ch_alphas, ch_betas, *n_coefs,
+    cuda_chunk.tea_leaf_kernel_cheby_init(ch_alphas, ch_betas, *n_coefs,
         *rx, *ry, *theta, error);
 }
 
@@ -62,7 +62,7 @@ extern "C" void tea_leaf_kernel_cheby_iterate_cuda_
 (const double * ch_alphas, const double * ch_betas, int *n_coefs,
  const double * rx, const double * ry, const int * cheby_calc_step)
 {
-    chunk.tea_leaf_kernel_cheby_iterate(ch_alphas, ch_betas, *n_coefs,
+    cuda_chunk.tea_leaf_kernel_cheby_iterate(ch_alphas, ch_betas, *n_coefs,
         *rx, *ry, *cheby_calc_step);
 }
 
@@ -118,7 +118,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
     tea_leaf_cheby_solve_init_p_device.setArg(2, theta);
 
     // this will junk p but we don't need it anyway
-    chunk.tea_leaf_kernel_cheby_iterate(NULL, NULL, 0, rx, ry, 1);
+    cuda_chunk.tea_leaf_kernel_cheby_iterate(NULL, NULL, 0, rx, ry, 1);
 
     // get norm of r
     tea_leaf_calc_2norm_kernel(1, error);
@@ -149,23 +149,23 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
 extern "C" void tea_leaf_kernel_init_cg_cuda_
 (const int * coefficient, double * dt, double * rx, double * ry, double * rro)
 {
-    chunk.tea_leaf_init_cg(*coefficient, *dt, rx, ry, rro);
+    cuda_chunk.tea_leaf_init_cg(*coefficient, *dt, rx, ry, rro);
 }
 
 extern "C" void tea_leaf_kernel_solve_cg_cuda_calc_w_
 (const double * rx, const double * ry, double * pw)
 {
-    chunk.tea_leaf_kernel_cg_calc_w(*rx, *ry, pw);
+    cuda_chunk.tea_leaf_kernel_cg_calc_w(*rx, *ry, pw);
 }
 extern "C" void tea_leaf_kernel_solve_cg_cuda_calc_ur_
 (double * alpha, double * rrn)
 {
-    chunk.tea_leaf_kernel_cg_calc_ur(*alpha, rrn);
+    cuda_chunk.tea_leaf_kernel_cg_calc_ur(*alpha, rrn);
 }
 extern "C" void tea_leaf_kernel_solve_cg_cuda_calc_p_
 (double * beta)
 {
-    chunk.tea_leaf_kernel_cg_calc_p(*beta);
+    cuda_chunk.tea_leaf_kernel_cg_calc_p(*beta);
 }
 
 /********************/
@@ -255,13 +255,13 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_p
 extern "C" void tea_leaf_kernel_init_cuda_
 (const int * coefficient, double * dt, double * rx, double * ry)
 {
-    chunk.tea_leaf_init_jacobi(*coefficient, *dt, rx, ry);
+    cuda_chunk.tea_leaf_init_jacobi(*coefficient, *dt, rx, ry);
 }
 
 extern "C" void tea_leaf_kernel_solve_cuda_
 (const double * rx, const double * ry, double * error)
 {
-    chunk.tea_leaf_kernel_jacobi(*rx, *ry, error);
+    cuda_chunk.tea_leaf_kernel_jacobi(*rx, *ry, error);
 }
 
 // jacobi
@@ -299,7 +299,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_jacobi
 extern "C" void tea_leaf_kernel_finalise_cuda_
 (void)
 {
-    chunk.tea_leaf_finalise();
+    cuda_chunk.tea_leaf_finalise();
 }
 
 // both

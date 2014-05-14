@@ -31,7 +31,7 @@
 extern "C" void pdv_kernel_cuda_
 (int *error_condition, int *prdct, double *dtbyt)
 {
-    chunk.PdV_kernel(error_condition, *prdct, *dtbyt);
+    cuda_chunk.PdV_kernel(error_condition, *prdct, *dtbyt);
 }
 
 void CloverleafCudaChunk::PdV_kernel

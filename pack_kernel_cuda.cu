@@ -27,8 +27,6 @@
 
 #include <numeric>
 
-extern CloverleafCudaChunk chunk;
-
 /**********************/
 
 // define a generic interface for fortran
@@ -39,7 +37,7 @@ extern "C" void operation##_##dir##_buffers_cuda_                    \
  int *x_inc, int *y_inc, int *depth, int *which_field,              \
  double *field_ptr, double *buffer_1, double *buffer_2)             \
 {                                                                   \
-    chunk.operation##_##dir(*chunk_1, *chunk_2, *external_face,     \
+    cuda_chunk.operation##_##dir(*chunk_1, *chunk_2, *external_face,     \
                             *x_inc, *y_inc, *depth,                 \
                             (*which_field), buffer_1, buffer_2);  \
 }
@@ -69,7 +67,7 @@ const int depth)
 {
     #define CALL_PACK(dev_ptr, type, face, dir)\
 	{\
-        const int launch_sz = (ceil((dir##_max+4+type.dir##_e)/static_cast<float>(BLOCK_SZ))) * depth; \
+        const int launch_sz = (ceil((dir##_max+4+type.dir##_extra)/static_cast<float>(BLOCK_SZ))) * depth; \
         device_pack##face##Buffer<<< launch_sz, BLOCK_SZ >>> \
         (x_min, x_max, y_min, y_max, type, \
         dev_ptr, dev_##face##_send_buffer, depth); \
@@ -129,7 +127,7 @@ const int depth)
         cudaMemcpy(dev_##face##_recv_buffer, buffer, buffer_size*sizeof(double), cudaMemcpyHostToDevice); \
         CUDA_ERR_CHECK; \
         cudaDeviceSynchronize();\
-        const int launch_sz = (ceil((dir##_max+4+type.dir##_e)/static_cast<float>(BLOCK_SZ))) * depth; \
+        const int launch_sz = (ceil((dir##_max+4+type.dir##_extra)/static_cast<float>(BLOCK_SZ))) * depth; \
         device_unpack##face##Buffer<<< launch_sz, BLOCK_SZ >>> \
         (x_min, x_max, y_min, y_max, type, \
         dev_ptr, dev_##face##_recv_buffer, depth); \

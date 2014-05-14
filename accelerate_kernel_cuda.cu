@@ -29,7 +29,7 @@
 extern "C" void accelerate_kernel_cuda_
 (double *dbyt)
 {
-    chunk.accelerate_kernel(*dbyt);
+    cuda_chunk.accelerate_kernel(*dbyt);
 }
 
 void CloverleafCudaChunk::accelerate_kernel

@@ -28,7 +28,7 @@
 extern "C" void flux_calc_kernel_cuda_
 (double *dbyt)
 {
-    chunk.flux_calc_kernel(*dbyt);
+    cuda_chunk.flux_calc_kernel(*dbyt);
 }
 
 void CloverleafCudaChunk::flux_calc_kernel

@@ -28,7 +28,7 @@
 extern "C" void initialise_chunk_kernel_cuda_
 (double* d_xmin, double* d_ymin, double* d_dx, double* d_dy)
 {
-    chunk.initialise_chunk_kernel(*d_xmin, *d_ymin, *d_dx, *d_dy);
+    cuda_chunk.initialise_chunk_kernel(*d_xmin, *d_ymin, *d_dx, *d_dy);
 }
 
 void CloverleafCudaChunk::initialise_chunk_kernel
