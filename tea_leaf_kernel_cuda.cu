@@ -78,45 +78,37 @@ void CloverleafCudaChunk::tea_leaf_cheby_copy_u
 void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel
 (int norm_array, double* norm)
 {
-    #if 0
     if (norm_array == 0)
     {
         // norm of u0
-        // TODO
+        device_tea_leaf_cheby_solve_calc_resid<<< num_blocks, BLOCK_SZ >>>
+        (x_min, x_max, y_min, y_max, u0, reduce_buf_1);
     }
     else if (norm_array == 1)
     {
         // norm of r
-        // TODO
+        device_tea_leaf_cheby_solve_calc_resid<<< num_blocks, BLOCK_SZ >>>
+        (x_min, x_max, y_min, y_max, work_array_2, reduce_buf_1);
     }
     else
     {
         DIE("Invalid value '%d' for norm_array passed, should be [1, 2]", norm_array);
     }
 
-    *norm = *thrust::reduce(reduce_ptr_1, reduce_ptr_1 + num_blocks, 0.0);
-    #endif
+    *norm = thrust::reduce(reduce_ptr_1, reduce_ptr_1 + num_blocks, 0.0);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
 (const double * ch_alphas, const double * ch_betas, int n_coefs,
  const double rx, const double ry, const double theta, double* error)
 {
-    #if 0
-    // TODO
     size_t ch_buf_sz = n_coefs*sizeof(double);
 
     // upload to device
-    ch_alphas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
-    queue.enqueueWriteBuffer(ch_alphas_device, CL_TRUE, 0, ch_buf_sz, ch_alphas);
-    ch_betas_device = cl::Buffer(context, CL_MEM_READ_ONLY, ch_buf_sz);
-    queue.enqueueWriteBuffer(ch_betas_device, CL_TRUE, 0, ch_buf_sz, ch_betas);
-    tea_leaf_cheby_solve_calc_p_device.setArg(7, ch_alphas_device);
-    tea_leaf_cheby_solve_calc_p_device.setArg(8, ch_betas_device);
-    tea_leaf_cheby_solve_calc_p_device.setArg(9, rx);
-    tea_leaf_cheby_solve_calc_p_device.setArg(10, ry);
-
-    tea_leaf_cheby_solve_init_p_device.setArg(2, theta);
+    cudaMalloc((void**) &ch_alphas_device, ch_buf_sz);
+    cudaMalloc((void**) &ch_betas_device, ch_buf_sz);
+    cudaMemcpy(ch_alphas_device, ch_alphas, ch_buf_sz, cudaMemcpyHostToDevice);
+    cudaMemcpy(ch_betas_device, ch_betas, ch_buf_sz, cudaMemcpyHostToDevice);
 
     // this will junk p but we don't need it anyway
     cuda_chunk.tea_leaf_kernel_cheby_iterate(NULL, NULL, 0, rx, ry, 1);
@@ -125,23 +117,21 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
     tea_leaf_calc_2norm_kernel(1, error);
 
     // then correct p
-    ENQUEUE(tea_leaf_cheby_solve_init_p_device);
-    #endif
+    device_tea_leaf_cheby_solve_init_p<<< num_blocks, BLOCK_SZ >>>
+    (x_min, x_max, y_min, y_max, work_array_1, work_array_2, theta);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
 (const double * ch_alphas, const double * ch_betas, int n_coefs,
  const double rx, const double ry, const int cheby_calc_step)
 {
-    #if 0
-    // TODO
-    tea_leaf_cheby_solve_calc_p_device.setArg(11, cheby_calc_step-1);
+    device_tea_leaf_cheby_solve_calc_u<<< num_blocks, BLOCK_SZ >>>
+    (x_min, x_max, y_min, y_max, u, work_array_1);
 
-    //ENQUEUE(tea_leaf_cheby_solve_calc_u_device);
-    ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_u_device);
-    //ENQUEUE(tea_leaf_cheby_solve_calc_p_device);
-    ENQUEUE_OFFSET(tea_leaf_cheby_solve_calc_p_device);
-    #endif
+    device_tea_leaf_cheby_solve_calc_p<<< num_blocks, BLOCK_SZ >>>
+    (x_min, x_max, y_min, y_max, u, work_array_1, work_array_2, work_array_4,
+        work_array_5, work_array_6, u0, ch_alphas_device, ch_betas_device,
+        rx, ry, cheby_calc_step-1);
 }
 
 /********************/
