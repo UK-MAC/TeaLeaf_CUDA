@@ -150,10 +150,6 @@
         {                                                       \
             kernel_times[func_name] = taken;                    \
         }                                                       \
-    }                                                           \
-    else                                                        \
-    {                                                           \
-        cudaDeviceSynchronize();                                \
     }
 
 /*******************/
