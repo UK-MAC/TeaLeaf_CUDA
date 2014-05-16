@@ -105,8 +105,6 @@ std::vector<double> CloverleafCudaChunk::dumpArray
 
     errorHandler(__LINE__, __FILE__);
 
-    // TODO
-
     return host_arr;
 }
 
