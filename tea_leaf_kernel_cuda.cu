@@ -127,10 +127,11 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
 {
     device_tea_leaf_cheby_solve_calc_u<<< num_blocks, BLOCK_SZ >>>
     (x_min, x_max, y_min, y_max, u, work_array_1);
+
     device_tea_leaf_cheby_solve_calc_p<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, u, work_array_1, work_array_2, work_array_3,
+    (x_min, x_max, y_min, y_max, u, work_array_1, work_array_2, work_array_4,
         work_array_5, work_array_6, u0, ch_alphas_device, ch_betas_device,
-        rx, ry, cheby_calc_step);
+        rx, ry, cheby_calc_step-1);
 }
 
 /********************/
