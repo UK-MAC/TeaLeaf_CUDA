@@ -80,7 +80,14 @@ MODULE definitions_module
    INTEGER      :: max_iters
    REAL(KIND=8) :: eps
    INTEGER      :: coefficient
-   INTEGER      :: tl_chebyshev_steps
+
+   ! for chebyshev solver - whether to run cg until a certain error (tl_ch_eps)
+   ! is reached, or for a certain number of steps (tl_ch_cg_presteps)
+   LOGICAL      :: tl_ch_cg_errswitch
+   ! error to run cg to if tl_ch_cg_errswitch is set
+   REAL(KIND=8) :: tl_ch_cg_epslim
+   ! number of steps of cg to run to before switching to ch if tl_ch_cg_errswitch not set
+   INTEGER      :: tl_ch_cg_presteps
 
    LOGICAL      :: use_vector_loops ! Some loops work better in serial depending on the hardware
 

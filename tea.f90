@@ -51,10 +51,6 @@ MODULE tea_leaf_module
       integer :: n_coefs
       real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
     end subroutine
-    subroutine tqli(d, e, np, z, info)
-      real(kind=8),dimension(np) :: d, e, z
-      integer :: np, info
-    end subroutine
   end interface
 
 CONTAINS
@@ -73,15 +69,19 @@ SUBROUTINE tea_leaf()
   REAL(KIND=8) :: rro, pw, rrn, alpha, beta
 
   ! For chebyshev solver
-  REAL(KIND=8), DIMENSION(tl_chebyshev_steps) :: cg_alphas, cg_betas
+  REAL(KIND=8), DIMENSION(max_iters) :: cg_alphas, cg_betas
   REAL(KIND=8), DIMENSION(max_iters) :: ch_alphas, ch_betas
   REAL(KIND=8) :: eigmin, eigmax, theta
   REAL(KIND=8) :: it_alpha, cn, gamm, bb
   INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters, info
+  LOGICAL :: ch_switch_check
 
   IF(coefficient .nE. RECIP_CONDUCTIVITY .and. coefficient .ne. conductivity) THEN
     CALL report_error('tea_leaf', 'unknown coefficient option')
   endif
+
+  error = 1e10
+  cheby_calc_steps = 0
 
   DO c=1,number_of_chunks
 
@@ -234,20 +234,27 @@ SUBROUTINE tea_leaf()
       endif
 
       DO n=1,max_iters
+        
+        IF (tl_ch_cg_errswitch) then
+            ch_switch_check = (cheby_calc_steps .gt. 0) .or. (error .le. tl_ch_cg_epslim)
+        ELSE
+            ch_switch_check = n .ge. tl_ch_cg_presteps
+        ENDIF
 
-        IF(tl_use_chebyshev .and. (n .gt. tl_chebyshev_steps)) then
+        IF (tl_use_chebyshev .and. ch_switch_check) then
           ! on the first chebyshev steps, find the eigenvalues, coefficients,
           ! and expected number of iterations
-          IF (n .eq. tl_chebyshev_steps+1) then
+          IF (cheby_calc_steps .eq. 0) then
             ! maximum number of iterations in chebyshev solver
             max_cheby_iters = max_iters - n + 2
-            info = 0
+            rro = error
+
             ! calculate eigenvalues
-            call tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax,  &
-                max_iters, n, info)
+            call tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
+                max_iters, n-1, info)
 
             if (info .ne. 0) then
-                call report_error('tea_leaf', 'Error calculating eigenvalues')
+              CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
             endif
 
             ! calculate chebyshev coefficients
@@ -265,6 +272,7 @@ SUBROUTINE tea_leaf()
             ELSEIF(use_opencl_kernels) THEN
               call tea_leaf_calc_2norm_kernel_cuda(0, bb)
             ENDIF
+
             call clover_allsum(bb)
 
             ! initialise 'p' array
@@ -277,7 +285,7 @@ SUBROUTINE tea_leaf()
                     chunks(c)%field%work_array1,                 &
                     chunks(c)%field%work_array2,                 &
                     chunks(c)%field%u0,                 &
-                    chunks(c)%field%work_array5,                 &
+                    chunks(c)%field%work_array4,                 &
                     chunks(c)%field%work_array6,                 &
                     chunks(c)%field%work_array7,                 &
                     ch_alphas, ch_betas, max_cheby_iters, &
@@ -286,21 +294,21 @@ SUBROUTINE tea_leaf()
               call tea_leaf_kernel_cheby_init_cuda(ch_alphas, ch_betas, &
                 max_cheby_iters, rx, ry, theta, error)
             ENDIF
+
             call clover_allsum(error)
 
             ! FIXME not giving correct estimate
             it_alpha = eps*bb/(4.0_8*error)
             cn = eigmax/eigmin
             gamm = (sqrt(cn) - 1.0_8)/(sqrt(cn) + 1.0_8)
-            est_itc = nint(log(it_alpha)/(2.0_8*log(gamm))) - n
+            est_itc = nint(log(it_alpha)/(2.0_8*log(gamm)))
+            ! XXX
+            est_itc = est_itc * 3
 
             if (parallel%boss) then
-              write(*,*) "switching after step", n
-              write(*,*) "eigmin", eigmin
-              write(*,*) "eigmax", eigmax
-              write(*,*) "cn", cn
-              write(*,*) "error", error
-              write(*,*) "est itc", est_itc
+              write(*,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
+              write(*,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
+              write(*,'(4f11.4,11i)')eigmin, eigmax, cn, error, est_itc
             endif
 
             cheby_calc_steps = 2
@@ -326,7 +334,7 @@ SUBROUTINE tea_leaf()
           ENDIF
 
           ! after estimated number of iterations has passed, calc resid
-          if (cheby_calc_steps .ge. est_itc) then
+          if (n .ge. est_itc) then
             IF(use_fortran_kernels) THEN
               call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
                     chunks(c)%field%x_max,                       &
@@ -433,6 +441,8 @@ SUBROUTINE tea_leaf()
 
           error = rrn
           rro = rrn
+
+          CALL clover_allsum(error)
         ELSE
           IF(use_fortran_kernels) THEN
             CALL tea_leaf_kernel_solve(chunks(c)%field%x_min,&
@@ -463,12 +473,12 @@ SUBROUTINE tea_leaf()
                   chunks(c)%field%u,                           &
                   chunks(c)%field%work_array2)
           ENDIF
+
+          CALL clover_max(error)
         ENDIF
 
         ! updates u and possibly p
         CALL update_halo(fields,2)
-
-        CALL clover_max(error)
 
         IF (abs(error) .LT. eps) EXIT
 
@@ -484,12 +494,12 @@ SUBROUTINE tea_leaf()
           WRITE(g_out,"('Iteration count ',i8)") n-1
           WRITE(0,"('Conduction error ',e14.7)") error
           WRITE(0,"('Iteration count ', i8)") n-1
+
+          if (tl_use_chebyshev) then
+            write(0, "('Chebyshev actually took ', i4)") cheby_calc_steps
+          endif
 !$      ENDIF
       ENDIF
-
-      if (tl_use_chebyshev) then
-        write(0, "('Actually took ', i4)") cheby_calc_steps
-      endif
 
       ! RESET
       IF(use_fortran_kernels) THEN
