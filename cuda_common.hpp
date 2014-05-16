@@ -348,6 +348,8 @@ public:
     (const double * ch_alphas, const double * ch_betas, int n_coefs,
      const double rx, const double ry, const int cheby_calc_steps);
 
+    double * ch_alphas_device, * ch_betas_device;
+
     #define TEA_ENUM_JACOBI     1
     #define TEA_ENUM_CG         2
     #define TEA_ENUM_CHEBYSHEV  3
