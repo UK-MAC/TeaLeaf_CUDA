@@ -281,6 +281,13 @@ private:
     void errorHandler
     (int line_num, const char* file);
 
+    void update_array
+    (int x_min, int x_max, int y_min, int y_max,
+     cell_info_t const& grid_type,
+     const int* chunk_neighbours,
+     double* cur_array_d,
+     int depth);
+
     // this function gets called when something goes wrong
     #define DIE(...) cloverDie(__LINE__, __FILE__, __VA_ARGS__)
     void cloverDie
