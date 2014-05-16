@@ -86,7 +86,6 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
 
 !$OMP PARALLEL
 !$OMP DO
-    ! set r
     DO k=y_min,y_max
         DO j=x_min,x_max
             w(j, k) = (1.0_8                                      &
@@ -99,7 +98,6 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
     ENDDO
 !$OMP END DO
 !$OMP DO
-  ! set p
   DO k=y_min,y_max
       DO j=x_min,x_max
           p(j, k) = r(j, k)/theta
@@ -108,7 +106,6 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
 !$OMP END DO
 !$OMP END PARALLEL
 
-  ! iterate once to get initial error
   call tea_leaf_kernel_cheby_iterate(x_min,&
       x_max,                       &
       y_min,                       &
@@ -254,14 +251,64 @@ SUBROUTINE tea_leaf_kernel_cheby_reset_Mi(x_min,             &
 
 end SUBROUTINE
 
+SUBROUTINE tqli(d,e,n, info)
+    ! http://physics.sharif.edu/~jafari/fortran-codes/lanczos/tqli.f90
+    IMPLICIT NONE
+    REAL(KIND=8), DIMENSION(n) :: d,e
+    INTEGER :: i,iter,l,m,n,info
+    REAL(KIND=8) :: b,c,dd,f,g,p,r,s
+    e(:)=eoshift(e(:),1)
+    info = 0
+    do l=1,n
+        iter=0
+        iterate: do
+            do m=l,n-1
+                dd=abs(d(m))+abs(d(m+1))
+                if (abs(e(m))+dd == dd) exit
+            end do
+            if (m == l) exit iterate
+            if (iter == 30) then
+                info=1
+                return
+            endif
+            iter=iter+1
+            g=(d(l+1)-d(l))/(2.0_8*e(l))
+            r=hypot(g,1.0_8)
+            g=d(m)-d(l)+e(l)/(g+sign(r,g))
+            s=1.0_8
+            c=1.0_8
+            p=0.0_8
+            do i=m-1,l,-1
+                f=s*e(i)
+                b=c*e(i)
+                r=hypot(f,g)
+                e(i+1)=r
+                if (r == 0.0_8) then
+                    d(i+1)=d(i+1)-p
+                    e(m)=0.0_8
+                    cycle iterate
+                end if
+                s=f/r
+                c=g/r
+                g=d(i+1)-p
+                r=(d(i)-g)*s+2.0_8*c*b
+                p=s*r
+                d(i+1)=g+p
+                g=c*r-b
+            end do
+            d(l)=d(l)-p
+            e(l)=g
+            e(m)=0.0_8
+        end do iterate
+    end do
+END SUBROUTINE tqli
+
 SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
-    max_iters, steps_done, info)
+    max_iters, tl_ch_cg_presteps, info)
 
-  IMPLICIT NONE
-
-  INTEGER :: steps_done, max_iters
+  INTEGER :: tl_ch_cg_presteps, max_iters
   REAL(KIND=8), DIMENSION(max_iters) :: cg_alphas, cg_betas
-  REAL(KIND=8), DIMENSION(steps_done) :: diag, offdiag, z
+  REAL(KIND=8), DIMENSION(tl_ch_cg_presteps) :: diag, offdiag, z
   ! z not used for this
   REAL(KIND=8) :: eigmin, eigmax, tmp
   INTEGER :: n, info
@@ -270,19 +317,17 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
   diag = 0
   offdiag = 0
 
-  do n=1,steps_done
+  do n=1,tl_ch_cg_presteps
     diag(n) = 1.0_8/cg_alphas(n)
     if (n .gt. 1) diag(n) = diag(n) + cg_betas(n-1)/cg_alphas(n-1)
-    if (n .lt. steps_done) offdiag(n+1) = sqrt(cg_betas(n))/cg_alphas(n)
+    if (n .lt. tl_ch_cg_presteps) offdiag(n+1) = sqrt(cg_betas(n))/cg_alphas(n)
   enddo
 
-  CALL tqli(diag, offdiag, steps_done, z, info)
-
-  if (info .ne. 0) return
+  CALL tqli(diag, offdiag, tl_ch_cg_presteps, info)
 
   ! bubble sort eigenvalues
   do
-    do n=1,steps_done-1
+    do n=1,tl_ch_cg_presteps-1
       if (diag(n) .ge. diag(n+1)) then
         tmp = diag(n)
         diag(n) = diag(n+1)
@@ -295,22 +340,21 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
   enddo
 
   eigmin = diag(1)
-  eigmax = diag(steps_done)
+  eigmax = diag(tl_ch_cg_presteps)
 
 END SUBROUTINE tea_calc_eigenvalues
 
 SUBROUTINE tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
     theta, max_cheby_iters)
 
-  IMPLICIT NONE
-
   INTEGER :: n, max_cheby_iters
   REAL(KIND=8), DIMENSION(max_cheby_iters) :: ch_alphas, ch_betas
   REAL(KIND=8) :: eigmin, eigmax
+
   REAL(KIND=8) :: theta, delta, sigma, rho_old, rho_new, cur_alpha, cur_beta
 
-  theta = (eigmax + eigmin)/2.0_8
-  delta = (eigmax - eigmin)/2.0_8
+  theta = (eigmax + eigmin)/2
+  delta = (eigmax - eigmin)/2
   sigma = theta/delta
 
   rho_old = 1.0_8/sigma

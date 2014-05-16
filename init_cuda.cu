@@ -27,11 +27,11 @@
 #endif
 
 #include "cuda_common.hpp"
+#include "cuda_strings.hpp"
 
 #include <sstream>
 #include <cstdio>
 #include <cassert>
-#include <cuda_strings.hpp>
 
 CloverleafCudaChunk cuda_chunk;
 
