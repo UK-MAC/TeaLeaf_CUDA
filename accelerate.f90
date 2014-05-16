@@ -56,7 +56,7 @@ SUBROUTINE accelerate()
                              chunks(c)%field%xvel1,                  &
                              chunks(c)%field%yvel1,                  &
                              chunks(c)%field%work_array1             )
-      ELSEIF(use_opencl_kernels)THEN
+      ELSEIF(use_cuda_kernels)THEN
         CALL accelerate_kernel_cuda(dt)
       ELSEIF(use_C_kernels)THEN
         CALL accelerate_kernel_c(chunks(c)%field%x_min,              &

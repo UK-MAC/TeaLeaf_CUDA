@@ -51,15 +51,13 @@ MODULE tea_leaf_module
       integer :: n_coefs
       real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
     end subroutine
-    subroutine tqli(d, e, np, z, info)
-      real(kind=8),dimension(np) :: d, e, z
-      integer :: np, info
-    end subroutine
   end interface
 
 CONTAINS
 
 SUBROUTINE tea_leaf()
+
+  IMPLICIT NONE
 
 !$ INTEGER :: OMP_GET_THREAD_NUM
   INTEGER :: c, n
@@ -73,7 +71,7 @@ SUBROUTINE tea_leaf()
   REAL(KIND=8) :: rro, pw, rrn, alpha, beta
 
   ! For chebyshev solver
-  REAL(KIND=8), DIMENSION(tl_chebyshev_steps) :: cg_alphas, cg_betas
+  REAL(KIND=8), DIMENSION(max_iters) :: cg_alphas, cg_betas
   REAL(KIND=8), DIMENSION(max_iters) :: ch_alphas, ch_betas
   REAL(KIND=8) :: eigmin, eigmax, theta
   REAL(KIND=8) :: it_alpha, cn, gamm, bb
@@ -120,7 +118,7 @@ SUBROUTINE tea_leaf()
               chunks(c)%field%work_array6,                 &
               chunks(c)%field%work_array7,                 &
               rx, ry, rro, coefficient)
-        ELSEIF(use_opencl_kernels) THEN
+        ELSEIF(use_cuda_kernels) THEN
           CALL tea_leaf_kernel_init_cg_cuda(coefficient, dt, rx, ry, rro)
         ELSEIF(use_C_kernels) THEN
           CALL tea_leaf_kernel_init_cg_c(chunks(c)%field%x_min, &
@@ -168,7 +166,7 @@ SUBROUTINE tea_leaf()
               chunks(c)%field%work_array6,                 &
               chunks(c)%field%work_array7,                 &
               coefficient)
-        ELSEIF(use_opencl_kernels) THEN
+        ELSEIF(use_cuda_kernels) THEN
           CALL tea_leaf_kernel_init_cuda(coefficient, dt, rx, ry)
         ELSEIF(use_C_kernels) THEN
           CALL tea_leaf_kernel_init_c(chunks(c)%field%x_min, &
@@ -224,10 +222,8 @@ SUBROUTINE tea_leaf()
             chunks(c)%field%work_array3,                &
             chunks(c)%field%work_array5,                &
             rro)
-        elseif(use_opencl_kernels) then
-          write(*,*) rro
+        elseif(use_cuda_kernels) then
           call tea_leaf_kernel_cheby_copy_u_cuda(rro)
-          write(*,*) rro
         endif
 
         call clover_allsum(rro)
@@ -239,16 +235,17 @@ SUBROUTINE tea_leaf()
           ! on the first chebyshev steps, find the eigenvalues, coefficients,
           ! and expected number of iterations
           IF (n .eq. tl_chebyshev_steps+1) then
-            ! maximum number of iterations in chebyshev solver
-            max_cheby_iters = max_iters - n + 2
-            info = 0
+            info = 1
             ! calculate eigenvalues
             call tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax,  &
-                max_iters, n, info)
+                max_iters, n-1, info)
 
             if (info .ne. 0) then
                 call report_error('tea_leaf', 'Error calculating eigenvalues')
             endif
+
+            ! maximum number of iterations in chebyshev solver
+            max_cheby_iters = max_iters - n + 2
 
             ! calculate chebyshev coefficients
             call tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
@@ -262,7 +259,7 @@ SUBROUTINE tea_leaf()
                     chunks(c)%field%y_max,                       &
                     chunks(c)%field%u0,                 &
                     bb)
-            ELSEIF(use_opencl_kernels) THEN
+            ELSEIF(use_cuda_kernels) THEN
               call tea_leaf_calc_2norm_kernel_cuda(0, bb)
             ENDIF
             call clover_allsum(bb)
@@ -282,7 +279,7 @@ SUBROUTINE tea_leaf()
                     chunks(c)%field%work_array7,                 &
                     ch_alphas, ch_betas, max_cheby_iters, &
                     rx, ry, theta, error)
-            ELSEIF(use_opencl_kernels) THEN
+            ELSEIF(use_cuda_kernels) THEN
               call tea_leaf_kernel_cheby_init_cuda(ch_alphas, ch_betas, &
                 max_cheby_iters, rx, ry, theta, error)
             ENDIF
@@ -320,7 +317,7 @@ SUBROUTINE tea_leaf()
                   chunks(c)%field%work_array7,                 &
                   ch_alphas, ch_betas, max_cheby_iters, &
                   rx, ry, cheby_calc_steps)
-          ELSEIF(use_opencl_kernels) THEN
+          ELSEIF(use_cuda_kernels) THEN
               call tea_leaf_kernel_cheby_iterate_cuda(ch_alphas, ch_betas, max_cheby_iters, &
                 rx, ry, cheby_calc_steps)
           ENDIF
@@ -334,7 +331,7 @@ SUBROUTINE tea_leaf()
                     chunks(c)%field%y_max,                       &
                     chunks(c)%field%work_array2,                 &
                     error)
-            ELSEIF(use_opencl_kernels) THEN
+            ELSEIF(use_cuda_kernels) THEN
               call tea_leaf_calc_2norm_kernel_cuda(1, error)
             ENDIF
           else
@@ -359,7 +356,7 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%work_array6,                 &
                 chunks(c)%field%work_array7,                 &
                 rx, ry, pw)
-          ELSEIF(use_opencl_kernels) THEN
+          ELSEIF(use_cuda_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_cuda_calc_w(rx, ry, pw)
           ELSEIF(use_c_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_c_calc_w(chunks(c)%field%x_min,&
@@ -389,7 +386,7 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%work_array4,                 &
                 chunks(c)%field%work_array5,                 &
                 alpha, rrn)
-          ELSEIF(use_opencl_kernels) THEN
+          ELSEIF(use_cuda_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_cuda_calc_ur(alpha, rrn)
           ELSEIF(use_c_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_c_calc_ur(chunks(c)%field%x_min,&
@@ -418,7 +415,7 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%work_array2,                 &
                 chunks(c)%field%work_array5,                 &
                 beta)
-          ELSEIF(use_opencl_kernels) THEN
+          ELSEIF(use_cuda_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_cuda_calc_p(beta)
           ELSEIF(use_c_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_c_calc_p(chunks(c)%field%x_min,&
@@ -447,7 +444,7 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%work_array1,                 &
                 chunks(c)%field%u,                           &
                 chunks(c)%field%work_array2)
-          ELSEIF(use_opencl_kernels) THEN
+          ELSEIF(use_cuda_kernels) THEN
               CALL tea_leaf_kernel_solve_cuda(rx, ry, error)
           ELSEIF(use_C_kernels) THEN
               CALL tea_leaf_kernel_solve_c(chunks(c)%field%x_min,&
@@ -475,6 +472,7 @@ SUBROUTINE tea_leaf()
         ! if the error isn't getting any better, then exit - no point in going further
         !IF (abs(error - old_error) .LT. eps .or. (error .eq. old_error)) EXIT
         old_error = error
+        write(*,*)  error
 
       ENDDO
 
@@ -500,7 +498,7 @@ SUBROUTINE tea_leaf()
               chunks(c)%field%energy1,                         &
               chunks(c)%field%density1,                        &
               chunks(c)%field%u)
-      ELSEIF(use_opencl_kernels) THEN
+      ELSEIF(use_cuda_kernels) THEN
           CALL tea_leaf_kernel_finalise_cuda()
       ELSEIF(use_C_kernels) THEN
           CALL tea_leaf_kernel_finalise_c(chunks(c)%field%x_min, &
@@ -520,6 +518,7 @@ SUBROUTINE tea_leaf()
 
   ENDDO
   IF(profiler_on) profiler%PdV=profiler%tea+(timer()-kernel_time)
+  write(*,*)
 
 END SUBROUTINE tea_leaf
 

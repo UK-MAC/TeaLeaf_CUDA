@@ -72,6 +72,7 @@ void CloverleafCudaChunk::tea_leaf_cheby_copy_u
     cudaDeviceSynchronize();
     cudaMemcpy(u0, u, BUFSZ2D(1, 1), cudaMemcpyDeviceToDevice);
     cudaMemcpy(rro, work_array_2, sizeof(double), cudaMemcpyDeviceToHost);
+    *rro = thrust::reduce(reduce_ptr_2, reduce_ptr_2 + num_blocks, 0.0);
 }
 
 void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel

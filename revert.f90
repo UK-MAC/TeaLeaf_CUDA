@@ -45,7 +45,7 @@ SUBROUTINE revert()
                          chunks(c)%field%density1,  &
                          chunks(c)%field%energy0,   &
                          chunks(c)%field%energy1    )
-      ELSEIF(use_opencl_kernels)THEN
+      ELSEIF(use_cuda_kernels)THEN
         CALL revert_kernel_cuda()
       ELSEIF(use_C_kernels)THEN
         CALL revert_kernel_c(chunks(c)%field%x_min, &

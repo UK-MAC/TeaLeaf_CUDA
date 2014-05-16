@@ -34,7 +34,7 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
    chunks(chunk)%field%x_max=x_cells
    chunks(chunk)%field%y_max=y_cells
 
-   IF (use_opencl_kernels .eqv. .true.) THEN
+   IF (use_cuda_kernels .eqv. .true.) THEN
 
      IF(profiler_on) THEN
        profiler_int=1

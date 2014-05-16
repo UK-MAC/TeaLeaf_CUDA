@@ -52,7 +52,7 @@ SUBROUTINE reset_field()
                               chunks(c)%field%xvel1,     &
                               chunks(c)%field%yvel0,     &
                               chunks(c)%field%yvel1      )
-      ELSEIF(use_opencl_kernels)THEN
+      ELSEIF(use_cuda_kernels)THEN
         CALL reset_field_kernel_cuda()
       ELSEIF(use_C_kernels)THEN
         CALL reset_field_kernel_c(chunks(c)%field%x_min, &

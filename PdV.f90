@@ -71,7 +71,7 @@ SUBROUTINE PdV(predict)
                       chunks(c)%field%yvel0,      &
                       chunks(c)%field%yvel1,      &
                       chunks(c)%field%work_array1 )
-      ELSEIF(use_opencl_kernels)THEN
+      ELSEIF(use_cuda_kernels)THEN
 
         IF(predict) THEN
           prdct=1

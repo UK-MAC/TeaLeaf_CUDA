@@ -49,7 +49,7 @@ SUBROUTINE viscosity()
                             chunks(c)%field%viscosity,                 &
                             chunks(c)%field%xvel0,                     &
                             chunks(c)%field%yvel0                      )
-      ELSEIF(use_opencl_kernels)THEN
+      ELSEIF(use_cuda_kernels)THEN
         CALL viscosity_kernel_cuda()
       ELSEIF(use_C_kernels)THEN
         CALL viscosity_kernel_c(chunks(c)%field%x_min,                 &

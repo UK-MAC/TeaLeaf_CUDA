@@ -124,7 +124,7 @@ NV_ARCH=FERMI
 CODE_GEN_FERMI=-gencode arch=compute_20,code=sm_21
 CODE_GEN_KEPLER=-gencode arch=compute_35,code=sm_35
 
-LDLIBS+=-lstdc++ -lcudart
+LDLIBS+=-lstdc++ -lcudart $(LAPACK)
 
 FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS)
 CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c
@@ -135,15 +135,20 @@ CXX_MPI_COMPILER=mpiCC
 CXXFLAGS+=$(CFLAGS)
 
 # requires CUDA_HOME to be set - not the same on all machines
-NV_FLAGS=-O2 -I$(CUDA_HOME)/include $(CODE_GEN_$(NV_ARCH)) -restrict -Xcompiler "$(CFLAGS_GNU)"
+NV_FLAGS=-I$(CUDA_HOME)/include $(CODE_GEN_$(NV_ARCH)) -restrict -Xcompiler "$(CFLAGS_GNU)"
 NV_FLAGS+=-DNO_ERR_CHK
 #NV_FLAGS+=-DTIME_KERNELS
+
+ifdef DEBUG
+NV_FLAGS+=-O0 -g -G
+else
+NV_FLAGS+=-O2
+endif
 
 C_FILES=\
 	accelerate_kernel_c.o           \
 	pack_kernel_c.o \
 	PdV_kernel_c.o                  \
-	tqli.o			\
 	timer_c.o                  \
 	initialise_chunk_kernel_c.o                  \
 	calc_dt_kernel_c.o                  \

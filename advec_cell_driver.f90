@@ -58,7 +58,7 @@ SUBROUTINE advec_cell_driver(chunk,sweep_number,dir)
                            chunks(chunk)%field%work_array5,           &
                            chunks(chunk)%field%work_array6,           &
                            chunks(chunk)%field%work_array7            )
-    ELSEIF(use_opencl_kernels)THEN
+    ELSEIF(use_cuda_kernels)THEN
       CALL advec_cell_kernel_cuda(dir, sweep_number)
     ELSEIF(use_C_kernels)THEN
       IF(use_vector_loops) THEN

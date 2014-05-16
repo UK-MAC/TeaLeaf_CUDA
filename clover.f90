@@ -563,7 +563,7 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
                                    external_face,                                       &
                                    x_inc,y_inc,depth,size,                              &
                                    field,left_snd_buffer,right_snd_buffer)
-    ELSEIF(use_opencl_kernels)THEN
+    ELSEIF(use_cuda_kernels)THEN
       CALL pack_left_right_buffers_cuda(chunks(chunk)%field%x_min,chunks(chunk)%field%x_max, &
                                        chunks(chunk)%field%y_min,chunks(chunk)%field%y_max, &
                                        chunks(chunk)%chunk_neighbours(chunk_left),          &
@@ -621,7 +621,7 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
                                      external_face,                                       &
                                      x_inc,y_inc,depth,size,                              &
                                      field,left_rcv_buffer,right_rcv_buffer)
-    ELSEIF(use_opencl_kernels)THEN
+    ELSEIF(use_cuda_kernels)THEN
       CALL unpack_left_right_buffers_cuda(chunks(chunk)%field%x_min,chunks(chunk)%field%x_max, &
                                          chunks(chunk)%field%y_min,chunks(chunk)%field%y_max, &
                                          chunks(chunk)%chunk_neighbours(chunk_left),          &
@@ -655,7 +655,7 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
                                    external_face,                                       &
                                    x_inc,y_inc,depth,size,                              &
                                    field,bottom_snd_buffer,top_snd_buffer)
-    ELSEIF(use_opencl_kernels)THEN
+    ELSEIF(use_cuda_kernels)THEN
       CALL pack_top_bottom_buffers_cuda(chunks(chunk)%field%x_min,chunks(chunk)%field%x_max, &
                                        chunks(chunk)%field%y_min,chunks(chunk)%field%y_max, &
                                        chunks(chunk)%chunk_neighbours(chunk_left),          &
@@ -714,7 +714,7 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
                                      external_face,                                       &
                                      x_inc,y_inc,depth,size,                              &
                                      field,bottom_rcv_buffer,top_rcv_buffer)
-    ELSEIF(use_opencl_kernels)THEN
+    ELSEIF(use_cuda_kernels)THEN
       CALL unpack_top_bottom_buffers_cuda(chunks(chunk)%field%x_min,chunks(chunk)%field%x_max, &
                                        chunks(chunk)%field%y_min,chunks(chunk)%field%y_max, &
                                        chunks(chunk)%chunk_neighbours(chunk_left),          &

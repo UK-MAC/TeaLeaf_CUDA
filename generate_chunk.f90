@@ -74,7 +74,7 @@ SUBROUTINE generate_chunk(chunk)
                                g_rect,                                &
                                g_circ,                                &
                                g_point)
-      ELSEIF(use_opencl_kernels)THEN
+      ELSEIF(use_cuda_kernels)THEN
         CALL generate_chunk_kernel_cuda(number_of_states,                      &
                                        state_density,                         &
                                        state_energy,                          &
