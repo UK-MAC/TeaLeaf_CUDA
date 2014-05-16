@@ -86,7 +86,6 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
 
 !$OMP PARALLEL
 !$OMP DO
-    ! set r
     DO k=y_min,y_max
         DO j=x_min,x_max
             w(j, k) = (1.0_8                                      &
@@ -99,7 +98,6 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
     ENDDO
 !$OMP END DO
 !$OMP DO
-  ! set p
   DO k=y_min,y_max
       DO j=x_min,x_max
           p(j, k) = r(j, k)/theta
@@ -108,7 +106,6 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
 !$OMP END DO
 !$OMP END PARALLEL
 
-  ! iterate once to get initial error
   call tea_leaf_kernel_cheby_iterate(x_min,&
       x_max,                       &
       y_min,                       &
@@ -307,13 +304,11 @@ SUBROUTINE tqli(d,e,n, info)
 END SUBROUTINE tqli
 
 SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
-    max_iters, steps_done, info)
+    max_iters, tl_ch_cg_presteps, info)
 
-  IMPLICIT NONE
-
-  INTEGER :: steps_done, max_iters
+  INTEGER :: tl_ch_cg_presteps, max_iters
   REAL(KIND=8), DIMENSION(max_iters) :: cg_alphas, cg_betas
-  REAL(KIND=8), DIMENSION(steps_done) :: diag, offdiag
+  REAL(KIND=8), DIMENSION(tl_ch_cg_presteps) :: diag, offdiag
   ! z not used for this
   REAL(KIND=8) :: eigmin, eigmax, tmp
   INTEGER :: n, info
@@ -322,21 +317,21 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
   diag = 0
   offdiag = 0
 
-  do n=1,steps_done
+  do n=1,tl_ch_cg_presteps
     diag(n) = 1.0_8/cg_alphas(n)
     if (n .gt. 1) diag(n) = diag(n) + cg_betas(n-1)/cg_alphas(n-1)
-    if (n .lt. steps_done) offdiag(n+1) = sqrt(cg_betas(n))/cg_alphas(n)
+    if (n .lt. tl_ch_cg_presteps) offdiag(n+1) = sqrt(cg_betas(n))/cg_alphas(n)
   enddo
 
-  CALL tqli(diag, offdiag, steps_done, info)
+  CALL tqli(diag, offdiag, tl_ch_cg_presteps, info)
   ! could just call this instead
-  !CALL dsterf(steps_done, diag, offdiag, info)
+  !CALL dsterf(tl_ch_cg_presteps, diag, offdiag, info)
 
   if (info .ne. 0) return
 
   ! bubble sort eigenvalues
   do
-    do n=1,steps_done-1
+    do n=1,tl_ch_cg_presteps-1
       if (diag(n) .ge. diag(n+1)) then
         tmp = diag(n)
         diag(n) = diag(n+1)
@@ -349,22 +344,21 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
   enddo
 
   eigmin = diag(1)
-  eigmax = diag(steps_done)
+  eigmax = diag(tl_ch_cg_presteps)
 
 END SUBROUTINE tea_calc_eigenvalues
 
 SUBROUTINE tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
     theta, max_cheby_iters)
 
-  IMPLICIT NONE
-
   INTEGER :: n, max_cheby_iters
   REAL(KIND=8), DIMENSION(max_cheby_iters) :: ch_alphas, ch_betas
   REAL(KIND=8) :: eigmin, eigmax
+
   REAL(KIND=8) :: theta, delta, sigma, rho_old, rho_new, cur_alpha, cur_beta
 
-  theta = (eigmax + eigmin)/2.0_8
-  delta = (eigmax - eigmin)/2.0_8
+  theta = (eigmax + eigmin)/2
+  delta = (eigmax - eigmin)/2
   sigma = theta/delta
 
   rho_old = 1.0_8/sigma
