@@ -35,13 +35,7 @@ extern "C" void reset_field_kernel_cuda_
 void CloverleafCudaChunk::reset_field_kernel
 (void)
 {
-    CUDA_BEGIN_PROFILE;
-
-    device_reset_field_kernel_cuda<<< num_blocks, BLOCK_SZ >>>
-    (x_min,x_max,y_min,y_max, density0, density1,
-        energy0, energy1, xvel0, xvel1, yvel0, yvel1);
-    CUDA_ERR_CHECK;
-
-    CUDA_END_PROFILE;
+    CUDALAUNCH(device_reset_field_kernel_cuda,
+        density0, density1, energy0, energy1, xvel0, xvel1, yvel0, yvel1);
 }
 

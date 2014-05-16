@@ -25,11 +25,12 @@
   tl_max_iters=200
   test_problem 1
   tl_eps=0.00000000001
-  tl_use_chebyshev
+  tl_use_cg
+  profiler_on=1
 
   tl_ch_cg_presteps=30
 
-  hydro_off
+  hydro_on
   tea_leaf_on
 
 *endtea

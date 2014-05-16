@@ -92,32 +92,71 @@
 
 #endif //NO_ERR_CHK
 
-// whether to time kernel run times
-#ifdef TIME_KERNELS
-
-// use same timer as fortran/c
-extern "C" void timer_c_(double*);
+/*******************/
 
 // beginning of profiling bit
-#define CUDA_BEGIN_PROFILE \
-    static float time; \
-    static cudaEvent_t __t_0, __t_1;          \
-    cudaEventCreate(&__t_0); \
-    cudaEventRecord(&__t_0);
+#define CUDA_BEGIN_PROFILE      \
+    if (profiler_on)            \
+    {                           \
+        cudaEventCreate(&_t0);  \
+        cudaEventRecord(_t0);   \
+    }
 
+// TODO better function calling
 // end of profiling bit
-#define CUDA_END_PROFILE \
-    cudaDeviceSynchronize();                        \
-    timer_c_(&__t_1); \
-    std::cout << "[PROFILING] " << __t_1 - __t_0  \
-    << " to calculate " << __FILE__  << std::endl;
+#define CUDA_END_PROFILE                                        \
+    if (profiler_on)                                            \
+    {                                                           \
+        cudaEventCreate(&_t1);                                  \
+        cudaEventRecord(_t1);                                   \
+        cudaEventSynchronize(_t1);                              \
+        cudaEventElapsedTime(&taken, _t0, _t1);                 \
+        std::string func_name(__func__);                        \
+        if (kernel_times.end() != kernel_times.find(func_name)) \
+        {                                                       \
+            kernel_times.at(func_name) += taken;                \
+        }                                                       \
+        else                                                    \
+        {                                                       \
+            kernel_times[func_name] = taken;                    \
+        }                                                       \
+    }                                                           \
+    else                                                        \
+    {                                                           \
+        cudaDeviceSynchronize();                                \
+    }
 
-#else
+// enormous ugly macro that profiles kernels + checks if there were any errors
+#define CUDALAUNCH(funcname, ...)                               \
+    if (profiler_on)                                            \
+    {                                                           \
+        cudaEventCreate(&_t0);                                  \
+        cudaEventRecord(_t0);                                   \
+    }                                                           \
+    funcname<<<num_blocks, BLOCK_SZ>>>(x_min, x_max, y_min, y_max, __VA_ARGS__); \
+    CUDA_ERR_CHECK;                                             \
+    if (profiler_on)                                            \
+    {                                                           \
+        cudaEventCreate(&_t1);                                  \
+        cudaEventRecord(_t1);                                   \
+        cudaEventSynchronize(_t1);                              \
+        cudaEventElapsedTime(&taken, _t0, _t1);                 \
+        std::string func_name(#funcname);                       \
+        if (kernel_times.end() != kernel_times.find(func_name)) \
+        {                                                       \
+            kernel_times.at(func_name) += taken;                \
+        }                                                       \
+        else                                                    \
+        {                                                       \
+            kernel_times[func_name] = taken;                    \
+        }                                                       \
+    }                                                           \
+    else                                                        \
+    {                                                           \
+        cudaDeviceSynchronize();                                \
+    }
 
-#define CUDA_BEGIN_PROFILE ;
-#define CUDA_END_PROFILE if (profiler_on) cudaDeviceSynchronize();
-
-#endif // TIME_KERNELS
+/*******************/
 
 typedef struct cell_info {
     const int x_extra;
@@ -248,6 +287,11 @@ private:
 
     // if being profiled
     bool profiler_on;
+    // for recording times if profiling is on
+    std::map<std::string, double> kernel_times;
+    // events used for timing
+    float taken;
+    cudaEvent_t _t0, _t1;
 
     // mpi packing
     #define PACK_ARGS                                       \
@@ -376,6 +420,8 @@ public:
     (INITIALISE_ARGS);
 
     CloverleafCudaChunk
+    (void);
+    ~CloverleafCudaChunk
     (void);
 };
 
