@@ -117,7 +117,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
     CUDA_ERR_CHECK;
 
     // this will junk p but we don't need it anyway
-    cuda_chunk.tea_leaf_kernel_cheby_iterate(NULL, NULL, 0, rx, ry, 1);
+    tea_leaf_kernel_cheby_iterate(ch_alphas, ch_betas, 0, rx, ry, 1);
 
     // get norm of r
     tea_leaf_calc_2norm_kernel(1, error);
