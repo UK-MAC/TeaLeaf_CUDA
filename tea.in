@@ -20,14 +20,15 @@
   end_step=10
 
   cuda_device=1
-  use_cuda_kernels
+  !use_cuda_kernels
 
-  tl_max_iters=200
+  tl_max_iters=1000
   test_problem 1
   tl_eps=0.00000000001
-  tl_use_cg
+  tl_use_chebyshev
   profiler_on=1
 
+  tl_ch_cg_errswitch
   tl_ch_cg_presteps=30
 
   hydro_on

@@ -300,18 +300,19 @@ SUBROUTINE tea_leaf()
 
             call clover_allsum(error)
 
-            ! FIXME not giving correct estimate
             it_alpha = eps*bb/(4.0_8*error)
             cn = eigmax/eigmin
             gamm = (sqrt(cn) - 1.0_8)/(sqrt(cn) + 1.0_8)
             est_itc = nint(log(it_alpha)/(2.0_8*log(gamm)))
-            ! XXX
-            est_itc = est_itc * 3
+
+            ! FIXME still not giving correct answer, but multiply by 2.5 does
+            ! an 'okay' job for now
+            est_itc = est_itc * 2.5
 
             if (parallel%boss) then
               write(*,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
               write(*,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
-              write(*,'(4f11.4,11i0)')eigmin, eigmax, cn, error, est_itc
+              write(*,'(4f11.4,11i11)')eigmin, eigmax, cn, error, est_itc
             endif
 
             cheby_calc_steps = 2
@@ -499,7 +500,10 @@ SUBROUTINE tea_leaf()
           WRITE(0,"('Iteration count ', i8)") n-1
 
           if (tl_use_chebyshev) then
-            write(0, "('Chebyshev actually took ', i4)") cheby_calc_steps
+            write(g_out, "('Chebyshev actually took ', i4, ' (' i4, ' off guess)')") &
+                cheby_calc_steps, cheby_calc_steps-est_itc
+            write(0, "('Chebyshev actually took ', i4, ' (' i4, ' off guess)')") &
+                cheby_calc_steps, cheby_calc_steps-est_itc
           endif
 !$      ENDIF
       ENDIF
