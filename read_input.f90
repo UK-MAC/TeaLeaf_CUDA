@@ -91,7 +91,7 @@ SUBROUTINE read_input()
 
   tl_ch_cg_errswitch = .false.
   tl_ch_cg_presteps = 30
-  tl_ch_cg_epslim = 1e-4
+  tl_ch_cg_epslim = 1e-5
 
   tl_use_chebyshev = .false.
   tl_use_cg = .false.

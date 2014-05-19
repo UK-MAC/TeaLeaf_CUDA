@@ -312,7 +312,7 @@ SUBROUTINE tea_leaf()
             if (parallel%boss) then
               write(*,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
               write(*,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
-              write(*,'(4f11.4,11i11)')eigmin, eigmax, cn, error, est_itc
+              write(*,'(3f11.4,1e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
             endif
 
             cheby_calc_steps = 2
@@ -336,6 +336,10 @@ SUBROUTINE tea_leaf()
               call tea_leaf_kernel_cheby_iterate_cuda(ch_alphas, ch_betas, max_cheby_iters, &
                 rx, ry, cheby_calc_steps)
           ENDIF
+
+          ! this reduces number of reductions done
+          ! should speed it up in most situations
+          !if ((n .ge. est_itc) .and. (mod(n, 10) .eq. 0)) then
 
           ! after estimated number of iterations has passed, calc resid
           if (n .ge. est_itc) then
