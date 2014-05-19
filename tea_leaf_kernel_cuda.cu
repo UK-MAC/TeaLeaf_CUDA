@@ -70,7 +70,7 @@ void CloverleafCudaChunk::tea_leaf_cheby_copy_u
 (double* rro)
 {
     cudaDeviceSynchronize();
-    cudaMemcpy(u0, u, BUFSZ2D(1, 1), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(u0, u, BUFSZ2D(0, 0), cudaMemcpyDeviceToDevice);
     cudaMemcpy(rro, work_array_2, sizeof(double), cudaMemcpyDeviceToHost);
     *rro = thrust::reduce(reduce_ptr_2, reduce_ptr_2 + num_blocks, 0.0);
 }
@@ -104,6 +104,8 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
 (const double * ch_alphas, const double * ch_betas, int n_coefs,
  const double rx, const double ry, const double theta, double* error)
 {
+    assert(tea_solver == TEA_ENUM_CHEBYSHEV);
+
     size_t ch_buf_sz = n_coefs*sizeof(double);
 
     // upload to device
