@@ -86,7 +86,6 @@ __global__ void device_tea_leaf_cg_init_others
 
         r[THARR2D(0, 0, 0)] = u[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
 
-#define CG_DO_PRECONDITION
 #if defined(CG_DO_PRECONDITION)
         Mi[THARR2D(0, 0, 0)] = (1.0
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
