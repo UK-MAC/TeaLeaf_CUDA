@@ -48,7 +48,7 @@ SUBROUTINE clover_barrier
 
 END SUBROUTINE clover_barrier
 
-SUBROUTINE clover_abort
+SUBROUTINE clover_abort() bind(C, name="clover_abort_")
 
   INTEGER :: ierr,err
 
@@ -93,6 +93,12 @@ SUBROUTINE clover_init_comms
   parallel%max_task=size
 
 END SUBROUTINE clover_init_comms
+
+SUBROUTINE clover_get_rank(rank) bind(C, name="clover_get_rank_")
+  IMPLICIT NONE
+  INTEGER :: err,rank,size
+  CALL MPI_COMM_RANK(MPI_COMM_WORLD,rank,err) 
+ENDSUBROUTINE clover_get_rank
 
 SUBROUTINE clover_get_num_chunks(count)
 

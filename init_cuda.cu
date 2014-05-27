@@ -23,7 +23,7 @@
  */
 
 #if defined(MPI_HDR)
-#include "mpi.h"
+extern "C" void clover_get_rank_(int*);
 #endif
 
 #include "cuda_common.hpp"
@@ -68,7 +68,7 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
 
     int rank;
 #if defined(MPI_HDR)
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    clover_get_rank_(&rank);
 #else
     rank = 0;
 #endif
@@ -116,7 +116,6 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     cudaGetDeviceCount(&num_devices);
 
     device_id += rank % num_devices;
-    std::cout << rank << std::endl;
 
     int err = cudaSetDevice(device_id);
 

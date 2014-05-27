@@ -1,5 +1,5 @@
 #if defined(MPI_HDR)
-#include "mpi.h"
+extern "C" void clover_abort_();
 #endif
 
 #include "cuda_common.hpp"
@@ -148,7 +148,7 @@ void CloverleafCudaChunk::cloverDie
     fprintf(stderr, "\nExiting\n");
 
 #if defined(MPI_HDR)
-    MPI_Abort(MPI_COMM_WORLD, 1);
+    clover_abort_();
 #else
     exit(1);
 #endif
