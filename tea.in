@@ -28,8 +28,8 @@
   tl_use_chebyshev
 
   tl_ch_cg_errswitch
-  tl_ch_cg_presteps=45
-  tl_ch_cg_epslim=0.00001
+  tl_ch_cg_presteps=35
+  tl_ch_cg_epslim=0.000000001
 
   hydro_off
   tea_leaf_on

@@ -307,10 +307,10 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
     if (n .lt. tl_ch_cg_presteps) offdiag(n+1) = sqrt(cg_betas(n))/cg_alphas(n)
   enddo
 
-  offdiag(:)=eoshift(offdiag(:),-1)
   CALL tqli(diag, offdiag, tl_ch_cg_presteps, info)
 
   ! could just call this instead
+  !offdiag(:)=eoshift(offdiag(:),1)
   !CALL dsterf(tl_ch_cg_presteps, diag, offdiag, info)
 
   if (info .ne. 0) return
