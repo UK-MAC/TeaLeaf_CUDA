@@ -31,15 +31,15 @@
 
 // define a generic interface for fortran
 #define C_PACK_INTERFACE(operation, dir)                            \
-extern "C" void operation##_##dir##_buffers_cuda_                    \
+extern "C" void operation##_##dir##_buffers_cuda_                   \
 (int *xmin, int *xmax, int *ymin, int *ymax,                        \
  int *chunk_1, int *chunk_2, int *external_face,                    \
  int *x_inc, int *y_inc, int *depth, int *which_field,              \
  double *field_ptr, double *buffer_1, double *buffer_2)             \
 {                                                                   \
-    cuda_chunk.operation##_##dir(*chunk_1, *chunk_2, *external_face,     \
+    cuda_chunk.operation##_##dir(*chunk_1, *chunk_2, *external_face,\
                             *x_inc, *y_inc, *depth,                 \
-                            (*which_field)-1, buffer_1, buffer_2);  \
+                            *which_field, buffer_1, buffer_2);      \
 }
 
 C_PACK_INTERFACE(pack, left_right)
@@ -74,7 +74,6 @@ const int depth)
         CUDA_ERR_CHECK; \
         cudaMemcpy(buffer, dev_##face##_send_buffer, buffer_size*sizeof(double), cudaMemcpyDeviceToHost); \
         CUDA_ERR_CHECK; \
-        cudaDeviceSynchronize();\
         break; \
 	}
 
@@ -110,9 +109,10 @@ const int depth)
         case FIELD_vol_flux_y: PACK_CUDA_BUFFERS(vol_flux_y, Y_FACE); break;
         case FIELD_mass_flux_x: PACK_CUDA_BUFFERS(mass_flux_x, X_FACE); break;
         case FIELD_mass_flux_y: PACK_CUDA_BUFFERS(mass_flux_y, Y_FACE); break;
-        default: DIE("Invalid which_array identifier passed to CUDA");
+        case FIELD_u: PACK_CUDA_BUFFERS(u, CELL); break;
+        case FIELD_p: PACK_CUDA_BUFFERS(work_array_1, CELL); break;
+        default: DIE("Invalid which_array identifier '%d' passed to CUDA - valid range is %d-%d", which_array, FIELD_density0, FIELD_p);
     }
-
 }
 
 void CloverleafCudaChunk::unpackBuffer
@@ -167,7 +167,9 @@ const int depth)
         case FIELD_vol_flux_y: UNPACK_CUDA_BUFFERS(vol_flux_y, Y_FACE); break;
         case FIELD_mass_flux_x: UNPACK_CUDA_BUFFERS(mass_flux_x, X_FACE); break;
         case FIELD_mass_flux_y: UNPACK_CUDA_BUFFERS(mass_flux_y, Y_FACE); break;
-        default: DIE("Invalid which_array identifier passed to CUDA");
+        case FIELD_u: UNPACK_CUDA_BUFFERS(u, CELL); break;
+        case FIELD_p: UNPACK_CUDA_BUFFERS(work_array_1, CELL); break;
+        default: DIE("Invalid which_array identifier '%d' passed to CUDA - valid range is %d-%d", which_array, FIELD_density0, FIELD_p);
     }
 }
 
@@ -198,36 +200,36 @@ int CloverleafCudaChunk::getBufferSize
         region[1] = depth;
         break;
     default:
-        DIE("Invalid face identifier (%d) passed to getBufferSize\n");
+        DIE("Invalid face identifier (%d) passed to getBufferSize\n", edge);
     }
 
     return region[0]*region[1];
 }
 
-#define CHECK_PACK(op, side1, side2)                          \
-    if (external_face != chunk_1 || external_face != chunk_2)               \
-    {                                                                       \
-        cudaDeviceSynchronize();                                            \
-    } \
-    if (external_face != chunk_1)                                           \
-    {                                                                       \
-        op##Buffer(which_field, \
-                   chunk_1, \
-                   buffer_1, \
-                   getBufferSize(chunk_1, depth, x_inc, y_inc), \
-                   depth); \
-    }                                                                       \
-    if (external_face != chunk_2)                                           \
-    {                                                                       \
-        op##Buffer(which_field, \
-                   chunk_2, \
-                   buffer_2, \
-                   getBufferSize(chunk_2, depth, x_inc, y_inc), \
-                   depth); \
-    }                                                                       \
-    if (external_face != chunk_1 || external_face != chunk_2)               \
-    {                                                                       \
-        cudaDeviceSynchronize();                                            \
+#define CHECK_PACK(op, side1, side2)                            \
+    if (external_face != chunk_1 || external_face != chunk_2)   \
+    {                                                           \
+        cudaDeviceSynchronize();                                \
+    }                                                           \
+    if (external_face != chunk_1)                               \
+    {                                                           \
+        op##Buffer(which_field,                                 \
+                   side1,                                       \
+                   buffer_1,                                    \
+                   getBufferSize(side1, depth, x_inc, y_inc),   \
+                   depth);                                      \
+    }                                                           \
+    if (external_face != chunk_2)                               \
+    {                                                           \
+        op##Buffer(which_field,                                 \
+                   side2,                                       \
+                   buffer_2,                                    \
+                   getBufferSize(side2, depth, x_inc, y_inc),   \
+                   depth);                                      \
+    }                                                           \
+    if (external_face != chunk_1 || external_face != chunk_2)   \
+    {                                                           \
+        cudaDeviceSynchronize();                                \
     }
 
 void CloverleafCudaChunk::pack_left_right

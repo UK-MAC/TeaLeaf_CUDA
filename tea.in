@@ -25,14 +25,14 @@
   tl_max_iters=1000
   test_problem 1
   tl_eps=0.00000000001
-  tl_use_chebyshev
+  tl_use_cg
 
-  !tl_ch_cg_errswitch
+  tl_ch_cg_errswitch
   tl_ch_cg_presteps=30
   tl_ch_cg_epslim=0.00000001
 
-  hydro_off
-  tea_leaf_on
+  hydro_on
+  tea_leaf_off
 
   profiler_on=1
 
