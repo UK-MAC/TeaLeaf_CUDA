@@ -109,30 +109,6 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
 !$OMP END DO
 !$OMP END PARALLEL
 
-  call tea_leaf_kernel_cheby_iterate(x_min,&
-      x_max,                       &
-      y_min,                       &
-      y_max,                       &
-      u,                           &
-      u0,                 &
-      p,                 &
-      r,                 &
-      Mi,                 &
-      w,                 &
-      z,                 &
-      Kx,                 &
-      Ky,                 &
-      ch_alphas, ch_betas, max_cheby_iters, &
-      rx, ry, 1)
-
-  ! then calculate the norm
-  call tea_leaf_calc_2norm_kernel(x_min,        &
-      x_max,                       &
-      y_min,                       &
-      y_max,                       &
-      r,                 &
-      error)
-
 end SUBROUTINE
 
 SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
@@ -331,7 +307,9 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
     if (n .lt. tl_ch_cg_presteps) offdiag(n+1) = sqrt(cg_betas(n))/cg_alphas(n)
   enddo
 
+  offdiag(:)=eoshift(offdiag(:),-1)
   CALL tqli(diag, offdiag, tl_ch_cg_presteps, info)
+
   ! could just call this instead
   !CALL dsterf(tl_ch_cg_presteps, diag, offdiag, info)
 
@@ -353,6 +331,8 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
 
   eigmin = diag(1)
   eigmax = diag(tl_ch_cg_presteps)
+
+  if (eigmin .lt. 0.0_8 .or. eigmax .lt. 0.0_8) info = 1
 
 END SUBROUTINE tea_calc_eigenvalues
 

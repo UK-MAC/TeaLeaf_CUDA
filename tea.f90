@@ -254,10 +254,6 @@ SUBROUTINE tea_leaf()
             call tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
                 max_iters, n-1, info)
 
-            if (info .ne. 0) then
-              CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
-            endif
-
             ! maximum number of iterations in chebyshev solver
             max_cheby_iters = max_iters - n + 2
 
@@ -301,6 +297,17 @@ SUBROUTINE tea_leaf()
                 max_cheby_iters, rx, ry, theta, error)
             ENDIF
 
+            IF(use_fortran_kernels) THEN
+              call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
+                    chunks(c)%field%x_max,                       &
+                    chunks(c)%field%y_min,                       &
+                    chunks(c)%field%y_max,                       &
+                    chunks(c)%field%work_array2,                 &
+                    error)
+            ELSEIF(use_cuda_kernels) THEN
+              call tea_leaf_calc_2norm_kernel_cuda(1, error)
+            ENDIF
+
             call clover_allsum(error)
 
             it_alpha = eps*bb/(4.0_8*error)
@@ -318,29 +325,35 @@ SUBROUTINE tea_leaf()
               write(*,'(3f11.4,1e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
             endif
 
-            cheby_calc_steps = 2
-          endif
+            if (info .ne. 0) then
+              CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
+            endif
 
-          IF(use_fortran_kernels) THEN
-              call tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
-                  chunks(c)%field%x_max,                       &
-                  chunks(c)%field%y_min,                       &
-                  chunks(c)%field%y_max,                       &
-                  chunks(c)%field%u,                           &
-                  chunks(c)%field%u0,                 &
-                  chunks(c)%field%work_array1,                 &
-                  chunks(c)%field%work_array2,                 &
-                  chunks(c)%field%work_array3,                 &
-                  chunks(c)%field%work_array4,                 &
-                  chunks(c)%field%work_array5,                 &
-                  chunks(c)%field%work_array6,                 &
-                  chunks(c)%field%work_array7,                 &
-                  ch_alphas, ch_betas, max_cheby_iters, &
+            cheby_calc_steps = 1
+
+          else
+
+            IF(use_fortran_kernels) THEN
+                call tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
+                    chunks(c)%field%x_max,                       &
+                    chunks(c)%field%y_min,                       &
+                    chunks(c)%field%y_max,                       &
+                    chunks(c)%field%u,                           &
+                    chunks(c)%field%u0,                 &
+                    chunks(c)%field%work_array1,                 &
+                    chunks(c)%field%work_array2,                 &
+                    chunks(c)%field%work_array3,                 &
+                    chunks(c)%field%work_array4,                 &
+                    chunks(c)%field%work_array5,                 &
+                    chunks(c)%field%work_array6,                 &
+                    chunks(c)%field%work_array7,                 &
+                    ch_alphas, ch_betas, max_cheby_iters, &
+                    rx, ry, cheby_calc_steps)
+            ELSEIF(use_cuda_kernels) THEN
+                call tea_leaf_kernel_cheby_iterate_cuda(ch_alphas, ch_betas, max_cheby_iters, &
                   rx, ry, cheby_calc_steps)
-          ELSEIF(use_cuda_kernels) THEN
-              call tea_leaf_kernel_cheby_iterate_cuda(ch_alphas, ch_betas, max_cheby_iters, &
-                rx, ry, cheby_calc_steps)
-          ENDIF
+            ENDIF
+          endif
 
           ! this reduces number of reductions done
           ! should speed it up in most situations
