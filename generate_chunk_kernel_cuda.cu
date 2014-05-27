@@ -73,8 +73,6 @@ const int g_point)
         const type* state_ ## arr ## _d  \
             = thrust::raw_pointer_cast(thr_state_ ## arr ## _d);
 
-    CUDA_BEGIN_PROFILE;
-
     THRUST_ALLOC_ARRAY(density, double);
     THRUST_ALLOC_ARRAY(energy, double);
     THRUST_ALLOC_ARRAY(xvel, double);
@@ -88,20 +86,16 @@ const int g_point)
 
     #undef THRUST_ALLOC_ARRAY
 
-    device_generate_chunk_kernel_init_cuda<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, density0, energy0, xvel0, yvel0, 
+    CUDALAUNCH(device_generate_chunk_kernel_init_cuda, density0, energy0, xvel0, yvel0, 
         state_density_d, state_energy_d, state_xvel_d, state_yvel_d);
-    CUDA_ERR_CHECK;
 
     for (int state = 1; state < number_of_states; state++)
     {
-        device_generate_chunk_kernel_cuda<<< num_blocks, BLOCK_SZ >>>
-        (x_min, x_max, y_min, y_max, 
+        CUDALAUNCH(device_generate_chunk_kernel_cuda, 
             vertexx, vertexy, cellx, celly, density0, energy0, xvel0, yvel0, u,
             state_density_d, state_energy_d, state_xvel_d,
             state_yvel_d, state_xmin_d, state_xmax_d, state_ymin_d, state_ymax_d,
             state_radius_d, state_geometry_d, g_rect, g_circ, g_point, state);
-        CUDA_ERR_CHECK;
     }
 
     thrust::device_free(thr_state_density_d);
@@ -114,7 +108,5 @@ const int g_point)
     thrust::device_free(thr_state_ymax_d);
     thrust::device_free(thr_state_radius_d);
     thrust::device_free(thr_state_geometry_d);
-
-    CUDA_END_PROFILE;
 }
 

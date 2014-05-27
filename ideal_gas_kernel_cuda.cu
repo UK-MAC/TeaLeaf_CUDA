@@ -41,20 +41,13 @@ extern "C" void ideal_gas_kernel_nopredict_cuda_
 void CloverleafCudaChunk::ideal_gas_kernel
 (int predict)
 {
-    CUDA_BEGIN_PROFILE;
-
     if (predict)
     {
-        device_ideal_gas_kernel_cuda<<< num_blocks, BLOCK_SZ >>>
-        (x_min,x_max,y_min,y_max, density1, energy1, pressure, soundspeed);
+        CUDALAUNCH(device_ideal_gas_kernel_cuda, density1, energy1, pressure, soundspeed);
     }
     else
     {
-        device_ideal_gas_kernel_cuda<<< num_blocks, BLOCK_SZ >>>
-        (x_min,x_max,y_min,y_max, density0, energy0, pressure, soundspeed);
+        CUDALAUNCH(device_ideal_gas_kernel_cuda, density0, energy0, pressure, soundspeed);
     }
-    CUDA_ERR_CHECK;
-
-    CUDA_END_PROFILE;
 }
 

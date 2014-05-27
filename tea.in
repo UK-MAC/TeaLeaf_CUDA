@@ -22,17 +22,17 @@
   cuda_device=1
   use_cuda_kernels
 
-  tl_max_iters=1000
+  tl_max_iters=2000
   test_problem 1
   tl_eps=0.00000000001
-  tl_use_cg
+  tl_use_chebyshev
 
   tl_ch_cg_errswitch
   tl_ch_cg_presteps=30
-  tl_ch_cg_epslim=0.00000001
+  tl_ch_cg_epslim=0.0000001
 
-  hydro_on
-  tea_leaf_off
+  hydro_off
+  tea_leaf_on
 
   profiler_on=1
 

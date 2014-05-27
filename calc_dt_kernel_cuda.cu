@@ -59,14 +59,10 @@ int* jldt,
 int* kldt,
 int* small)
 {
-    CUDA_BEGIN_PROFILE;
-
-    device_calc_dt_kernel_cuda<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, g_small, g_big, dtmin, dtc_safe,
+    CUDALAUNCH(device_calc_dt_kernel_cuda, g_small, g_big, dtmin, dtc_safe,
         dtu_safe, dtv_safe, dtdiv_safe, xarea, yarea, celldx, celldy,
         volume, density0, viscosity, soundspeed, xvel0, yvel0,
         reduce_buf_1, reduce_buf_2);
-    CUDA_ERR_CHECK;
 
     // reduce_ptr 2 is a thrust wrapper around work_array_2
     *dt_min_val = *thrust::min_element(reduce_ptr_2,
@@ -75,8 +71,6 @@ int* small)
     // ditto on reduce ptr 1
     double jk_control = *thrust::max_element(reduce_ptr_1,
                                              reduce_ptr_1 + num_blocks);
-
-    CUDA_END_PROFILE;
 
     *dtl_control = 10.01 * (jk_control - static_cast<int>(jk_control));
 

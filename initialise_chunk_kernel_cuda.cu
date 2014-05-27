@@ -34,20 +34,14 @@ extern "C" void initialise_chunk_kernel_cuda_
 void CloverleafCudaChunk::initialise_chunk_kernel
 (double d_xmin, double d_ymin, double d_dx, double d_dy)
 {
-    CUDA_BEGIN_PROFILE;
-
-    device_initialise_chunk_kernel_vertex_cuda<<< num_blocks, BLOCK_SZ >>>
-    (x_min,x_max,y_min,y_max, d_xmin, d_ymin, d_dx, d_dy, 
+    CUDALAUNCH(device_initialise_chunk_kernel_vertex_cuda,
+        d_xmin, d_ymin, d_dx, d_dy, 
         vertexx, vertexdx, vertexy, vertexdy);
-    CUDA_ERR_CHECK;
 
-    device_initialise_chunk_kernel_cuda<<< num_blocks, BLOCK_SZ >>>
-    (x_min,x_max,y_min,y_max, d_xmin, d_ymin, d_dx, d_dy, 
+    CUDALAUNCH(device_initialise_chunk_kernel_cuda,
+        d_xmin, d_ymin, d_dx, d_dy, 
         vertexx, vertexdx, vertexy, vertexdy,
         cellx, celldx, celly, celldy,
         volume, xarea, yarea);
-    CUDA_ERR_CHECK;
-
-    CUDA_END_PROFILE;
 }
 

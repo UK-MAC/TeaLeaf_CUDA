@@ -97,7 +97,7 @@ CloverleafCudaChunk::~CloverleafCudaChunk
         for (std::map<std::string, double>::iterator ii = kernel_times.begin();
             ii != kernel_times.end(); ii++)
         {
-            fprintf(stdout, "%30s : %.3f\n", (*ii).first.c_str(), (*ii).second);
+            fprintf(stdout, "%35s : %.3f\n", ii->first.c_str(), ii->second);
         }
     }
 }

@@ -37,31 +37,23 @@ extern "C" void pdv_kernel_cuda_
 void CloverleafCudaChunk::PdV_kernel
 (int* error_condition, int predict, double dt)
 {
-    CUDA_BEGIN_PROFILE;
-
     if (predict)
     {
-        device_PdV_cuda_kernel_predict<<< num_blocks, BLOCK_SZ >>>
-        (x_min, x_max, y_min, y_max, dt, pdv_reduce_array,
+        CUDALAUNCH(device_PdV_cuda_kernel_predict, dt, pdv_reduce_array,
             xarea, yarea, volume, density0, density1,
             energy0, energy1, pressure, viscosity,
             xvel0, yvel0, xvel1, yvel1);
-        CUDA_ERR_CHECK;
     }
     else
     {
-        device_PdV_cuda_kernel_not_predict<<< num_blocks, BLOCK_SZ >>>
-        (x_min, x_max, y_min, y_max, dt, pdv_reduce_array,
+        CUDALAUNCH(device_PdV_cuda_kernel_not_predict, dt, pdv_reduce_array,
             xarea, yarea, volume, density0, density1,
             energy0, energy1, pressure, viscosity,
             xvel0, yvel0, xvel1, yvel1);
-        CUDA_ERR_CHECK;
     }
 
     *error_condition = *thrust::max_element(reduce_pdv,
                                             reduce_pdv + num_blocks);
-
-    CUDA_END_PROFILE;
 
     if (1 == *error_condition)
     {

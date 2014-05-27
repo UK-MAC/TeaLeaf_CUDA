@@ -37,12 +37,7 @@ extern "C" void revert_kernel_cuda_
 void CloverleafCudaChunk::revert_kernel
 (void)
 {
-    CUDA_BEGIN_PROFILE;
-
-    device_revert_kernel_cuda<<< num_blocks, BLOCK_SZ >>>
-    (x_min,x_max,y_min,y_max, density0, density1, energy0, energy1);
-    CUDA_ERR_CHECK;
-
-    CUDA_END_PROFILE;
+    CUDALAUNCH(device_revert_kernel_cuda,
+        density0, density1, energy0, energy1);
 }
 

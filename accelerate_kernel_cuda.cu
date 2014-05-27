@@ -35,13 +35,8 @@ extern "C" void accelerate_kernel_cuda_
 void CloverleafCudaChunk::accelerate_kernel
 (double dbyt)
 {
-    CUDA_BEGIN_PROFILE;
-
-    device_accelerate_kernel_cuda<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, dbyt, xarea, yarea, volume, density0,
+    CUDALAUNCH(device_accelerate_kernel_cuda,
+        dbyt, xarea, yarea, volume, density0,
         pressure, viscosity, xvel0, yvel0, xvel1, yvel1);
-    CUDA_ERR_CHECK;
-
-    CUDA_END_PROFILE;
 }
 

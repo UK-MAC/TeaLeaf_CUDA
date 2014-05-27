@@ -35,24 +35,17 @@ extern "C" void advec_cell_kernel_cuda_
 void CloverleafCudaChunk::advec_cell_kernel
 (int dr, int swp_nmbr)
 {
-    CUDA_BEGIN_PROFILE;
-
     if (dr == 1)
     {
-        device_pre_vol_kernel_x<<< num_blocks, BLOCK_SZ >>>
-        (
-            x_min, x_max, y_min, y_max, swp_nmbr,
+        CUDALAUNCH(device_pre_vol_kernel_x, swp_nmbr,
             work_array_1,
             work_array_2,
             volume,
             vol_flux_x,
             vol_flux_y
         );
-        CUDA_ERR_CHECK;
 
-        device_ener_flux_kernel_x<<< num_blocks, BLOCK_SZ >>>
-        (
-            x_min, x_max, y_min, y_max, swp_nmbr,
+        CUDALAUNCH(device_ener_flux_kernel_x, swp_nmbr,
             volume,
             vol_flux_x,
             vol_flux_y,
@@ -63,11 +56,8 @@ void CloverleafCudaChunk::advec_cell_kernel
             vertexdx,
             mass_flux_x
         );
-        CUDA_ERR_CHECK;
 
-        device_advec_cell_kernel_x<<< num_blocks, BLOCK_SZ >>>
-        (
-            x_min, x_max, y_min, y_max, swp_nmbr,
+        CUDALAUNCH(device_advec_cell_kernel_x, swp_nmbr,
             volume,
             vol_flux_x,
             vol_flux_y,
@@ -77,25 +67,18 @@ void CloverleafCudaChunk::advec_cell_kernel
             work_array_2,
             mass_flux_x
         );
-        CUDA_ERR_CHECK;
     }
     else if (dr == 2)
     {
-
-        device_pre_vol_kernel_y<<< num_blocks, BLOCK_SZ >>>
-        (
-            x_min, x_max, y_min, y_max, swp_nmbr,
+        CUDALAUNCH(device_pre_vol_kernel_y, swp_nmbr,
             work_array_1,
             work_array_2,
             volume,
             vol_flux_x,
             vol_flux_y
         );
-        CUDA_ERR_CHECK;
 
-        device_ener_flux_kernel_y<<< num_blocks, BLOCK_SZ >>>
-        (
-            x_min, x_max, y_min, y_max, swp_nmbr,
+        CUDALAUNCH(device_ener_flux_kernel_y, swp_nmbr,
             volume,
             vol_flux_x,
             vol_flux_y,
@@ -106,11 +89,8 @@ void CloverleafCudaChunk::advec_cell_kernel
             vertexdy,
             mass_flux_y
         );
-        CUDA_ERR_CHECK;
 
-        device_advec_cell_kernel_y<<< num_blocks, BLOCK_SZ >>>
-        (
-            x_min, x_max, y_min, y_max, swp_nmbr,
+        CUDALAUNCH(device_advec_cell_kernel_y, swp_nmbr,
             volume,
             vol_flux_x,
             vol_flux_y,
@@ -120,9 +100,6 @@ void CloverleafCudaChunk::advec_cell_kernel
             work_array_2,
             mass_flux_y
         );
-        CUDA_ERR_CHECK;
     }
-
-    CUDA_END_PROFILE;
 }
 

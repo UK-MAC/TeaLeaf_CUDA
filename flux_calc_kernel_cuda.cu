@@ -34,13 +34,8 @@ extern "C" void flux_calc_kernel_cuda_
 void CloverleafCudaChunk::flux_calc_kernel
 (double dbyt)
 {
-    CUDA_BEGIN_PROFILE;
-
-    device_flux_calc_kernel_cuda<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, dbyt, xarea, yarea, xvel0, yvel0,
+    CUDALAUNCH(device_flux_calc_kernel_cuda,
+        dbyt, xarea, yarea, xvel0, yvel0,
         xvel1, yvel1, vol_flux_x, vol_flux_y);
-    CUDA_ERR_CHECK;
-
-    CUDA_END_PROFILE;
 }
 

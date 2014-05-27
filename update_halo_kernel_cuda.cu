@@ -43,15 +43,13 @@ const int* chunk_neighbours,
 double* cur_array_d,
 int depth)
 {
-    #define CHECK_LAUNCH(face, dir)                                 \
-    if (EXTERNAL_FACE == chunk_neighbours[CHUNK_ ## face - 1])      \
-    {                                                               \
+    #define CHECK_LAUNCH(face, dir)                                     \
+    if (EXTERNAL_FACE == chunk_neighbours[CHUNK_ ## face - 1])          \
+    {                                                                   \
         const int launch_sz = (ceil((dir##_max+5+grid_type.dir##_extra) \
-            /static_cast<float>(BLOCK_SZ))) * depth;                \
-        device_update_halo_kernel_##face##_cuda                     \
-        <<< launch_sz, BLOCK_SZ >>>                                 \
-        (x_min, x_max, y_min, y_max, grid_type, cur_array_d, depth);\
-        CUDA_ERR_CHECK;                                             \
+            /static_cast<float>(BLOCK_SZ))) * depth;                    \
+        CUDALAUNCH(device_update_halo_kernel_##face##_cuda,             \
+            grid_type, cur_array_d, depth);                             \
     }
 
     CHECK_LAUNCH(bottom, x);
@@ -67,8 +65,6 @@ void CloverleafCudaChunk::update_halo_kernel
 const int depth,
 const int* chunk_neighbours)
 {
-    CUDA_BEGIN_PROFILE;
-
     #define HALO_UPDATE_RESIDENT(arr, grid_type)        \
     {if (1 == fields[FIELD_##arr - 1])                  \
     {                                                   \
@@ -99,7 +95,5 @@ const int* chunk_neighbours)
     HALO_UPDATE_RESIDENT(work_array_1, CELL);
 
     #undef HALO_UPDATE_RESIDENT
-
-    CUDA_END_PROFILE;
 }
 

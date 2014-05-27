@@ -36,13 +36,8 @@ extern "C" void viscosity_kernel_cuda_
 void CloverleafCudaChunk::viscosity_kernel
 (void)
 {
-    CUDA_BEGIN_PROFILE;
-
-    device_viscosity_kernel_cuda<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, celldx, celldy, density0, pressure, viscosity,
+    CUDALAUNCH(device_viscosity_kernel_cuda,
+        celldx, celldy, density0, pressure, viscosity,
         xvel0, yvel0);
-    CUDA_ERR_CHECK;
-
-    CUDA_END_PROFILE;
 }
 

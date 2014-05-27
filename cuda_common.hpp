@@ -94,38 +94,6 @@
 
 /*******************/
 
-// beginning of profiling bit
-#define CUDA_BEGIN_PROFILE      \
-    if (profiler_on)            \
-    {                           \
-        cudaEventCreate(&_t0);  \
-        cudaEventRecord(_t0);   \
-    }
-
-// TODO better function calling
-// end of profiling bit
-#define CUDA_END_PROFILE                                        \
-    if (profiler_on)                                            \
-    {                                                           \
-        cudaEventCreate(&_t1);                                  \
-        cudaEventRecord(_t1);                                   \
-        cudaEventSynchronize(_t1);                              \
-        cudaEventElapsedTime(&taken, _t0, _t1);                 \
-        std::string func_name(__func__);                        \
-        if (kernel_times.end() != kernel_times.find(func_name)) \
-        {                                                       \
-            kernel_times.at(func_name) += taken;                \
-        }                                                       \
-        else                                                    \
-        {                                                       \
-            kernel_times[func_name] = taken;                    \
-        }                                                       \
-    }                                                           \
-    else                                                        \
-    {                                                           \
-        cudaDeviceSynchronize();                                \
-    }
-
 // enormous ugly macro that profiles kernels + checks if there were any errors
 #define CUDALAUNCH(funcname, ...)                               \
     if (profiler_on)                                            \
