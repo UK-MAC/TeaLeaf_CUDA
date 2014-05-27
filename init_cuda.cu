@@ -81,14 +81,10 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
         DIE("Input file not found\n");
     }
 
-    int device_id = clover::preferredDevice(input);
     // find out which solver to use
     bool tl_use_jacobi = clover::paramEnabled(input, "tl_use_jacobi");
     bool tl_use_cg = clover::paramEnabled(input, "tl_use_cg");
     bool tl_use_chebyshev = clover::paramEnabled(input, "tl_use_chebyshev");
-
-    // use first device whatever happens (ignore MPI rank) for running across different platforms
-    bool usefirst = clover::paramEnabled(input, "opencl_usefirst");
 
     if(!rank)fprintf(stdout, "Solver to use: ");
     if (tl_use_chebyshev)
@@ -112,9 +108,22 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
         if(!rank)fprintf(stdout, "Jacobi (no solver specified in tea.in)\n");
     }
 
+    int device_id = clover::preferredDevice(input);
+
     fclose(input);
 
-    cudaSetDevice(device_id); 
+    int num_devices;
+    cudaGetDeviceCount(&num_devices);
+
+    device_id += rank % num_devices;
+    std::cout << rank << std::endl;
+
+    int err = cudaSetDevice(device_id);
+
+    if (err != cudaSuccess)
+    {
+        DIE("Setting device id to %d in rank %d failed with error code %d\n", device_id, rank, err);
+    }
 
     struct cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, device_id);

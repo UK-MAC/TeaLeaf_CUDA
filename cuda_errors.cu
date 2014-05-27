@@ -1,3 +1,7 @@
+#if defined(MPI_HDR)
+#include "mpi.h"
+#endif
+
 #include "cuda_common.hpp"
 #include <cstdarg>
 #include <cstdio>
