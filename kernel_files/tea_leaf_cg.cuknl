@@ -60,12 +60,12 @@ __global__ void device_tea_leaf_cg_init_others
  const double * __restrict const u,
        double * __restrict const p,
        double * __restrict const r,
-       double * __restrict const w,
        double * __restrict const Mi,
+       double * __restrict const w,
+       double * __restrict const z,
  const double * __restrict const Kx,
  const double * __restrict const Ky,
- double rx, double ry,
-       double * __restrict const z)
+ double rx, double ry)
 {
     __kernel_indexes;
 

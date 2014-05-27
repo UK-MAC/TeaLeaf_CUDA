@@ -1,4 +1,7 @@
 #include "cuda_common.hpp"
+
+#define CG_DO_PRECONDITION
+
 #include "kernel_files/tea_leaf_common.cuknl"
 #include "kernel_files/tea_leaf_jacobi.cuknl"
 #include "kernel_files/tea_leaf_cg.cuknl"
@@ -123,27 +126,20 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
     tea_leaf_calc_2norm_kernel(1, error);
 
     // then correct p
-    device_tea_leaf_cheby_solve_init_p<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, work_array_1, work_array_2, theta);
-
-    CUDA_ERR_CHECK;
+    CUDALAUNCH(device_tea_leaf_cheby_solve_init_p, work_array_1, z, theta);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
 (const double * ch_alphas, const double * ch_betas, int n_coefs,
  const double rx, const double ry, const int cheby_calc_step)
 {
-    device_tea_leaf_cheby_solve_calc_u<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, u, work_array_1);
+    CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, work_array_1);
 
-    CUDA_ERR_CHECK;
-
-    device_tea_leaf_cheby_solve_calc_p<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, u, work_array_1, work_array_2, work_array_4,
-        work_array_5, work_array_6, u0, ch_alphas_device, ch_betas_device,
+    CUDALAUNCH(device_tea_leaf_cheby_solve_calc_p, u, u0,
+        work_array_1, work_array_2, work_array_3, work_array_4,
+        z, work_array_5, work_array_6,
+        ch_alphas_device, ch_betas_device,
         rx, ry, cheby_calc_step-1);
-
-    CUDA_ERR_CHECK;
 }
 
 /********************/
@@ -185,31 +181,19 @@ void CloverleafCudaChunk::tea_leaf_init_cg
 
     calcrxry(dt, rx, ry);
 
-    device_tea_leaf_cg_init_u<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, density1, energy1, u,
+    CUDALAUNCH(device_tea_leaf_cg_init_u, density1, energy1, u,
         work_array_1, work_array_2, work_array_3, coefficient);
 
-    CUDA_ERR_CHECK;
-
     // init Kx, Ky
-    device_tea_leaf_cg_init_directions<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, work_array_3, work_array_5, work_array_6);
-
-    CUDA_ERR_CHECK;
+    CUDALAUNCH(device_tea_leaf_cg_init_directions, work_array_3, work_array_5, work_array_6);
 
     // premultiply Kx/Ky
-    device_tea_leaf_init_diag<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, work_array_5, work_array_6, *rx, *ry);
-
-    CUDA_ERR_CHECK;
+    CUDALAUNCH(device_tea_leaf_init_diag, work_array_5, work_array_6, *rx, *ry);
 
     // get initial guess in w, r, etc
-    device_tea_leaf_cg_init_others<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, reduce_buf_2, u, work_array_1,
-        work_array_2, work_array_3, work_array_4, work_array_5,
-        work_array_6, *rx, *ry, z);
-
-    CUDA_ERR_CHECK;
+    CUDALAUNCH(device_tea_leaf_cg_init_others, reduce_buf_2, u,
+        work_array_1, work_array_2, work_array_3, work_array_4, z,
+        work_array_5, work_array_6, *rx, *ry);
 
     *rro = thrust::reduce(reduce_ptr_2, reduce_ptr_2 + num_blocks, 0.0);
 }
@@ -217,11 +201,8 @@ void CloverleafCudaChunk::tea_leaf_init_cg
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_w
 (double rx, double ry, double* pw)
 {
-    device_tea_leaf_cg_solve_calc_w<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, reduce_buf_3,
-        work_array_1, work_array_3, work_array_5, work_array_6, rx, ry);
-
-    CUDA_ERR_CHECK;
+    CUDALAUNCH(device_tea_leaf_cg_solve_calc_w, reduce_buf_3,
+        work_array_1, work_array_4, work_array_5, work_array_6, rx, ry);
 
     *pw = thrust::reduce(reduce_ptr_3, reduce_ptr_3 + num_blocks, 0.0);
 }
@@ -229,11 +210,8 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_w
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
 (double alpha, double* rrn)
 {
-    device_tea_leaf_cg_solve_calc_ur<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, alpha, reduce_buf_4, u, work_array_1,
-        work_array_2, work_array_3, z, work_array_4);
-
-    CUDA_ERR_CHECK;
+    CUDALAUNCH(device_tea_leaf_cg_solve_calc_ur, alpha, reduce_buf_4, u, work_array_1,
+        work_array_2, work_array_4, z, work_array_3);
 
     *rrn = thrust::reduce(reduce_ptr_4, reduce_ptr_4 + num_blocks, 0.0);
 }
@@ -241,10 +219,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_p
 (double beta)
 {
-    device_tea_leaf_cg_solve_calc_p<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, beta, work_array_1, work_array_2, z);
-
-    CUDA_ERR_CHECK;
+    CUDALAUNCH(device_tea_leaf_cg_solve_calc_p, beta, work_array_1, work_array_2, z);
 }
 
 /********************/
@@ -273,19 +248,16 @@ void CloverleafCudaChunk::tea_leaf_init_jacobi
 
     calcrxry(dt, rx, ry);
 
-    device_tea_leaf_jacobi_init<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, density1, energy1,
+    CUDALAUNCH(device_tea_leaf_jacobi_init, density1, energy1,
         work_array_1, work_array_2, work_array_3, u, coefficient);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_jacobi
 (double rx, double ry, double* error)
 {
-    device_tea_leaf_jacobi_copy_u<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, u, work_array_4);
+    CUDALAUNCH(device_tea_leaf_jacobi_copy_u, u, work_array_4);
 
-    device_tea_leaf_jacobi_solve<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, rx, ry, work_array_1, work_array_2,
+    CUDALAUNCH(device_tea_leaf_jacobi_solve, rx, ry, work_array_1, work_array_2,
         work_array_3, u, work_array_4, reduce_buf_1);
 
     *error = thrust::reduce(reduce_ptr_1, reduce_ptr_1 + num_blocks, 0.0);
@@ -304,7 +276,6 @@ extern "C" void tea_leaf_kernel_finalise_cuda_
 void CloverleafCudaChunk::tea_leaf_finalise
 (void)
 {
-    device_tea_leaf_finalise<<< num_blocks, BLOCK_SZ >>>
-    (x_min, x_max, y_min, y_max, density1, u, energy1);
+    CUDALAUNCH(device_tea_leaf_finalise, density1, u, energy1);
 }
 

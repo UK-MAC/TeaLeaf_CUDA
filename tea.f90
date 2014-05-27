@@ -217,15 +217,16 @@ SUBROUTINE tea_leaf()
           ! do something like this or copy the functions but remove the Mi
           ! and z arrays (messy). This does mean extra memory bandwidth will
           ! be used, but it's not too much of an issue
-          call tea_leaf_kernel_cheby_reset_Mi(chunks(c)%field%x_min,&
-            chunks(c)%field%x_max,                       &
-            chunks(c)%field%y_min,                       &
-            chunks(c)%field%y_max,                       &
-            chunks(c)%field%work_array1,                &
-            chunks(c)%field%work_array2,                &
-            chunks(c)%field%work_array3,                &
-            chunks(c)%field%work_array5,                &
-            rro)
+
+          !call tea_leaf_kernel_cheby_reset_Mi(chunks(c)%field%x_min,&
+          !  chunks(c)%field%x_max,                       &
+          !  chunks(c)%field%y_min,                       &
+          !  chunks(c)%field%y_max,                       &
+          !  chunks(c)%field%work_array1,                &
+          !  chunks(c)%field%work_array2,                &
+          !  chunks(c)%field%work_array3,                &
+          !  chunks(c)%field%work_array5,                &
+          !  rro)
         elseif(use_cuda_kernels) then
           call tea_leaf_kernel_cheby_copy_u_cuda(rro)
         endif
@@ -285,10 +286,12 @@ SUBROUTINE tea_leaf()
                     chunks(c)%field%y_min,                       &
                     chunks(c)%field%y_max,                       &
                     chunks(c)%field%u,                           &
+                    chunks(c)%field%u0,                 &
                     chunks(c)%field%work_array1,                 &
                     chunks(c)%field%work_array2,                 &
-                    chunks(c)%field%u0,                 &
+                    chunks(c)%field%work_array3,                 &
                     chunks(c)%field%work_array4,                 &
+                    chunks(c)%field%work_array5,                 &
                     chunks(c)%field%work_array6,                 &
                     chunks(c)%field%work_array7,                 &
                     ch_alphas, ch_betas, max_cheby_iters, &
@@ -324,9 +327,11 @@ SUBROUTINE tea_leaf()
                   chunks(c)%field%y_min,                       &
                   chunks(c)%field%y_max,                       &
                   chunks(c)%field%u,                           &
+                  chunks(c)%field%u0,                 &
                   chunks(c)%field%work_array1,                 &
                   chunks(c)%field%work_array2,                 &
-                  chunks(c)%field%u0,                 &
+                  chunks(c)%field%work_array3,                 &
+                  chunks(c)%field%work_array4,                 &
                   chunks(c)%field%work_array5,                 &
                   chunks(c)%field%work_array6,                 &
                   chunks(c)%field%work_array7,                 &
@@ -504,9 +509,9 @@ SUBROUTINE tea_leaf()
           WRITE(0,"('Iteration count ', i8)") n-1
 
           if (tl_use_chebyshev) then
-            write(g_out, "('Chebyshev actually took ', i4, ' (' i4, ' off guess)')") &
+            write(g_out, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
                 cheby_calc_steps, cheby_calc_steps-est_itc
-            write(0, "('Chebyshev actually took ', i4, ' (' i4, ' off guess)')") &
+            write(0, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
                 cheby_calc_steps, cheby_calc_steps-est_itc
           endif
 !$      ENDIF

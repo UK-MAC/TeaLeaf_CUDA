@@ -31,12 +31,14 @@ __global__ void device_tea_leaf_cheby_solve_calc_u
 __global__ void device_tea_leaf_cheby_solve_calc_p
 (int x_min, int x_max, int y_min, int y_max,
  const double * __restrict const u,
+ const double * __restrict const u0,
        double * __restrict const p,
        double * __restrict const r,
+       double * __restrict const Mi,
        double * __restrict const w,
+       double * __restrict const z,
  const double * __restrict const Kx,
  const double * __restrict const Ky,
- const double * __restrict const u0,
  const double * __restrict const alpha,
  const double * __restrict const beta,
  double rx, double ry,
@@ -54,8 +56,9 @@ __global__ void device_tea_leaf_cheby_solve_calc_p
             - (Kx[THARR2D(1, 0, 0)]*u[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*u[THARR2D(-1, 0, 0)]);
 
         r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
+        z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
         p[THARR2D(0, 0, 0)] = alpha[step]*p[THARR2D(0, 0, 0)]
-                            + beta[step]*r[THARR2D(0, 0, 0)];
+                            + beta[step]*z[THARR2D(0, 0, 0)];
     }
 }
 
