@@ -312,6 +312,10 @@ SUBROUTINE tea_leaf()
               write(*,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
               write(*,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
               write(*,'(3f11.4,1e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
+
+              write(g_out,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
+              write(g_out,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
+              write(g_out,'(3f11.4,1e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
             endif
 
             if (info .ne. 0) then
