@@ -2,17 +2,17 @@
 !
 ! This file is part of TeaLeaf.
 !
-! TeaLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! TeaLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! TeaLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! TeaLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! TeaLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Driver for the heat conduction kernel
@@ -20,7 +20,7 @@
 !>  @details Invokes the user specified kernel for the heat conduction
 
 MODULE tea_leaf_module
- 
+
   USE report_module
   USE data_module
   USE tea_leaf_kernel_module
@@ -235,7 +235,7 @@ SUBROUTINE tea_leaf()
       endif
 
       DO n=1,max_iters
-        
+
         IF (tl_ch_cg_errswitch) then
             ch_switch_check = (cheby_calc_steps .gt. 0) .or. (error .le. tl_ch_cg_epslim)
         ELSE
@@ -318,7 +318,7 @@ SUBROUTINE tea_leaf()
               CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
             endif
 
-            cheby_calc_steps = 1
+            cheby_calc_steps = 2
           else
             IF(use_fortran_kernels) THEN
                 call tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
@@ -340,27 +340,27 @@ SUBROUTINE tea_leaf()
                 call tea_leaf_kernel_cheby_iterate_cuda(ch_alphas, ch_betas, max_cheby_iters, &
                   rx, ry, cheby_calc_steps)
             ENDIF
-          endif
 
-          ! this reduces number of reductions done
-          ! should speed it up in most situations
-          !if ((n .ge. est_itc) .and. (mod(n, 10) .eq. 0)) then
+            ! this reduces number of reductions done
+            ! should speed it up in most situations
+            !if ((n .ge. est_itc) .and. (mod(n, 10) .eq. 0)) then
 
-          ! after estimated number of iterations has passed, calc resid
-          if (n .ge. est_itc) then
-            IF(use_fortran_kernels) THEN
-              call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
-                    chunks(c)%field%x_max,                       &
-                    chunks(c)%field%y_min,                       &
-                    chunks(c)%field%y_max,                       &
-                    chunks(c)%field%work_array2,                 &
-                    error)
-            ELSEIF(use_cuda_kernels) THEN
-              call tea_leaf_calc_2norm_kernel_cuda(1, error)
-            ENDIF
-          else
-            ! dummy to make it go smaller every time but not reach tolerance
-            error = 1.0_8/(cheby_calc_steps)
+            ! after estimated number of iterations has passed, calc resid
+            if (n .ge. est_itc) then
+              IF(use_fortran_kernels) THEN
+                call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
+                      chunks(c)%field%x_max,                       &
+                      chunks(c)%field%y_min,                       &
+                      chunks(c)%field%y_max,                       &
+                      chunks(c)%field%work_array2,                 &
+                      error)
+              ELSEIF(use_cuda_kernels) THEN
+                call tea_leaf_calc_2norm_kernel_cuda(1, error)
+              ENDIF
+            else
+              ! dummy to make it go smaller every time but not reach tolerance
+              error = 1.0_8/(cheby_calc_steps)
+            endif
           endif
 
           call clover_allsum(error)

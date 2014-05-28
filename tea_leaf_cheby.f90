@@ -109,6 +109,33 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
 !$OMP END DO
 !$OMP END PARALLEL
 
+  call tea_leaf_kernel_cheby_iterate(x_min,             &
+                           x_max,             &
+                           y_min,             &
+                           y_max,             &
+                           u,                &
+                           u0,                &
+                           p,                &
+                           r,            &
+                           Mi,            &
+                           w,     &
+                           z,            &
+                           Kx,                &
+                           Ky,  &
+                           ch_alphas, &
+                           ch_betas, &
+                           max_cheby_iters, &
+                           rx, &
+                           ry, &
+                           1)
+
+  call tea_leaf_calc_2norm_kernel(x_min, &
+                          x_max,             &
+                          y_min,             &
+                          y_max,             &
+                          r,               &
+                          error)
+
 end SUBROUTINE
 
 SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
