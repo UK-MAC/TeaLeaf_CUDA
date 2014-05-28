@@ -136,7 +136,7 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
                           r,               &
                           error)
 
-end SUBROUTINE
+END SUBROUTINE
 
 SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
                            x_max,             &

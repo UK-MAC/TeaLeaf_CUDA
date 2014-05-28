@@ -121,11 +121,14 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
     // this will junk p but we don't need it anyway
     tea_leaf_kernel_cheby_iterate(ch_alphas, ch_betas, 0, rx, ry, 1);
 
-    // get norm of r
-    tea_leaf_calc_2norm_kernel(1, error);
-
     // then correct p
     CUDALAUNCH(device_tea_leaf_cheby_solve_init_p, work_array_1, z, theta);
+
+    // do a step like in fortran
+    tea_leaf_kernel_cheby_iterate(ch_alphas, ch_betas, 0, rx, ry, 1);
+
+    // get norm of r
+    tea_leaf_calc_2norm_kernel(1, error);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
