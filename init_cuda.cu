@@ -121,7 +121,8 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
 
     if (err != cudaSuccess)
     {
-        DIE("Setting device id to %d in rank %d failed with error code %d\n", device_id, rank, err);
+        fprintf(stderr, "Setting device id to %d in rank %d failed with error code %d\n", device_id, rank, err);
+        errorHandler(__LINE__, __FILE__);
     }
 
     struct cudaDeviceProp prop;
