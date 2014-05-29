@@ -549,7 +549,7 @@ SUBROUTINE tea_leaf()
     ENDIF
 
   ENDDO
-  IF(profiler_on) profiler%PdV=profiler%tea+(timer()-kernel_time)
+  IF(profiler_on) profiler%tea=profiler%tea+(timer()-kernel_time)
 
 END SUBROUTINE tea_leaf
 
