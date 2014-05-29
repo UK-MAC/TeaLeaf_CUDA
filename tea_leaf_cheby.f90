@@ -104,37 +104,11 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
   DO k=y_min,y_max
       DO j=x_min,x_max
           p(j, k) = z(j, k)/theta
+          u(j, k) = u(j, k) + p(j, k)
       ENDDO
   ENDDO
 !$OMP END DO
 !$OMP END PARALLEL
-
-  call tea_leaf_kernel_cheby_iterate(x_min,             &
-                           x_max,             &
-                           y_min,             &
-                           y_max,             &
-                           u,                &
-                           u0,                &
-                           p,                &
-                           r,            &
-                           Mi,            &
-                           w,     &
-                           z,            &
-                           Kx,                &
-                           Ky,  &
-                           ch_alphas, &
-                           ch_betas, &
-                           max_cheby_iters, &
-                           rx, &
-                           ry, &
-                           1)
-
-  call tea_leaf_calc_2norm_kernel(x_min, &
-                          x_max,             &
-                          y_min,             &
-                          y_max,             &
-                          r,               &
-                          error)
 
 END SUBROUTINE
 
@@ -178,13 +152,6 @@ SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
 !$OMP DO
     DO k=y_min,y_max
         DO j=x_min,x_max
-            u(j, k) = u(j, k) + p(j, k)
-        ENDDO
-    ENDDO
-!$OMP END DO
-!$OMP DO
-    DO k=y_min,y_max
-        DO j=x_min,x_max
             w(j, k) = (1.0_8                                      &
                 + ry*(Ky(j, k+1) + Ky(j, k))                      &
                 + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
@@ -193,6 +160,13 @@ SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
             r(j, k) = u0(j, k) - w(j, k)
             z(j, k) = Mi(j, k)*r(j, k)
             p(j, k) = ch_alphas(step)*p(j, k) + ch_betas(step)*z(j, k)
+        ENDDO
+    ENDDO
+!$OMP END DO
+!$OMP DO
+    DO k=y_min,y_max
+        DO j=x_min,x_max
+            u(j, k) = u(j, k) + p(j, k)
         ENDDO
     ENDDO
 !$OMP END DO

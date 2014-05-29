@@ -31,8 +31,7 @@ MODULE tea_leaf_module
   IMPLICIT NONE
 
   interface
-    subroutine tea_leaf_kernel_cheby_copy_u_cuda(rro)
-      real(kind=8) :: rro
+    subroutine tea_leaf_kernel_cheby_copy_u_cuda()
     end subroutine
     subroutine tea_leaf_calc_2norm_kernel_cuda(initial, norm)
       integer :: initial
@@ -228,10 +227,8 @@ SUBROUTINE tea_leaf()
           !  chunks(c)%field%work_array5,                &
           !  rro)
         elseif(use_cuda_kernels) then
-          call tea_leaf_kernel_cheby_copy_u_cuda(rro)
+          call tea_leaf_kernel_cheby_copy_u_cuda()
         endif
-
-        call clover_allsum(rro)
       endif
 
       DO n=1,max_iters
@@ -243,6 +240,9 @@ SUBROUTINE tea_leaf()
         ENDIF
 
         IF (tl_use_chebyshev .and. ch_switch_check) then
+          ! don't need to update p any more
+          fields(FIELD_P) = 0
+
           ! on the first chebyshev steps, find the eigenvalues, coefficients,
           ! and expected number of iterations
           IF (cheby_calc_steps .eq. 0) then
@@ -295,6 +295,40 @@ SUBROUTINE tea_leaf()
             ELSEIF(use_cuda_kernels) THEN
               call tea_leaf_kernel_cheby_init_cuda(ch_alphas, ch_betas, &
                 max_cheby_iters, rx, ry, theta, error)
+            ENDIF
+
+            CALL update_halo(fields,2)
+
+            IF(use_fortran_kernels) THEN
+                call tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
+                    chunks(c)%field%x_max,                       &
+                    chunks(c)%field%y_min,                       &
+                    chunks(c)%field%y_max,                       &
+                    chunks(c)%field%u,                           &
+                    chunks(c)%field%u0,                          &
+                    chunks(c)%field%work_array1,                 &
+                    chunks(c)%field%work_array2,                 &
+                    chunks(c)%field%work_array3,                 &
+                    chunks(c)%field%work_array4,                 &
+                    chunks(c)%field%work_array5,                 &
+                    chunks(c)%field%work_array6,                 &
+                    chunks(c)%field%work_array7,                 &
+                    ch_alphas, ch_betas, max_cheby_iters,        &
+                    rx, ry, cheby_calc_steps)
+            ELSEIF(use_cuda_kernels) THEN
+                call tea_leaf_kernel_cheby_iterate_cuda(ch_alphas, ch_betas, max_cheby_iters, &
+                  rx, ry, cheby_calc_steps)
+            ENDIF
+
+            IF(use_fortran_kernels) THEN
+              call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
+                    chunks(c)%field%x_max,                       &
+                    chunks(c)%field%y_min,                       &
+                    chunks(c)%field%y_max,                       &
+                    chunks(c)%field%work_array2,                 &
+                    error)
+            ELSEIF(use_cuda_kernels) THEN
+              call tea_leaf_calc_2norm_kernel_cuda(1, error)
             ENDIF
 
             call clover_allsum(error)
@@ -455,6 +489,9 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%work_array5,                 &
                 beta)
           ENDIF
+
+      !IF (parallel%boss) write(*,*) rrn, rro, alpha, beta
+      !call flush
 
           error = rrn
           rro = rrn
