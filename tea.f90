@@ -237,8 +237,10 @@ SUBROUTINE tea_leaf()
       DO n=1,max_iters
 
         IF (tl_ch_cg_errswitch) then
+            ! either the error has got below tolerance, or it's already going
             ch_switch_check = (cheby_calc_steps .gt. 0) .or. (error .le. tl_ch_cg_epslim)
         ELSE
+            ! enough steps have passed
             ch_switch_check = n .ge. tl_ch_cg_presteps
         ENDIF
 
@@ -360,13 +362,13 @@ SUBROUTINE tea_leaf()
               ELSEIF(use_cuda_kernels) THEN
                 call tea_leaf_calc_2norm_kernel_cuda(1, error)
               ENDIF
+
+              call clover_allsum(error)
             else
               ! dummy to make it go smaller every time but not reach tolerance
               error = 1.0_8/(cheby_calc_steps)
             endif
           endif
-
-          call clover_allsum(error)
 
           cheby_calc_steps = cheby_calc_steps + 1
 
