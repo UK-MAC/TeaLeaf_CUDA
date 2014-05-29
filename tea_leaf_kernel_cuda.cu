@@ -42,9 +42,9 @@ void CloverleafCudaChunk::calcrxry
 
 // Chebyshev solver
 extern "C" void tea_leaf_kernel_cheby_copy_u_cuda_
-(double* rro)
+(void)
 {
-    cuda_chunk.tea_leaf_cheby_copy_u(rro);
+    cuda_chunk.tea_leaf_cheby_copy_u();
 }
 
 extern "C" void tea_leaf_calc_2norm_kernel_cuda_
@@ -70,11 +70,10 @@ extern "C" void tea_leaf_kernel_cheby_iterate_cuda_
 }
 
 void CloverleafCudaChunk::tea_leaf_cheby_copy_u
-(double* rro)
+(void)
 {
     cudaDeviceSynchronize();
     cudaMemcpy(u0, u, BUFSZ2D(0, 0), cudaMemcpyDeviceToDevice);
-    *rro = thrust::reduce(reduce_ptr_2, reduce_ptr_2 + num_blocks, 0.0);
 }
 
 void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel
@@ -124,24 +123,21 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
     // then correct p
     CUDALAUNCH(device_tea_leaf_cheby_solve_init_p, work_array_1, z, theta);
 
-    // do a step like in fortran
-    tea_leaf_kernel_cheby_iterate(ch_alphas, ch_betas, 0, rx, ry, 1);
-
-    // get norm of r
-    tea_leaf_calc_2norm_kernel(1, error);
+    // update p
+    CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, work_array_1);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
 (const double * ch_alphas, const double * ch_betas, int n_coefs,
  const double rx, const double ry, const int cheby_calc_step)
 {
-    CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, work_array_1);
-
     CUDALAUNCH(device_tea_leaf_cheby_solve_calc_p, u, u0,
         work_array_1, work_array_2, work_array_3, work_array_4,
         z, work_array_5, work_array_6,
         ch_alphas_device, ch_betas_device,
         rx, ry, cheby_calc_step-1);
+
+    CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, work_array_1);
 }
 
 /********************/
