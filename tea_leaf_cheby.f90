@@ -96,14 +96,14 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
                 - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
                 - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
             r(j, k) = u0(j, k) - w(j, k)
-            z(j, k) = Mi(j, k)*r(j, k)
+            !z(j, k) = Mi(j, k)*r(j, k)
         ENDDO
     ENDDO
 !$OMP END DO
 !$OMP DO
   DO k=y_min,y_max
       DO j=x_min,x_max
-          p(j, k) = z(j, k)/theta
+          p(j, k) = (Mi(j, k)*r(j, k))/theta
           u(j, k) = u(j, k) + p(j, k)
       ENDDO
   ENDDO
@@ -158,8 +158,8 @@ SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
                 - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
                 - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
             r(j, k) = u0(j, k) - w(j, k)
-            z(j, k) = Mi(j, k)*r(j, k)
-            p(j, k) = ch_alphas(step)*p(j, k) + ch_betas(step)*z(j, k)
+            !z(j, k) = Mi(j, k)*r(j, k)
+            p(j, k) = ch_alphas(step)*p(j, k) + ch_betas(step)*Mi(j, k)*r(j, k)
         ENDDO
     ENDDO
 !$OMP END DO
