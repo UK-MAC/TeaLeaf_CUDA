@@ -97,13 +97,13 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
                 - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
             r(j, k) = u0(j, k) - w(j, k)
             !z(j, k) = Mi(j, k)*r(j, k)
+          p(j, k) = (Mi(j, k)*r(j, k))/theta
         ENDDO
     ENDDO
 !$OMP END DO
 !$OMP DO
   DO k=y_min,y_max
       DO j=x_min,x_max
-          p(j, k) = (Mi(j, k)*r(j, k))/theta
           u(j, k) = u(j, k) + p(j, k)
       ENDDO
   ENDDO
