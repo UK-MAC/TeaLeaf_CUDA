@@ -77,6 +77,12 @@ SUBROUTINE tea_leaf()
   INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters, info
   LOGICAL :: ch_switch_check
 
+  INTEGER :: cg_calc_steps
+  REAL(KIND=8) :: cg_time, ch_time
+  cg_time = 0.0_8
+  ch_time = 0.0_8
+  cg_calc_steps = 0
+
   IF(coefficient .nE. RECIP_CONDUCTIVITY .and. coefficient .ne. conductivity) THEN
     CALL report_error('tea_leaf', 'unknown coefficient option')
   endif
@@ -232,6 +238,8 @@ SUBROUTINE tea_leaf()
       endif
 
       DO n=1,max_iters
+
+ kernel_time=timer()
 
         IF (tl_ch_cg_errswitch) then
             ! either the error has got below tolerance, or it's already going
@@ -408,6 +416,7 @@ SUBROUTINE tea_leaf()
 
         ELSEIF(tl_use_cg .or. tl_use_chebyshev) then
           fields(FIELD_P) = 1
+          cg_calc_steps = cg_calc_steps + 1
 
           IF(use_fortran_kernels) THEN
             CALL tea_leaf_kernel_solve_cg_fortran_calc_w(chunks(c)%field%x_min,&
@@ -535,6 +544,12 @@ SUBROUTINE tea_leaf()
         ! updates u and possibly p
         CALL update_halo(fields,2)
 
+IF (tl_use_chebyshev .and. ch_switch_check) then
+    ch_time=ch_time+(timer()-kernel_time)
+else
+    cg_time=cg_time+(timer()-kernel_time)
+endif
+
         IF (abs(error) .LT. eps) EXIT
 
         ! if the error isn't getting any better, then exit - no point in going further
@@ -588,6 +603,21 @@ SUBROUTINE tea_leaf()
 
   ENDDO
   IF(profiler_on) profiler%tea=profiler%tea+(timer()-kernel_time)
+
+  call clover_sum(ch_time)
+  call clover_sum(cg_time)
+  call clover_barrier()
+  call flush(0)
+  IF (parallel%boss) THEN
+    write(0,"('CH time ', f16.10)") ch_time+0.0_8
+    write(0,"('CG time ', f16.10)") cg_time+0.0_8
+    write(0,"('CH steps ', i6)") cheby_calc_steps
+    write(0,"('CG steps ', i6)") cG_calc_steps
+    write(0,"('CG per iteration ', f16.10)") cg_time/cg_calc_steps
+    write(0,"('ch per iteration ', f16.10)") ch_time/cheby_calc_steps
+  endif
+  call flush(0)
+  call clover_barrier()
 
 END SUBROUTINE tea_leaf
 
