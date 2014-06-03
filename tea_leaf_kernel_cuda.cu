@@ -117,11 +117,10 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
 
     CUDA_ERR_CHECK;
 
-    // this will junk p but we don't need it anyway
-    tea_leaf_kernel_cheby_iterate(ch_alphas, ch_betas, 0, rx, ry, 1);
-
-    // then correct p
-    CUDALAUNCH(device_tea_leaf_cheby_solve_init_p, work_array_1, z, theta);
+    CUDALAUNCH(device_tea_leaf_cheby_solve_init_p, u, u0,
+        work_array_1, work_array_2, work_array_3, work_array_4,
+        z, work_array_5, work_array_6,
+        theta, rx, ry);
 
     // update p
     CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, work_array_1);
