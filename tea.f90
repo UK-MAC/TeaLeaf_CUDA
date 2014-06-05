@@ -31,8 +31,7 @@ MODULE tea_leaf_module
   IMPLICIT NONE
 
   interface
-    subroutine tea_leaf_kernel_cheby_copy_u_cuda(rro)
-      real(kind=8) :: rro
+    subroutine tea_leaf_kernel_cheby_copy_u_cuda()
     end subroutine
     subroutine tea_leaf_calc_2norm_kernel_cuda(initial, norm)
       integer :: initial
@@ -228,21 +227,24 @@ SUBROUTINE tea_leaf()
           !  chunks(c)%field%work_array5,                &
           !  rro)
         elseif(use_cuda_kernels) then
-          call tea_leaf_kernel_cheby_copy_u_cuda(rro)
+          call tea_leaf_kernel_cheby_copy_u_cuda()
         endif
-
-        call clover_allsum(rro)
       endif
 
       DO n=1,max_iters
 
         IF (tl_ch_cg_errswitch) then
+            ! either the error has got below tolerance, or it's already going
             ch_switch_check = (cheby_calc_steps .gt. 0) .or. (error .le. tl_ch_cg_epslim)
         ELSE
+            ! enough steps have passed
             ch_switch_check = n .ge. tl_ch_cg_presteps
         ENDIF
 
         IF (tl_use_chebyshev .and. ch_switch_check) then
+          ! don't need to update p any more
+          fields(FIELD_P) = 0
+
           ! on the first chebyshev steps, find the eigenvalues, coefficients,
           ! and expected number of iterations
           IF (cheby_calc_steps .eq. 0) then
@@ -297,6 +299,40 @@ SUBROUTINE tea_leaf()
                 max_cheby_iters, rx, ry, theta, error)
             ENDIF
 
+            CALL update_halo(fields,2)
+
+            IF(use_fortran_kernels) THEN
+                call tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
+                    chunks(c)%field%x_max,                       &
+                    chunks(c)%field%y_min,                       &
+                    chunks(c)%field%y_max,                       &
+                    chunks(c)%field%u,                           &
+                    chunks(c)%field%u0,                          &
+                    chunks(c)%field%work_array1,                 &
+                    chunks(c)%field%work_array2,                 &
+                    chunks(c)%field%work_array3,                 &
+                    chunks(c)%field%work_array4,                 &
+                    chunks(c)%field%work_array5,                 &
+                    chunks(c)%field%work_array6,                 &
+                    chunks(c)%field%work_array7,                 &
+                    ch_alphas, ch_betas, max_cheby_iters,        &
+                    rx, ry, cheby_calc_steps)
+            ELSEIF(use_cuda_kernels) THEN
+                call tea_leaf_kernel_cheby_iterate_cuda(ch_alphas, ch_betas, max_cheby_iters, &
+                  rx, ry, cheby_calc_steps)
+            ENDIF
+
+            IF(use_fortran_kernels) THEN
+              call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
+                    chunks(c)%field%x_max,                       &
+                    chunks(c)%field%y_min,                       &
+                    chunks(c)%field%y_max,                       &
+                    chunks(c)%field%work_array2,                 &
+                    error)
+            ELSEIF(use_cuda_kernels) THEN
+              call tea_leaf_calc_2norm_kernel_cuda(1, error)
+            ENDIF
+
             call clover_allsum(error)
 
             it_alpha = eps*bb/(4.0_8*error)
@@ -309,9 +345,12 @@ SUBROUTINE tea_leaf()
             est_itc = est_itc * 2.5
 
             if (parallel%boss) then
-              write(*,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
-              write(*,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
-              write(*,'(3f11.4,1e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
+              write(g_out,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
+              write(g_out,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
+              write(g_out,'(2f11.4,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
+              write(0,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
+              write(0,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
+              write(0,'(2f11.4,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
             endif
 
             if (info .ne. 0) then
@@ -357,13 +396,12 @@ SUBROUTINE tea_leaf()
               ELSEIF(use_cuda_kernels) THEN
                 call tea_leaf_calc_2norm_kernel_cuda(1, error)
               ENDIF
+              call clover_allsum(error)
             else
               ! dummy to make it go smaller every time but not reach tolerance
               error = 1.0_8/(cheby_calc_steps)
             endif
           endif
-
-          call clover_allsum(error)
 
           cheby_calc_steps = cheby_calc_steps + 1
 
@@ -451,6 +489,9 @@ SUBROUTINE tea_leaf()
                 chunks(c)%field%work_array5,                 &
                 beta)
           ENDIF
+
+      !IF (parallel%boss) write(*,*) rrn, rro, alpha, beta
+      !call flush
 
           error = rrn
           rro = rrn
@@ -545,7 +586,7 @@ SUBROUTINE tea_leaf()
     ENDIF
 
   ENDDO
-  IF(profiler_on) profiler%PdV=profiler%tea+(timer()-kernel_time)
+  IF(profiler_on) profiler%tea=profiler%tea+(timer()-kernel_time)
 
 END SUBROUTINE tea_leaf
 
