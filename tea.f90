@@ -564,13 +564,6 @@ endif
           WRITE(g_out,"('Iteration count ',i8)") n-1
           WRITE(0,"('Conduction error ',e14.7)") error
           WRITE(0,"('Iteration count ', i8)") n-1
-
-          if (tl_use_chebyshev) then
-            write(g_out, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
-                cheby_calc_steps, cheby_calc_steps-est_itc
-            write(0, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
-                cheby_calc_steps, cheby_calc_steps-est_itc
-          endif
 !$      ENDIF
       ENDIF
 
@@ -606,18 +599,19 @@ endif
 
   call clover_sum(ch_time)
   call clover_sum(cg_time)
-  call clover_barrier()
-  call flush(0)
-  IF (parallel%boss) THEN
-    write(0,"('CH time ', f16.10)") ch_time+0.0_8
-    write(0,"('CG time ', f16.10)") cg_time+0.0_8
-    write(0,"('CH steps ', i6)") cheby_calc_steps
-    write(0,"('CG steps ', i6)") cG_calc_steps
-    write(0,"('CG per iteration ', f16.10)") cg_time/cg_calc_steps
-    write(0,"('ch per iteration ', f16.10)") ch_time/cheby_calc_steps
+  IF (parallel%boss .and. tl_use_chebyshev) THEN
+    write(0, "(a3, a16, a7, a16, a7)") "", "Time", "Steps", "Per it", "Ratio"
+    write(0, "(a3, f16.10, i7, f16.10, f7.2)") "CG", cg_time + 0.0_8, cg_calc_steps, &
+        merge(cg_time/cg_calc_steps, 0.0_8, cg_calc_steps .gt. 0), 1.0_8
+    write(0, "(a3, f16.10, i7, f16.10, f7.2)") "CH", ch_time + 0.0_8, cheby_calc_steps, &
+        merge(ch_time/cheby_calc_steps, 0.0_8, cheby_calc_steps .gt. 0), &
+        merge((ch_time/cheby_calc_steps)/(cg_time/cg_calc_steps), 0.0_8, cheby_calc_steps .gt. 0)
+    write(0, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
+        cheby_calc_steps, cheby_calc_steps-est_itc
+
+    write(g_out, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
+        cheby_calc_steps, cheby_calc_steps-est_itc
   endif
-  call flush(0)
-  call clover_barrier()
 
 END SUBROUTINE tea_leaf
 
