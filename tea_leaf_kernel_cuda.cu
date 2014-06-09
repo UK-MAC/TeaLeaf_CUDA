@@ -82,14 +82,12 @@ void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel
     if (norm_array == 0)
     {
         // norm of u0
-        device_tea_leaf_cheby_solve_calc_resid<<< num_blocks, BLOCK_SZ >>>
-        (x_min, x_max, y_min, y_max, u0, reduce_buf_1);
+        CUDALAUNCH(device_tea_leaf_cheby_solve_calc_resid, u0, reduce_buf_1);
     }
     else if (norm_array == 1)
     {
         // norm of r
-        device_tea_leaf_cheby_solve_calc_resid<<< num_blocks, BLOCK_SZ >>>
-        (x_min, x_max, y_min, y_max, work_array_2, reduce_buf_1);
+        CUDALAUNCH(device_tea_leaf_cheby_solve_calc_resid, work_array_2, reduce_buf_1);
     }
     else
     {
@@ -119,7 +117,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
 
     CUDALAUNCH(device_tea_leaf_cheby_solve_init_p, u, u0,
         work_array_1, work_array_2, work_array_3, work_array_4,
-        z, work_array_5, work_array_6,
+        work_array_5, work_array_6,
         theta, rx, ry);
 
     // update p
@@ -132,7 +130,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
 {
     CUDALAUNCH(device_tea_leaf_cheby_solve_calc_p, u, u0,
         work_array_1, work_array_2, work_array_3, work_array_4,
-        z, work_array_5, work_array_6,
+        work_array_5, work_array_6,
         ch_alphas_device, ch_betas_device,
         rx, ry, cheby_calc_step-1);
 

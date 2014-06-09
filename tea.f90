@@ -609,6 +609,12 @@ endif
     write(0, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
         cheby_calc_steps, cheby_calc_steps-est_itc
 
+    write(g_out, "(a3, a16, a7, a16, a7)") "", "Time", "Steps", "Per it", "Ratio"
+    write(g_out, "(a3, f16.10, i7, f16.10, f7.2)") "CG", cg_time + 0.0_8, cg_calc_steps, &
+        merge(cg_time/cg_calc_steps, 0.0_8, cg_calc_steps .gt. 0), 1.0_8
+    write(g_out, "(a3, f16.10, i7, f16.10, f7.2)") "CH", ch_time + 0.0_8, cheby_calc_steps, &
+        merge(ch_time/cheby_calc_steps, 0.0_8, cheby_calc_steps .gt. 0), &
+        merge((ch_time/cheby_calc_steps)/(cg_time/cg_calc_steps), 0.0_8, cheby_calc_steps .gt. 0)
     write(g_out, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
         cheby_calc_steps, cheby_calc_steps-est_itc
   endif
