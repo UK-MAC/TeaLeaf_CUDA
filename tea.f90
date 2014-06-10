@@ -151,7 +151,7 @@ SUBROUTINE tea_leaf()
         fields=0
         fields(FIELD_U) = 1
         fields(FIELD_P) = 1
-        CALL update_halo(fields,2)
+        CALL update_halo(fields,1)
 
         ! and globally sum rro
         call clover_allsum(rro)
@@ -307,7 +307,7 @@ SUBROUTINE tea_leaf()
                 max_cheby_iters, rx, ry, theta, error)
             ENDIF
 
-            CALL update_halo(fields,2)
+            CALL update_halo(fields,1)
 
             IF(use_fortran_kernels) THEN
                 call tea_leaf_kernel_cheby_iterate(chunks(c)%field%x_min,&
@@ -539,7 +539,7 @@ SUBROUTINE tea_leaf()
         ENDIF
 
         ! updates u and possibly p
-        CALL update_halo(fields,2)
+        CALL update_halo(fields,1)
 
         if (profiler_on) then
           IF (tl_use_chebyshev .and. ch_switch_check) then

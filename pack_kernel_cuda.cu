@@ -88,7 +88,7 @@ const int depth)
             case CHUNK_TOP:\
                 CALL_PACK(dev_ptr, type, top, x);\
             default: \
-                DIE("Invalid side passed to buffer packing"); \
+                DIE("Invalid side %d passed to buffer packing", which_side); \
         }
 
     switch(which_array)
@@ -149,7 +149,7 @@ const int depth)
             case CHUNK_TOP:\
                 CALL_UNPACK(dev_ptr, type, top, x);\
             default: \
-                DIE("Invalid side passed to buffer unpacking"); \
+                DIE("Invalid side %d passed to buffer unpacking", which_side); \
         }
 
     switch(which_array)
