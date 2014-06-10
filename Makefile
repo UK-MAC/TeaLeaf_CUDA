@@ -141,7 +141,7 @@ NV_FLAGS+=-DNO_ERR_CHK
 ifdef DEBUG
 NV_FLAGS+=-O0 -g -G
 else
-NV_FLAGS+=-O2
+NV_FLAGS+=-O3
 endif
 
 C_FILES=\

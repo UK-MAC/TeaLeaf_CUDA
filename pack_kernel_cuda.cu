@@ -55,7 +55,6 @@ void CloverleafCudaChunk::packRect
  int which_field, int depth)
 {
     // TODO just call packBuffer/unpackBuffer from this
-    // TODO remove unnecesary synchronisations below
 }
 
 void CloverleafCudaChunk::packBuffer
@@ -113,6 +112,9 @@ const int depth)
         case FIELD_p: PACK_CUDA_BUFFERS(work_array_1, CELL); break;
         default: DIE("Invalid which_array identifier '%d' passed to CUDA - valid range is %d-%d", which_array, FIELD_density0, FIELD_p);
     }
+
+    #undef CALL_PACK
+    #undef PACK_CUDA_BUFFERS
 }
 
 void CloverleafCudaChunk::unpackBuffer
@@ -171,6 +173,9 @@ const int depth)
         case FIELD_p: UNPACK_CUDA_BUFFERS(work_array_1, CELL); break;
         default: DIE("Invalid which_array identifier '%d' passed to CUDA - valid range is %d-%d", which_array, FIELD_density0, FIELD_p);
     }
+
+    #undef CALL_UNPACK
+    #undef UNPACK_CUDA_BUFFERS
 }
 
 int CloverleafCudaChunk::getBufferSize
