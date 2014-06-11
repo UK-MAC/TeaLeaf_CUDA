@@ -71,6 +71,7 @@ const int depth)
         (x_min, x_max, y_min, y_max, type, \
         dev_ptr, dev_##face##_send_buffer, depth); \
         CUDA_ERR_CHECK; \
+        cudaDeviceSynchronize();\
         cudaMemcpy(buffer, dev_##face##_send_buffer, buffer_size*sizeof(double), cudaMemcpyDeviceToHost); \
         CUDA_ERR_CHECK; \
         break; \

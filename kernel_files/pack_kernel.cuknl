@@ -34,9 +34,9 @@
 /********************/
 
 // for top/bottom
-#define HORZ_IDX(add) (column + depth + ((add + 1) - 1) * (x_max + x_extra + (2 * depth)))
+#define HORZ_IDX(add) (column + depth + ((add + 1) - 1)*((x_max + 1) + x_extra + (2 * depth)) - 2)
 // for left/right
-#define VERT_IDX(add) ((add + 1) + (row + depth - 1) * depth)
+#define VERT_IDX(add) ((add) + (row + depth - 1)*depth - 2)
 
 __global__ void device_packleftBuffer
 (int x_min,int x_max,int y_min,int y_max,
@@ -146,11 +146,11 @@ const int depth)
 
     __kernel_indexes;
 
-    if (column >= (x_min + 1) - depth && column <= (x_max + 1) + y_extra + depth)
+    if (column >= (x_min + 1) - depth && column <= (x_max + 1) + x_extra + depth)
     {
         if (row < depth)
         {
-            bottom_buffer[HORZ_IDX(row)] = array[THARR2D(0, (y_min + 1) + y_extra - 1 + 1, x_extra)];
+            bottom_buffer[HORZ_IDX(row)] = array[THARR2D(0, (y_min + 1) + y_extra - 1 + row + 1, x_extra)];
         }
     }
 }
@@ -163,11 +163,10 @@ double* bottom_buffer,
 const int depth)
 {
     int x_extra = type.x_extra;
-    int y_extra = type.y_extra;
 
     __kernel_indexes;
 
-    if (column >= (x_min + 1) - depth && column <= (x_max + 1) + y_extra + depth)
+    if (column >= (x_min + 1) - depth && column <= (x_max + 1) + x_extra + depth)
     {
         if (row < depth)
         {
@@ -186,11 +185,10 @@ double* top_buffer,
 const int depth)
 {
     int x_extra = type.x_extra;
-    int y_extra = type.y_extra;
 
     __kernel_indexes;
 
-    if (column >= (x_min + 1) - depth && column <= (x_max + 1) + y_extra + depth)
+    if (column >= (x_min + 1) - depth && column <= (x_max + 1) + x_extra + depth)
     {
         if (row < depth)
         {
@@ -211,11 +209,11 @@ const int depth)
 
     __kernel_indexes;
 
-    if (column >= (x_min + 1) - depth && column <= (x_max + 1) + y_extra + depth)
+    if (column >= (x_min + 1) - depth && column <= (x_max + 1) + x_extra + depth)
     {
         if (row < depth)
         {
-            array[THARR2D(0, (y_max + 1) + y_extra + 1, x_extra)] = top_buffer[HORZ_IDX(row)];
+            array[THARR2D(0, (y_max + 1) + y_extra + row + 1, x_extra)] = top_buffer[HORZ_IDX(row)];
         }
     }
 }

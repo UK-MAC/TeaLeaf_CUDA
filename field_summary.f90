@@ -119,7 +119,6 @@ SUBROUTINE field_summary()
 !$    IF(OMP_GET_THREAD_NUM().EQ.0) THEN
         IF(test_problem.EQ.1) THEN
           qa_diff=ABS((100.0_8*(temp/126.762419408430_8))-100.0_8)
-          qa_diff=ABS((100.0_8*(temp/0.1127430E+03))-100.0_8)
           WRITE(*,*)"Test problem 1 is within",qa_diff,"% of the expected solution"
           WRITE(g_out,*)"Test problem 1 is within",qa_diff,"% of the expected solution"
           IF(qa_diff.LT.0.001) THEN

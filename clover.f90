@@ -664,12 +664,12 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
     ELSEIF(use_cuda_kernels)THEN
       CALL pack_top_bottom_buffers_cuda(chunks(chunk)%field%x_min,chunks(chunk)%field%x_max, &
                                        chunks(chunk)%field%y_min,chunks(chunk)%field%y_max, &
-                                       chunks(chunk)%chunk_neighbours(chunk_left),          &
-                                       chunks(chunk)%chunk_neighbours(chunk_right),         &
+                                       chunks(chunk)%chunk_neighbours(chunk_bottom),          &
+                                       chunks(chunk)%chunk_neighbours(chunk_top),         &
                                        external_face,                                       &
                                        x_inc,y_inc,depth,                                   &
                                        which_field,                                         &
-                                       field,left_snd_buffer,right_snd_buffer)
+                                       field,bottom_snd_buffer,top_snd_buffer)
     ELSEIF(use_C_kernels)THEN
       CALL pack_top_bottom_buffers_c(chunks(chunk)%field%x_min,chunks(chunk)%field%x_max, &
                                      chunks(chunk)%field%y_min,chunks(chunk)%field%y_max, &
@@ -702,6 +702,7 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
       sender=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
       CALL MPI_IRECV(top_rcv_buffer,size,MPI_DOUBLE_PRECISION,sender,tag, &
                      MPI_COMM_WORLD,request(message_count+2),err)
+
       message_count=message_count+2
     ENDIF
 
@@ -723,12 +724,12 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
     ELSEIF(use_cuda_kernels)THEN
       CALL unpack_top_bottom_buffers_cuda(chunks(chunk)%field%x_min,chunks(chunk)%field%x_max, &
                                        chunks(chunk)%field%y_min,chunks(chunk)%field%y_max, &
-                                       chunks(chunk)%chunk_neighbours(chunk_left),          &
-                                       chunks(chunk)%chunk_neighbours(chunk_right),         &
+                                       chunks(chunk)%chunk_neighbours(chunk_bottom),          &
+                                       chunks(chunk)%chunk_neighbours(chunk_top),         &
                                        external_face,                                       &
                                        x_inc,y_inc,depth,                                   &
                                        which_field,                                         &
-                                       field,left_snd_buffer,right_snd_buffer)
+                                       field,bottom_rcv_buffer,top_rcv_buffer)
     ELSEIF(use_C_kernels)THEN
       CALL unpack_top_bottom_buffers_c(chunks(chunk)%field%x_min,chunks(chunk)%field%x_max, &
                                        chunks(chunk)%field%y_min,chunks(chunk)%field%y_max, &
