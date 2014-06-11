@@ -78,7 +78,7 @@ SUBROUTINE tea_leaf()
   LOGICAL :: ch_switch_check
 
   INTEGER :: cg_calc_steps
-  REAL(KIND=8) :: cg_time, ch_time
+  REAL(KIND=8) :: cg_time, ch_time, solve_timer
   cg_time = 0.0_8
   ch_time = 0.0_8
   cg_calc_steps = 0
@@ -239,7 +239,7 @@ SUBROUTINE tea_leaf()
 
       DO n=1,max_iters
 
-        if (profiler_on) kernel_time=timer()
+        if (profiler_on) solve_timer=timer()
 
         IF (tl_ch_cg_errswitch) then
             ! either the error has got below tolerance, or it's already going
@@ -543,9 +543,9 @@ SUBROUTINE tea_leaf()
 
         if (profiler_on) then
           IF (tl_use_chebyshev .and. ch_switch_check) then
-              ch_time=ch_time+(timer()-kernel_time)
+              ch_time=ch_time+(timer()-solve_timer)
           else
-              cg_time=cg_time+(timer()-kernel_time)
+              cg_time=cg_time+(timer()-solve_timer)
           endif
         endif
 
