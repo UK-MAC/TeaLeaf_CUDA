@@ -115,6 +115,9 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     int num_devices;
     cudaGetDeviceCount(&num_devices);
 
+    fprintf(stdout, "%d devices available in rank %d - would use %d - adding %d - choosing %d\n",
+            num_devices, rank, device_id, rank%num_devices, device_id + rank % num_devices);
+    fflush(stdout);
     device_id += rank % num_devices;
 
     int err = cudaSetDevice(device_id);
