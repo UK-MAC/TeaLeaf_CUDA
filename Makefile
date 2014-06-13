@@ -124,7 +124,7 @@ NV_ARCH=FERMI
 CODE_GEN_FERMI=-gencode arch=compute_20,code=sm_21
 CODE_GEN_KEPLER=-gencode arch=compute_35,code=sm_35
 
-LDLIBS+=-lstdc++ -lcudart $(LAPACK)
+LDLIBS+=-lstdc++ -lcudart
 
 FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS)
 CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c
