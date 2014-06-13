@@ -20,7 +20,7 @@
   end_step=100
 
   cuda_device=0
-  use_cuda_kernels
+  !use_cuda_kernels
 
   tl_max_iters=2000
   test_problem 1
