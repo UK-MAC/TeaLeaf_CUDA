@@ -583,9 +583,9 @@ SUBROUTINE tea_leaf()
   ENDDO
   IF(profiler_on) profiler%tea=profiler%tea+(timer()-kernel_time)
 
-  call clover_sum(ch_time)
-  call clover_sum(cg_time)
   IF (profiler_on .and. parallel%boss .and. tl_use_chebyshev) THEN
+    call clover_sum(ch_time)
+    call clover_sum(cg_time)
     write(0, "(a3, a16, a7, a16, a7)") "", "Time", "Steps", "Per it", "Ratio"
     write(0, "(a3, f16.10, i7, f16.10, f7.2)") "CG", cg_time + 0.0_8, cg_calc_steps, &
         merge(cg_time/cg_calc_steps, 0.0_8, cg_calc_steps .gt. 0), 1.0_8
