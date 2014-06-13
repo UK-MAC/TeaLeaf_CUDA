@@ -60,7 +60,7 @@ SUBROUTINE tea_leaf()
 
 !$ INTEGER :: OMP_GET_THREAD_NUM
   INTEGER :: c, n
-  REAL(KIND=8) :: ry,rx, error, old_error
+  REAL(KIND=8) :: ry,rx, error
 
   INTEGER :: fields(NUM_FIELDS)
 
@@ -74,7 +74,7 @@ SUBROUTINE tea_leaf()
   REAL(KIND=8), DIMENSION(max_iters) :: ch_alphas, ch_betas
   REAL(KIND=8) :: eigmin, eigmax, theta
   REAL(KIND=8) :: it_alpha, cn, gamm, bb
-  INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters, info
+  INTEGER :: est_itc, cheby_calc_steps, max_cheby_iters, info, switch_step
   LOGICAL :: ch_switch_check
 
   INTEGER :: cg_calc_steps
@@ -93,9 +93,6 @@ SUBROUTINE tea_leaf()
   DO c=1,number_of_chunks
 
     IF(chunks(c)%task.EQ.parallel%task) THEN
-
-      ! set old error to 0 initially
-      old_error = 0.0
 
       fields=0
       fields(FIELD_ENERGY1) = 1
@@ -222,16 +219,9 @@ SUBROUTINE tea_leaf()
           ! do something like this or copy the functions but remove the Mi
           ! and z arrays (messy). This does mean extra memory bandwidth will
           ! be used, but it's not too much of an issue
-
-          !call tea_leaf_kernel_cheby_reset_Mi(chunks(c)%field%x_min,&
-          !  chunks(c)%field%x_max,                       &
-          !  chunks(c)%field%y_min,                       &
-          !  chunks(c)%field%y_max,                       &
-          !  chunks(c)%field%work_array1,                &
-          !  chunks(c)%field%work_array2,                &
-          !  chunks(c)%field%work_array3,                &
-          !  chunks(c)%field%work_array5,                &
-          !  rro)
+          !
+          ! Need to turn preconditioner on/off from tea.in, but will probably
+          ! require adding  an extra set of functions (copy pasted)
         elseif(use_cuda_kernels) then
           call tea_leaf_kernel_cheby_copy_u_cuda()
         endif
@@ -239,7 +229,7 @@ SUBROUTINE tea_leaf()
 
       DO n=1,max_iters
 
-        if (profiler_on) solve_timer=timer()
+        if (profile_solver) solve_timer=timer()
 
         IF (tl_ch_cg_errswitch) then
             ! either the error has got below tolerance, or it's already going
@@ -355,16 +345,17 @@ SUBROUTINE tea_leaf()
             if (parallel%boss) then
               write(g_out,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
               write(g_out,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
-              write(g_out,'(2f11.4,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
+              write(g_out,'(2f11.8,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
               write(0,'(a,i3,a,e15.7)') "Switching after ",n," steps, error ",rro
               write(0,'(5a11)')"eigmin", "eigmax", "cn", "error", "est itc"
-              write(0,'(2f11.4,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
+              write(0,'(2f11.8,2e11.4,11i11)')eigmin, eigmax, cn, error, est_itc
             endif
 
             if (info .ne. 0) then
               CALL report_error('tea_leaf', 'Error in calculating eigenvalues')
             endif
 
+            switch_step = n
             cheby_calc_steps = 2
           else
             IF(use_fortran_kernels) THEN
@@ -388,12 +379,12 @@ SUBROUTINE tea_leaf()
                   rx, ry, cheby_calc_steps)
             ENDIF
 
-            ! this reduces number of reductions done
-            ! should speed it up in most situations
-            !if ((n .ge. est_itc) .and. (mod(n, 10) .eq. 0)) then
-
             ! after estimated number of iterations has passed, calc resid
-            if (n .ge. est_itc) then
+            ! Leaving 10 iterations between each global reduction won't affect
+            ! total time spent much if at all (number of steps spent in
+            ! chebyshev is typically O(300+)) but will greatyl reduce global
+            ! synchronisations needed
+            if ((n-switch_step .ge. est_itc) .and. (mod(n, 10) .eq. 0)) then
               IF(use_fortran_kernels) THEN
                 call tea_leaf_calc_2norm_kernel(chunks(c)%field%x_min,        &
                       chunks(c)%field%x_max,                       &
@@ -541,7 +532,7 @@ SUBROUTINE tea_leaf()
         ! updates u and possibly p
         CALL update_halo(fields,1)
 
-        if (profiler_on) then
+        if (profile_solver) then
           IF (tl_use_chebyshev .and. ch_switch_check) then
               ch_time=ch_time+(timer()-solve_timer)
           else
@@ -550,10 +541,6 @@ SUBROUTINE tea_leaf()
         endif
 
         IF (abs(error) .LT. eps) EXIT
-
-        ! if the error isn't getting any better, then exit - no point in going further
-        !IF (abs(error - old_error) .LT. eps .or. (error .eq. old_error)) EXIT
-        old_error = error
 
       ENDDO
 
@@ -594,11 +581,13 @@ SUBROUTINE tea_leaf()
     ENDIF
 
   ENDDO
-  IF(profiler_on) profiler%tea=profiler%tea+(timer()-kernel_time)
+  IF(profile_solver) profiler%tea=profiler%tea+(timer()-kernel_time)
 
-  call clover_sum(ch_time)
-  call clover_sum(cg_time)
-  IF (profiler_on .and. parallel%boss .and. tl_use_chebyshev) THEN
+  IF (profile_solver .and. tl_use_chebyshev) THEN
+    call clover_sum(ch_time)
+    call clover_sum(cg_time)
+  endif
+  IF (profile_solver .and. parallel%boss .and. tl_use_chebyshev) THEN
     write(0, "(a3, a16, a7, a16, a7)") "", "Time", "Steps", "Per it", "Ratio"
     write(0, "(a3, f16.10, i7, f16.10, f7.2)") "CG", cg_time + 0.0_8, cg_calc_steps, &
         merge(cg_time/cg_calc_steps, 0.0_8, cg_calc_steps .gt. 0), 1.0_8

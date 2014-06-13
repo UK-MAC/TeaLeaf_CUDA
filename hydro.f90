@@ -202,6 +202,9 @@ SUBROUTINE hydro
 
      END IF
 
+    call flush(g_out)
+    call flush(0)
+
   END DO
 
 END SUBROUTINE hydro

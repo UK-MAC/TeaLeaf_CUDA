@@ -63,9 +63,6 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     // FIXME (and opencl really)
     // make a better platform agnostic way of selecting devices
 
-    // choose device 0 unless specified
-    cudaThreadExit();
-
     int rank;
 #if defined(MPI_HDR)
     clover_get_rank_(&rank);
@@ -112,9 +109,15 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
 
     fclose(input);
 
+#ifdef MANUALLY_CHOOSE_GPU
+    // choose device 0 unless specified
+    cudaThreadExit();
     int num_devices;
     cudaGetDeviceCount(&num_devices);
 
+    fprintf(stdout, "%d devices available in rank %d - would use %d - adding %d - choosing %d\n",
+            num_devices, rank, device_id, rank%num_devices, device_id + rank % num_devices);
+    fflush(stdout);
     device_id += rank % num_devices;
 
     int err = cudaSetDevice(device_id);
@@ -124,13 +127,15 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
         fprintf(stderr, "Setting device id to %d in rank %d failed with error code %d\n", device_id, rank, err);
         errorHandler(__LINE__, __FILE__);
     }
+#endif
 
     struct cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, device_id);
     std::cout << "CUDA using " << prop.name << std::endl;
 
     #define CUDA_ARRAY_ALLOC(arr, size)     \
-            assert(cudaMalloc((void**) &arr, size) == cudaSuccess);\
+            cudaMalloc((void**) &arr, size) == cudaSuccess;\
+            errorHandler(__LINE__, __FILE__);\
             cudaDeviceSynchronize();        \
             cudaMemset(arr, 0, size);       \
             cudaDeviceSynchronize();        \
