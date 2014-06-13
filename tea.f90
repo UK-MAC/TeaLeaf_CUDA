@@ -229,7 +229,7 @@ SUBROUTINE tea_leaf()
 
       DO n=1,max_iters
 
-        if (profiler_on) solve_timer=timer()
+        if (profile_solver) solve_timer=timer()
 
         IF (tl_ch_cg_errswitch) then
             ! either the error has got below tolerance, or it's already going
@@ -532,7 +532,7 @@ SUBROUTINE tea_leaf()
         ! updates u and possibly p
         CALL update_halo(fields,1)
 
-        if (profiler_on) then
+        if (profile_solver) then
           IF (tl_use_chebyshev .and. ch_switch_check) then
               ch_time=ch_time+(timer()-solve_timer)
           else
@@ -581,13 +581,13 @@ SUBROUTINE tea_leaf()
     ENDIF
 
   ENDDO
-  IF(profiler_on) profiler%tea=profiler%tea+(timer()-kernel_time)
+  IF(profile_solver) profiler%tea=profiler%tea+(timer()-kernel_time)
 
-  IF (profiler_on .and. tl_use_chebyshev) THEN
+  IF (profile_solver .and. tl_use_chebyshev) THEN
     call clover_sum(ch_time)
     call clover_sum(cg_time)
   endif
-  IF (profiler_on .and. parallel%boss .and. tl_use_chebyshev) THEN
+  IF (profile_solver .and. parallel%boss .and. tl_use_chebyshev) THEN
     write(0, "(a3, a16, a7, a16, a7)") "", "Time", "Steps", "Per it", "Ratio"
     write(0, "(a3, f16.10, i7, f16.10, f7.2)") "CG", cg_time + 0.0_8, cg_calc_steps, &
         merge(cg_time/cg_calc_steps, 0.0_8, cg_calc_steps .gt. 0), 1.0_8
