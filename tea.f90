@@ -78,10 +78,11 @@ SUBROUTINE tea_leaf()
   LOGICAL :: ch_switch_check
 
   INTEGER :: cg_calc_steps
-  REAL(KIND=8) :: cg_time, ch_time, solve_timer
+  REAL(KIND=8) :: cg_time, ch_time, solve_timer, total_solve_time, ch_per_it, cg_per_it
   cg_time = 0.0_8
   ch_time = 0.0_8
   cg_calc_steps = 0
+  total_solve_time = 0.0_8
 
   IF(coefficient .nE. RECIP_CONDUCTIVITY .and. coefficient .ne. conductivity) THEN
     CALL report_error('tea_leaf', 'unknown coefficient option')
@@ -538,6 +539,7 @@ SUBROUTINE tea_leaf()
           else
               cg_time=cg_time+(timer()-solve_timer)
           endif
+          total_solve_time = total_solve_time + (timer() - solve_timer)
         endif
 
         IF (abs(error) .LT. eps) EXIT
@@ -583,28 +585,36 @@ SUBROUTINE tea_leaf()
   ENDDO
   IF(profile_solver) profiler%tea=profiler%tea+(timer()-kernel_time)
 
+  IF (profile_solver .and. parallel%boss) then
+    write(0, "(a16, a7, a16)") "Time", "Steps", "Per it"
+    write(0, "(f16.10, i7, f16.10, f7.2)") total_solve_time, n, total_solve_time/n
+    write(g_out, "(a16, a7, a16)") "Time", "Steps", "Per it"
+    write(g_out, "(f16.10, i7, f16.10, f7.2)") total_solve_time, n, total_solve_time/n
+  endif
+
   IF (profile_solver .and. tl_use_chebyshev) THEN
     call clover_sum(ch_time)
     call clover_sum(cg_time)
-  endif
-  IF (profile_solver .and. parallel%boss .and. tl_use_chebyshev) THEN
-    write(0, "(a3, a16, a7, a16, a7)") "", "Time", "Steps", "Per it", "Ratio"
-    write(0, "(a3, f16.10, i7, f16.10, f7.2)") "CG", cg_time + 0.0_8, cg_calc_steps, &
-        merge(cg_time/cg_calc_steps, 0.0_8, cg_calc_steps .gt. 0), 1.0_8
-    write(0, "(a3, f16.10, i7, f16.10, f7.2)") "CH", ch_time + 0.0_8, cheby_calc_steps, &
-        merge(ch_time/cheby_calc_steps, 0.0_8, cheby_calc_steps .gt. 0), &
-        merge((ch_time/cheby_calc_steps)/(cg_time/cg_calc_steps), 0.0_8, cheby_calc_steps .gt. 0)
-    write(0, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
-        cheby_calc_steps, cheby_calc_steps-est_itc
+    if (parallel%boss) then
+      cg_per_it = merge((cg_time/cg_calc_steps)/parallel%max_task, 0.0_8, cg_calc_steps .gt. 0)
+      ch_per_it = merge((ch_time/cheby_calc_steps)/parallel%max_task, 0.0_8, cheby_calc_steps .gt. 0)
 
-    write(g_out, "(a3, a16, a7, a16, a7)") "", "Time", "Steps", "Per it", "Ratio"
-    write(g_out, "(a3, f16.10, i7, f16.10, f7.2)") "CG", cg_time + 0.0_8, cg_calc_steps, &
-        merge(cg_time/cg_calc_steps, 0.0_8, cg_calc_steps .gt. 0), 1.0_8
-    write(g_out, "(a3, f16.10, i7, f16.10, f7.2)") "CH", ch_time + 0.0_8, cheby_calc_steps, &
-        merge(ch_time/cheby_calc_steps, 0.0_8, cheby_calc_steps .gt. 0), &
-        merge((ch_time/cheby_calc_steps)/(cg_time/cg_calc_steps), 0.0_8, cheby_calc_steps .gt. 0)
-    write(g_out, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
-        cheby_calc_steps, cheby_calc_steps-est_itc
+      write(0, "(a3, a16, a7, a16, a7)") "", "Time", "Steps", "Per it", "Ratio"
+      write(0, "(a3, f16.10, i7, f16.10, f7.2)") &
+          "CG", cg_time + 0.0_8, cg_calc_steps, cg_per_it, 1.0_8
+      write(0, "(a3, f16.10, i7, f16.10, f7.2)") "CH", ch_time + 0.0_8, cheby_calc_steps, &
+          ch_per_it, merge(ch_per_it/cg_per_it, 0.0_8, cheby_calc_steps .gt. 0)
+      write(0, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
+          cheby_calc_steps, cheby_calc_steps-est_itc
+
+      write(g_out, "(a3, a16, a7, a16, a7)") "", "Time", "Steps", "Per it", "Ratio"
+      write(g_out, "(a3, f16.10, i7, f16.10, f7.2)") &
+          "CG", cg_time + 0.0_8, cg_calc_steps, cg_per_it, 1.0_8
+      write(g_out, "(a3, f16.10, i7, f16.10, f7.2)") "CH", ch_time + 0.0_8, cheby_calc_steps, &
+          ch_per_it, merge(ch_per_it/cg_per_it, 0.0_8, cheby_calc_steps .gt. 0)
+      write(g_out, "('Chebyshev actually took ', i6, ' (' i6, ' off guess)')") &
+          cheby_calc_steps, cheby_calc_steps-est_itc
+    endif
   endif
 
 END SUBROUTINE tea_leaf
