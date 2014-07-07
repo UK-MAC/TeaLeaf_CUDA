@@ -16,6 +16,11 @@ std::string matchParam
     /* read in line from file */
     while (NULL != fgets(name_buf, 100, input))
     {
+        /* ignore line */
+        if (NULL != strstr(name_buf, "!"))
+        {
+            continue;
+        }
         /* if it has the parameter name, its the line we want */
         if (NULL != strstr(name_buf, param_name))
         {

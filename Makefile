@@ -169,10 +169,10 @@ FORTRAN_FILES=\
 	pack_kernel.o \
 	data.o			\
 	definitions.o			\
-	tea.o			\
 	tea_leaf_jacobi.o			\
 	tea_leaf_cg.o			\
 	tea_leaf_cheby.o			\
+	tea.o			\
 	report.o			\
 	timer.o			\
 	parse.o			\
