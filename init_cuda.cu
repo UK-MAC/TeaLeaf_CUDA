@@ -106,6 +106,7 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     }
 
     int device_id = clover::preferredDevice(input);
+    device_id = device_id < 0 ? 0 : device_id;
 
     fclose(input);
 
