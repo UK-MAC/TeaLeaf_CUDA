@@ -86,7 +86,7 @@ __global__ void device_tea_leaf_jacobi_solve
             /(1.0 + (Kx[THARR2D(0, 0, 0)] + Kx[THARR2D(1, 0, 0)])*rx
                   + (Ky[THARR2D(0, 0, 0)] + Ky[THARR2D(0, 1, 0)])*ry);
         
-        error_local[lid] = u1[THARR2D(0, 0, 0)] - un[THARR2D(0, 0, 0)];
+        error_local[lid] = fabs(u1[THARR2D(0, 0, 0)] - un[THARR2D(0, 0, 0)]);
     }
 
     Reduce< double, BLOCK_SZ/2 >::run(error_local, error, max);

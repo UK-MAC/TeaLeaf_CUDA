@@ -244,7 +244,7 @@ void CloverleafCudaChunk::tea_leaf_init_jacobi
     calcrxry(dt, rx, ry);
 
     CUDALAUNCH(device_tea_leaf_jacobi_init, density1, energy1,
-        work_array_1, work_array_2, work_array_3, u, coefficient);
+        work_array_5, work_array_6, work_array_3, u, coefficient);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_jacobi
@@ -252,10 +252,10 @@ void CloverleafCudaChunk::tea_leaf_kernel_jacobi
 {
     CUDALAUNCH(device_tea_leaf_jacobi_copy_u, u, work_array_4);
 
-    CUDALAUNCH(device_tea_leaf_jacobi_solve, rx, ry, work_array_1, work_array_2,
+    CUDALAUNCH(device_tea_leaf_jacobi_solve, rx, ry, work_array_5, work_array_6,
         work_array_3, u, work_array_4, reduce_buf_1);
 
-    *error = thrust::reduce(reduce_ptr_1, reduce_ptr_1 + num_blocks, 0.0);
+    *error = *thrust::max_element(reduce_ptr_1, reduce_ptr_1 + num_blocks);
 }
 
 /********************/

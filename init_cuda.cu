@@ -236,6 +236,12 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     ADD_BUFFER_DBG_MAP(u);
     arr_names["p"] = work_array_1;
 
+    ADD_BUFFER_DBG_MAP(work_array_2);
+    ADD_BUFFER_DBG_MAP(work_array_3);
+    ADD_BUFFER_DBG_MAP(work_array_4);
+    ADD_BUFFER_DBG_MAP(work_array_5);
+    ADD_BUFFER_DBG_MAP(work_array_6);
+
     ADD_BUFFER_DBG_MAP(density0);
     ADD_BUFFER_DBG_MAP(density1);
     ADD_BUFFER_DBG_MAP(energy0);
