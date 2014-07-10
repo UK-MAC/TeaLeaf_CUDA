@@ -6,7 +6,7 @@
   state 5 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=10.0 ymin=7.0 ymax=8.0
 
   x_cells=1000
-  y_cells=500
+  y_cells=1000
 
   xmin=0.0
   ymin=0.0
@@ -17,7 +17,7 @@
   timestep_rise=1.5
   max_timestep=0.04
   end_time=5.0
-  end_step=100
+  end_step=10
 
   cuda_device=0
   use_cuda_kernels
@@ -27,7 +27,7 @@
   tl_eps=0.00000000001
 
   tl_use_cg
-  tl_use_chebyshev
+  !tl_use_chebyshev
 
   tl_ch_cg_errswitch
   tl_ch_cg_presteps=35
@@ -36,7 +36,7 @@
   hydro_off
   tea_leaf_on
 
-  !profiler_on
-  profile_solver
+  profiler_on
+  !profile_solver
 
 *endtea

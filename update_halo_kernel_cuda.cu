@@ -46,12 +46,34 @@ int depth)
     #define CHECK_LAUNCH(face, dir)                                     \
     if (EXTERNAL_FACE == chunk_neighbours[CHUNK_ ## face - 1])          \
     {                                                                   \
+        if (profiler_on)                                                \
+        {                                                               \
+            cudaEventCreate(&_t0);                                      \
+            cudaEventRecord(_t0);                                       \
+        }                                                               \
         const int launch_sz = (ceil((dir##_max+5+grid_type.dir##_extra) \
             /static_cast<float>(BLOCK_SZ))) * depth;                    \
-        CUDALAUNCH(device_update_halo_kernel_##face##_cuda,             \
-            grid_type, cur_array_d, depth);                             \
+        device_update_halo_kernel_##face##_cuda                         \
+        <<<launch_sz, BLOCK_SZ >>>                                      \
+            (x_min, x_max, y_min, y_max, grid_type, cur_array_d, depth);\
+        CUDA_ERR_CHECK;                                                 \
+        if (profiler_on)                                                \
+        {                                                               \
+            cudaEventCreate(&_t1);                                      \
+            cudaEventRecord(_t1);                                       \
+            cudaEventSynchronize(_t1);                                  \
+            cudaEventElapsedTime(&taken, _t0, _t1);                     \
+            std::string func_name("device_update_halo_kernel_"#face);   \
+            if (kernel_times.end() != kernel_times.find(func_name))     \
+            {                                                           \
+                kernel_times.at(func_name) += taken;                    \
+            }                                                           \
+            else                                                        \
+            {                                                           \
+                kernel_times[func_name] = taken;                        \
+            }                                                           \
+        }                                                               \
     }
-
     CHECK_LAUNCH(bottom, x);
     CHECK_LAUNCH(top, x);
     CHECK_LAUNCH(left, y);
