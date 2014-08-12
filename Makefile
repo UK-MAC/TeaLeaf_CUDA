@@ -120,7 +120,7 @@ endif
 
 # flags for nvcc
 # set NV_ARCH to select the correct one
-NV_ARCH=FERMI
+NV_ARCH=KEPLER
 CODE_GEN_FERMI=-gencode arch=compute_20,code=sm_21
 CODE_GEN_KEPLER=-gencode arch=compute_35,code=sm_35
 
