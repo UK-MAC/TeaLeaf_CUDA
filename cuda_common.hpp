@@ -186,6 +186,7 @@ private:
     double* work_array_4;
     double* work_array_5;
     double* work_array_6;
+    double* work_array_8;
 
     // buffers used in mpi transfers
     double * left_buffer;
