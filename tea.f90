@@ -284,7 +284,7 @@ SUBROUTINE tea_exchange(fields,depth)
                                          1, 2,                                               &
                                          request(message_count+1), request(message_count+2))
       message_count = message_count + 2
-  INTEGER      :: fields(num_fields),depth
+    ENDIF
 
     IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
       ! do right exchanges
@@ -304,8 +304,8 @@ SUBROUTINE tea_exchange(fields,depth)
       message_count = message_count + 2
     ENDIF
 
-  ! Assuming 1 patch per task, this will be changed
-  ! Also, not packing all fields for each communication, doing one at a time
+    !make a call to wait / sync
+    CALL MPI_WAITALL(message_count,request,status,err)
 
     !unpack in left direction
     IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
@@ -449,17 +449,17 @@ SUBROUTINE tea_pack_left(chunk, fields, depth, left_right_offset)
     ENDIF
   ENDIF
   IF(fields(FIELD_P).EQ.1) THEN
-                                 chunks(parallel%task+1)%left_snd_buffer,                      &
-                                 chunks(parallel%task+1)%left_rcv_buffer,                      &
-                                 chunks(parallel%task+1)%right_snd_buffer,                     &
-                                 chunks(parallel%task+1)%right_rcv_buffer,                     &
-                                 chunks(parallel%task+1)%bottom_snd_buffer,                    &
-                                 chunks(parallel%task+1)%bottom_rcv_buffer,                    &
-                                 chunks(parallel%task+1)%top_snd_buffer,                       &
-                                 chunks(parallel%task+1)%top_rcv_buffer,                       &
-                                 depth, &
-                                 0, 0, &
-                                 FIELD_P)
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_left(chunks(chunk)%field%x_min,                    &
+                                    chunks(chunk)%field%x_max,                    &
+                                    chunks(chunk)%field%y_min,                    &
+                                    chunks(chunk)%field%y_max,                    &
+                                    chunks(chunk)%field%vector_p,                  &
+                                    chunks(chunk)%left_snd_buffer,                &
+                                    CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                    depth, CELL_DATA,                             &
+                                    left_right_offset(FIELD_P))
+    ENDIF
   ENDIF
   IF(fields(FIELD_U).EQ.1) THEN
     IF(use_fortran_kernels) THEN
@@ -577,17 +577,17 @@ SUBROUTINE tea_unpack_left(fields, chunk, depth,                         &
     ENDIF
   ENDIF
   IF(fields(FIELD_U).EQ.1) THEN
-                                 chunks(parallel%task+1)%left_snd_buffer,                      &
-                                 chunks(parallel%task+1)%left_rcv_buffer,                      &
-                                 chunks(parallel%task+1)%right_snd_buffer,                     &
-                                 chunks(parallel%task+1)%right_rcv_buffer,                     &
-                                 chunks(parallel%task+1)%bottom_snd_buffer,                    &
-                                 chunks(parallel%task+1)%bottom_rcv_buffer,                    &
-                                 chunks(parallel%task+1)%top_snd_buffer,                       &
-                                 chunks(parallel%task+1)%top_rcv_buffer,                       &
-                                 depth, &
-                                 0, 0, &
-                                 FIELD_density1)
+    IF(use_fortran_kernels) THEN
+      CALL tea_unpack_message_left(chunks(chunk)%field%x_min,                    &
+                                      chunks(chunk)%field%x_max,                    &
+                                      chunks(chunk)%field%y_min,                    &
+                                      chunks(chunk)%field%y_max,                    &
+                                      chunks(chunk)%field%u,                  &
+                                      chunks(chunk)%left_rcv_buffer,                &
+                                      CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                      depth, CELL_DATA,                             &
+                                      left_right_offset(FIELD_U))
+    ENDIF
   ENDIF
   IF(fields(FIELD_SD).EQ.1) THEN
     IF(use_fortran_kernels) THEN
@@ -665,18 +665,18 @@ SUBROUTINE tea_pack_right(chunk, fields, depth, left_right_offset)
                                      left_right_offset(FIELD_P))
     ENDIF
   ENDIF
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%energy0,       &
-                                 chunks(parallel%task+1)%left_snd_buffer,                      &
-                                 chunks(parallel%task+1)%left_rcv_buffer,                      &
-                                 chunks(parallel%task+1)%right_snd_buffer,                     &
-                                 chunks(parallel%task+1)%right_rcv_buffer,                     &
-                                 chunks(parallel%task+1)%bottom_snd_buffer,                    &
-                                 chunks(parallel%task+1)%bottom_rcv_buffer,                    &
-                                 chunks(parallel%task+1)%top_snd_buffer,                       &
-                                 chunks(parallel%task+1)%top_rcv_buffer,                       &
-                                 depth, &
-                                 0, 0, &
-                                 FIELD_energy0)
+  IF(fields(FIELD_U).EQ.1) THEN
+    IF(use_fortran_kernels) THEN
+      CALL tea_pack_message_right(chunks(chunk)%field%x_min,                    &
+                                     chunks(chunk)%field%x_max,                    &
+                                     chunks(chunk)%field%y_min,                    &
+                                     chunks(chunk)%field%y_max,                    &
+                                     chunks(chunk)%field%u,                  &
+                                     chunks(chunk)%right_snd_buffer,               &
+                                     CELL_DATA,VERTEX_DATA,X_FACE_DATA,Y_FACE_DATA,&
+                                     depth, CELL_DATA,                             &
+                                     left_right_offset(FIELD_U))
+    ENDIF
   ENDIF
   IF(fields(FIELD_SD).EQ.1) THEN
     IF(use_fortran_kernels) THEN
