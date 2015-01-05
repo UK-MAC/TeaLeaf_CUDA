@@ -19,15 +19,13 @@
 !>  @author David Beckingsale, Wayne Gaudin
 !>  @details Invokes the mesh decomposer and sets up chunk connectivity. It then
 !>  allocates the communication buffers and call the chunk initialisation and
-!>  generation routines. It calls the equation of state to calculate initial
-!>  pressure before priming the halo cells and writing an initial field summary.
+!>  generation routines and primes the halo cells and writes an initial field summary.
 
 SUBROUTINE start
 
-  USE clover_module
+  USE tea_module
   USE parse_module
   USE update_halo_module
-  USE ideal_gas_module
 
   IMPLICIT NONE
 
@@ -41,18 +39,17 @@ SUBROUTINE start
   LOGICAL :: profiler_off
 
   IF(parallel%boss)THEN
-     WRITE(g_out,*) 'Setting up initial geometry'
-     WRITE(g_out,*)
+    WrITE(g_out,*) 'Setting up initial geometry'
+    WRITE(g_out,*)
   ENDIF
 
   time  = 0.0
   step  = 0
-  dtold = dtinit
   dt    = dtinit
 
-  CALL clover_barrier
+  CALL tea_barrier
 
-  CALL clover_get_num_chunks(number_of_chunks)
+  CALL tea_get_num_chunks(number_of_chunks)
 
   ALLOCATE(chunks(1:number_of_chunks))
   ALLOCATE(left(1:number_of_chunks))
@@ -60,12 +57,14 @@ SUBROUTINE start
   ALLOCATE(bottom(1:number_of_chunks))
   ALLOCATE(top(1:number_of_chunks))
 
-  CALL clover_decompose(grid%x_cells,grid%y_cells,left,right,bottom,top)
+  CALL tea_decompose(grid%x_cells,grid%y_cells,left,right,bottom,top)
 
-  DO c=1,number_of_chunks
+  DO c=1,chunks_per_task
       
     ! Needs changing so there can be more than 1 chunk per task
-    chunks(c)%task = c-1
+    chunks(c)%task = parallel%task
+
+    !chunk_task_responsible_for = parallel%task+1
 
     x_cells = right(c) -left(c)  +1
     y_cells = top(c)   -bottom(c)+1
@@ -88,20 +87,17 @@ SUBROUTINE start
 
   ENDDO
 
-  ! Makes it work in old versions of gfortran (???)
-  write(*,*)
-
   DEALLOCATE(left,right,bottom,top)
 
-  CALL clover_barrier
+  CALL tea_barrier
 
-  DO c=1,number_of_chunks
+  DO c=1,chunks_per_task
     IF(chunks(c)%task.EQ.parallel%task)THEN
-      CALL clover_allocate_buffers(c)
+      CALL tea_allocate_buffers(c)
     ENDIF
   ENDDO
 
-  DO c=1,number_of_chunks
+  DO c=1,chunks_per_task
     IF(chunks(c)%task.EQ.parallel%task)THEN
       CALL initialise_chunk(c)
     ENDIF
@@ -111,37 +107,24 @@ SUBROUTINE start
      WRITE(g_out,*) 'Generating chunks'
   ENDIF
 
-  DO c=1,number_of_chunks
+  DO c=1,chunks_per_task
     IF(chunks(c)%task.EQ.parallel%task)THEN
       CALL generate_chunk(c)
     ENDIF
   ENDDO
 
-  advect_x=.TRUE.
-
-  CALL clover_barrier
+  CALL tea_barrier
 
   ! Do no profile the start up costs otherwise the total times will not add up
   ! at the end
   profiler_off=profiler_on
   profiler_on=.FALSE.
 
-  DO c = 1, number_of_chunks
-    CALL ideal_gas(c,.FALSE.)
-  END DO
-
   ! Prime all halo data for the first step
   fields=0
-  fields(FIELD_DENSITY0)=1
+  fields(FIELD_DENSITY)=1
   fields(FIELD_ENERGY0)=1
-  fields(FIELD_PRESSURE)=1
-  fields(FIELD_VISCOSITY)=1
-  fields(FIELD_DENSITY1)=1
   fields(FIELD_ENERGY1)=1
-  fields(FIELD_XVEL0)=1
-  fields(FIELD_YVEL0)=1
-  fields(FIELD_XVEL1)=1
-  fields(FIELD_YVEL1)=1
 
   CALL update_halo(fields,2)
 
@@ -154,7 +137,7 @@ SUBROUTINE start
 
   IF(visit_frequency.NE.0) CALL visit()
 
-  CALL clover_barrier
+  CALL tea_barrier
 
   profiler_on=profiler_off
 

@@ -24,7 +24,7 @@
 
 SUBROUTINE initialise
 
-  USE clover_module
+  USE tea_module
   USE parse_module
   USE report_module
 
@@ -60,7 +60,7 @@ SUBROUTINE initialise
   ENDIF
 !$OMP END PARALLEL
 
-  CALL clover_barrier
+  CALL tea_barrier
 
   IF(parallel%boss)THEN
     WRITE(g_out,*) 'Tea will run from the following input:-'
@@ -87,12 +87,11 @@ SUBROUTINE initialise
       WRITE(out_unit,'(A)')'xmax=10.0'
       WRITE(out_unit,'(A)')'ymax=10.0'
       WRITE(out_unit,'(A)')'initial_timestep=0.004'
-      WRITE(out_unit,'(A)')'timestep_rise=1.5'
-      WRITE(out_unit,'(A)')'max_timestep=0.004'
-      WRITE(out_unit,'(A)')'end_time=1.0'
-      WRITE(out_unit,'(A)')'end_step=87'
-      WRITE(out_unit,'(A)')'tl_max_iters=10000'
+      WRITE(out_unit,'(A)')'end_step=10'
+      WRITE(out_unit,'(A)')'tl_max_iters=1000'
       WRITE(out_unit,'(A)')' test_problem 1'
+      WRITE(out_unit,'(A)')'tl_use_jacobi'
+      WRITE(out_unit,'(A)')'tl_eps=1.0e-15'
       WRITE(out_unit,'(A)')'*endtea'
       CLOSE(out_unit)
       uin=get_unit(dummy)
@@ -112,14 +111,14 @@ SUBROUTINE initialise
     CLOSE(out_unit)
   ENDIF
 
-  CALL clover_barrier
+  CALL tea_barrier
 
   g_in=get_unit(dummy)
   OPEN(FILE='tea.in.tmp',ACTION='READ',STATUS='OLD',UNIT=g_in,IOSTAT=ios)
 
   IF(ios.NE.0) CALL report_error('initialise','Error opening tea.in.tmp file')
 
-  CALL clover_barrier
+  CALL tea_barrier
 
   IF(parallel%boss)THEN
      REWIND(uin)
@@ -138,13 +137,13 @@ SUBROUTINE initialise
 
   CALL read_input()
 
-  CALL clover_barrier
+  CALL tea_barrier
 
   step=0
 
   CALL start
 
-  CALL clover_barrier
+  CALL tea_barrier
 
   IF(parallel%boss)THEN
      WRITE(g_out,*) 'Starting the calculation'

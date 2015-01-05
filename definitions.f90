@@ -33,9 +33,7 @@ MODULE definitions_module
       LOGICAL            :: defined
 
       REAL(KIND=8)       :: density          &
-                           ,energy           &
-                           ,xvel             &
-                           ,yvel
+                           ,energy
 
       INTEGER            :: geometry
 
@@ -61,21 +59,16 @@ MODULE definitions_module
 
    INTEGER      :: step
 
-   LOGICAL      :: advect_x
-
    INTEGER      :: error_condition
 
    INTEGER      :: test_problem
    LOGICAL      :: complete
 
    LOGICAL      :: use_fortran_kernels
-   LOGICAL      :: use_C_kernels
-   LOGICAL      :: use_OA_kernels
    LOGICAL      :: use_cuda_kernels
-   LOGICAL      :: use_Tealeaf
-   LOGICAL      :: use_Hydro
    LOGICAL      :: tl_use_chebyshev
    LOGICAL      :: tl_use_cg
+   LOGICAL      :: tl_use_ppcg
    LOGICAL      :: tl_use_jacobi
    INTEGER      :: max_iters
    REAL(KIND=8) :: eps
@@ -88,32 +81,24 @@ MODULE definitions_module
    REAL(KIND=8) :: tl_ch_cg_epslim
    ! number of steps of cg to run to before switching to ch if tl_ch_cg_errswitch not set
    INTEGER      :: tl_ch_cg_presteps
+   ! do b-Ax after finishing to make sure solver actually converged
+   LOGICAL      :: tl_check_result
+   ! number of inner steps in ppcg solver
+   INTEGER      :: tl_ppcg_inner_steps
+   ! preconditioner is on or not
+   LOGICAL      :: tl_preconditioner_on
 
    LOGICAL      :: use_vector_loops ! Some loops work better in serial depending on the hardware
 
    LOGICAL      :: profiler_on ! Internal code profiler to make comparisons across systems easier
 
-   ! Profile execution time per iteration of lienar solver.
-   ! Want to know the time taken per step, but turning profiling on
-   ! interferes with GPU based solvers as profiling requires
-   ! waiting for each kernel to finish execution
-   LOGICAL      :: profile_solver
-                                
-
    TYPE profiler_type
      REAL(KIND=8)       :: timestep        &
-                          ,acceleration    &
-                          ,PdV             &
-                          ,cell_advection  &
-                          ,mom_advection   &
-                          ,viscosity       &
-                          ,ideal_gas       &
                           ,visit           &
                           ,summary         &
-                          ,reset           &
-                          ,revert          &
-                          ,flux            &
-                          ,tea             &
+                          ,tea_init        &
+                          ,tea_solve       &
+                          ,tea_reset       &
                           ,set_field       &
                           ,halo_exchange
                      
@@ -124,21 +109,9 @@ MODULE definitions_module
 
    INTEGER      :: end_step
 
-   REAL(KIND=8) :: dtold          &
-                  ,dt             &
+   REAL(KIND=8) :: dt             &
                   ,time           &
-                  ,dtinit         &
-                  ,dtmin          &
-                  ,dtmax          &
-                  ,dtrise         &
-                  ,dtu_safe       &
-                  ,dtv_safe       &
-                  ,dtc_safe       &
-                  ,dtdiv_safe     &
-                  ,dtc            &
-                  ,dtu            &
-                  ,dtv            &
-                  ,dtdiv
+                  ,dtinit
 
    INTEGER      :: visit_frequency   &
                   ,summary_frequency
@@ -146,23 +119,17 @@ MODULE definitions_module
    INTEGER         :: jdt,kdt
 
    TYPE field_type
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: density0,density1
+     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: density
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: energy0,energy1
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: pressure
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: viscosity
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: soundspeed
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: xvel0,xvel1
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: yvel0,yvel1
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vol_flux_x,mass_flux_x
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vol_flux_y,mass_flux_y
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: u, u0
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: work_array1 !node_flux, stepbymass, volume_change, pre_vol
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: work_array2 !node_mass_post, post_vol
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: work_array3 !node_mass_pre,pre_mass
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: work_array4 !advec_vel, post_mass
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: work_array5 !mom_flux, advec_vol
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: work_array6 !pre_vol, post_ener
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: work_array7 !post_vol, ener_flux
+     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_p
+     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_r
+     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_Mi
+     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_w
+     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_z
+     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_Kx
+     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_Ky
+     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_sd
 
      INTEGER         :: left            &
                        ,right           &

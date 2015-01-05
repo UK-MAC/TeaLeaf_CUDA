@@ -1,4 +1,4 @@
-!cROWn Copyright 2014 AWE.
+!Crown Copyright 2014 AWE.
 !
 ! This file is part of TeaLeaf.
 !
@@ -53,33 +53,34 @@ SUBROUTINE tea_leaf_calc_2norm_kernel(x_min, &
 
 end SUBROUTINE tea_leaf_calc_2norm_kernel
 
-SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
+SUBROUTINE tea_leaf_kernel_cheby_init(x_min,  &
                            x_max,             &
                            y_min,             &
                            y_max,             &
-                           u,                &
+                           u,                 &
                            u0,                &
-                           p,                &
-                           r,            &
-                           Mi,            &
-                           w,     &
-                           z,            &
+                           p,                 &
+                           r,                 &
+                           Mi,                &
+                           w,                 &
+                           z,                 &
                            Kx,                &
-                           Ky,  &
-                           ch_alphas, &
-                           ch_betas, &
-                           max_cheby_iters, &
-                           rx, &
-                           ry, &
-                           theta, &
-                           error)
+                           Ky,                &
+                           ch_alphas,         &
+                           ch_betas,          &
+                           max_cheby_iters,   &
+                           rx,                &
+                           ry,                &
+                           theta,             &
+                           error,             &
+                           preconditioner_on)
   IMPLICIT NONE
 
+  LOGICAL :: preconditioner_on
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u0
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u, u0, p
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p, r, Mi, z
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r, Mi, z
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx, Ky
 
   INTEGER :: j,k, max_cheby_iters
@@ -87,6 +88,7 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
   REAL(KIND=8), DIMENSION(max_cheby_iters) :: ch_alphas, ch_betas
 
 !$OMP PARALLEL
+  IF (preconditioner_on) THEN
 !$OMP DO
     DO k=y_min,y_max
         DO j=x_min,x_max
@@ -96,11 +98,27 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
                 - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
                 - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
             r(j, k) = u0(j, k) - w(j, k)
-            !z(j, k) = Mi(j, k)*r(j, k)
-          p(j, k) = (Mi(j, k)*r(j, k))/theta
+
+            p(j, k) = (Mi(j, k)*r(j, k))/theta
         ENDDO
     ENDDO
 !$OMP END DO
+  ELSE
+!$OMP DO
+    DO k=y_min,y_max
+        DO j=x_min,x_max
+            w(j, k) = (1.0_8                                      &
+                + ry*(Ky(j, k+1) + Ky(j, k))                      &
+                + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
+                - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
+                - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
+            r(j, k) = u0(j, k) - w(j, k)
+
+            p(j, k) = r(j, k)/theta
+        ENDDO
+    ENDDO
+!$OMP END DO
+  ENDIF
 !$OMP DO
   DO k=y_min,y_max
       DO j=x_min,x_max
@@ -112,33 +130,34 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,             &
 
 END SUBROUTINE
 
-SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
-                           x_max,             &
-                           y_min,             &
-                           y_max,             &
-                           u,                &
-                           u0,                &
-                           p,                &
-                           r,            &
-                           Mi,            &
-                           w,     &
-                           z,            &
-                           Kx,                &
-                           Ky,  &
-                           ch_alphas, &
-                           ch_betas, &
-                           max_cheby_iters, &
-                           rx, &
-                           ry, &
-                           step)
+SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min, &
+                           x_max,               &
+                           y_min,               &
+                           y_max,               &
+                           u,                   &
+                           u0,                  &
+                           p,                   &
+                           r,                   &
+                           Mi,                  &
+                           w                ,   &
+                           z,                   &
+                           Kx,                  &
+                           Ky,                  &
+                           ch_alphas,           &
+                           ch_betas,            &
+                           max_cheby_iters,     &
+                           rx,                  &
+                           ry,                  &
+                           step,                &
+                           preconditioner_on)
 
   IMPLICIT NONE
 
+  LOGICAL :: preconditioner_on
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u0
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u, u0, p
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p, r, Mi, z
+  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r, Mi, z
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx, Ky
 
   INTEGER :: j,k
@@ -149,6 +168,7 @@ SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
     REAL(KIND=8), DIMENSION(max_cheby_iters) :: ch_alphas, ch_betas
 
 !$OMP PARALLEL
+  IF (preconditioner_on) THEN
 !$OMP DO
     DO k=y_min,y_max
         DO j=x_min,x_max
@@ -158,11 +178,25 @@ SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
                 - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
                 - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
             r(j, k) = u0(j, k) - w(j, k)
-            !z(j, k) = Mi(j, k)*r(j, k)
             p(j, k) = ch_alphas(step)*p(j, k) + ch_betas(step)*Mi(j, k)*r(j, k)
         ENDDO
     ENDDO
 !$OMP END DO
+  ELSE
+!$OMP DO
+    DO k=y_min,y_max
+        DO j=x_min,x_max
+            w(j, k) = (1.0_8                                      &
+                + ry*(Ky(j, k+1) + Ky(j, k))                      &
+                + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
+                - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
+                - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
+            r(j, k) = u0(j, k) - w(j, k)
+            p(j, k) = ch_alphas(step)*p(j, k) + ch_betas(step)*r(j, k)
+        ENDDO
+    ENDDO
+!$OMP END DO
+  ENDIF
 !$OMP DO
     DO k=y_min,y_max
         DO j=x_min,x_max
@@ -174,7 +208,7 @@ SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min,             &
 
 END SUBROUTINE tea_leaf_kernel_cheby_iterate
 
-SUBROUTINE tea_leaf_kernel_cheby_copy_u(x_min,             &
+SUBROUTINE tea_leaf_kernel_cheby_copy_u(x_min,&
                            x_max,             &
                            y_min,             &
                            y_max,             &
@@ -197,45 +231,6 @@ SUBROUTINE tea_leaf_kernel_cheby_copy_u(x_min,             &
 
 end SUBROUTINE
 
-SUBROUTINE tea_leaf_kernel_cheby_reset_Mi(x_min,             &
-                           x_max,             &
-                           y_min,             &
-                           y_max,             &
-                           p,           & ! 1
-                           r,           & ! 2
-                           Mi,          & ! 3
-                           z,           & ! 5
-                           rro)
-
-  IMPLICIT NONE
-
-  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Mi
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
-
-  INTEGER(KIND=4) :: j,k
-
-  REAL(kind=8) :: rro
-
-!$OMP PARALLEL
-!$OMP DO REDUCTION(+:rro)
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            Mi(j, k) = 1.0_8
-
-            z(j, k) = r(j, k)
-            p(j, k) = r(j, k)
-
-            rro = rro + r(j, k)*r(j, k);
-        ENDDO
-    ENDDO
-!$OMP END DO
-!$OMP END PARALLEL
-
-end SUBROUTINE
-
 SUBROUTINE tqli(d,e,n, info)
     ! http://physics.sharif.edu/~jafari/fortran-codes/lanczos/tqli.f90
     IMPLICIT NONE
@@ -244,52 +239,52 @@ SUBROUTINE tqli(d,e,n, info)
     REAL(KIND=8) :: b,c,dd,f,g,p,r,s
     e(:)=eoshift(e(:),1)
     info = 0
-    do l=1,n
-        iter=0
-        iterate: do
-            do m=l,n-1
-                dd=abs(d(m))+abs(d(m+1))
-                if (abs(e(m))+dd == dd) exit
-            end do
-            if (m == l) exit iterate
-            if (iter == 30) then
-                info=1
-                return
-            endif
-            iter=iter+1
-            g=(d(l+1)-d(l))/(2.0_8*e(l))
-            r=hypot(g,1.0_8)
-            g=d(m)-d(l)+e(l)/(g+sign(r,g))
-            s=1.0_8
-            c=1.0_8
-            p=0.0_8
-            do i=m-1,l,-1
-                f=s*e(i)
-                b=c*e(i)
-                r=hypot(f,g)
-                e(i+1)=r
-                if (r == 0.0_8) then
-                    d(i+1)=d(i+1)-p
-                    e(m)=0.0_8
-                    cycle iterate
-                end if
-                s=f/r
-                c=g/r
-                g=d(i+1)-p
-                r=(d(i)-g)*s+2.0_8*c*b
-                p=s*r
-                d(i+1)=g+p
-                g=c*r-b
-            end do
-            d(l)=d(l)-p
-            e(l)=g
+    DO l=1,n
+      iter=0
+      iterate: DO
+        DO m=l,n-1
+          dd=ABS(d(m))+ABS(d(m+1))
+          IF (ABS(e(m))+dd == dd) EXIT
+        ENDDO
+        IF (m == l) EXIT iterate
+        IF (iter == 30) THEN
+          info=1
+          RETURN
+        ENDIF
+        iter=iter+1
+        g=(d(l+1)-d(l))/(2.0_8*e(l))
+        r=SQRT(g**2.0_8+1.0_8**2.0_8)
+        g=d(m)-d(l)+e(l)/(g+SIGN(r,g))
+        s=1.0_8
+        c=1.0_8
+        p=0.0_8
+        DO i=m-1,l,-1
+          f=s*e(i)
+          b=c*e(i)
+          r=SQRT(f**2.0_8+g**2.0_8)
+          e(i+1)=r
+          IF (r == 0.0_8) THEN
+            d(i+1)=d(i+1)-p
             e(m)=0.0_8
-        end do iterate
-    end do
+            CYCLE iterate
+          ENDIF
+          s=f/r
+          c=g/r
+          g=d(i+1)-p
+          r=(d(i)-g)*s+2.0_8*c*b
+          p=s*r
+          d(i+1)=g+p
+          g=c*r-b
+        ENDDO
+        d(l)=d(l)-p
+        e(l)=g
+        e(m)=0.0_8
+      END DO iterate
+    END DO
 END SUBROUTINE tqli
 
 SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
-    max_iters, tl_ch_cg_presteps, info)
+                                max_iters, tl_ch_cg_presteps, info)
 
   INTEGER :: tl_ch_cg_presteps, max_iters
   REAL(KIND=8), DIMENSION(max_iters) :: cg_alphas, cg_betas
@@ -302,11 +297,11 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
   diag = 0
   offdiag = 0
 
-  do n=1,tl_ch_cg_presteps
+  DO n=1,tl_ch_cg_presteps
     diag(n) = 1.0_8/cg_alphas(n)
-    if (n .gt. 1) diag(n) = diag(n) + cg_betas(n-1)/cg_alphas(n-1)
-    if (n .lt. tl_ch_cg_presteps) offdiag(n+1) = sqrt(cg_betas(n))/cg_alphas(n)
-  enddo
+    IF (n .GT. 1) diag(n) = diag(n) + cg_betas(n-1)/cg_alphas(n-1)
+    IF (n .LT. tl_ch_cg_presteps) offdiag(n+1) = SQRT(cg_betas(n))/cg_alphas(n)
+  ENDDO
 
   CALL tqli(diag, offdiag, tl_ch_cg_presteps, info)
 
@@ -314,26 +309,26 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
   !offdiag(:)=eoshift(offdiag(:),1)
   !CALL dsterf(tl_ch_cg_presteps, diag, offdiag, info)
 
-  if (info .ne. 0) return
+  IF (info .NE. 0) RETURN
 
   ! bubble sort eigenvalues
-  do
-    do n=1,tl_ch_cg_presteps-1
-      if (diag(n) .ge. diag(n+1)) then
+  DO
+    DO n=1,tl_ch_cg_presteps-1
+      IF (diag(n) .GE. diag(n+1)) THEN
         tmp = diag(n)
         diag(n) = diag(n+1)
         diag(n+1) = tmp
-        swapped = .true.
-      endif
-    enddo
-    if (.not. swapped) exit
-    swapped = .false.
-  enddo
+        swapped = .TRUE.
+      ENDIF
+    ENDDO
+    IF (.NOT. swapped) EXIT
+    swapped = .FALSE.
+  ENDDO
 
   eigmin = diag(1)
   eigmax = diag(tl_ch_cg_presteps)
 
-  if (eigmin .lt. 0.0_8 .or. eigmax .lt. 0.0_8) info = 1
+  IF (eigmin .LT. 0.0_8 .OR. eigmax .LT. 0.0_8) info = 1
 
 END SUBROUTINE tea_calc_eigenvalues
 
@@ -352,7 +347,7 @@ SUBROUTINE tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
 
   rho_old = 1.0_8/sigma
 
-  do n=1,max_cheby_iters
+  DO n=1,max_cheby_iters
     rho_new = 1.0_8/(2.0_8*sigma - rho_old)
     cur_alpha = rho_new*rho_old
     cur_beta = 2.0_8*rho_new/delta
@@ -361,9 +356,9 @@ SUBROUTINE tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
     ch_betas(n) = cur_beta
 
     rho_old = rho_new
-  enddo
+  ENDDO
 
 END SUBROUTINE tea_calc_ch_coefs
 
-end module
+END MODULE
 

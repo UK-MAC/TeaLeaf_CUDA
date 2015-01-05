@@ -25,27 +25,29 @@ IMPLICIT NONE
 
 CONTAINS
 
-SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
-                           x_max,             &
-                           y_min,             &
-                           y_max,             &
-                           density,           &
-                           energy,            &
-                           u,                 &
-                           p,           & ! 1
-                           r,           & ! 2
-                           Mi,          & ! 3
-                           w,           & ! 4
-                           z,           & ! 5
-                           Kx,          & ! 6
-                           Ky,          & ! 7
-                           rx,          &
-                           ry,          &
-                           rro,         &
-                           coef)
+SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,  &
+                           x_max,                  &
+                           y_min,                  &
+                           y_max,                  &
+                           density,                &
+                           energy,                 &
+                           u,                      &
+                           p,                      &
+                           r,                      &
+                           Mi,                     &
+                           w,                      &
+                           z,                      &
+                           Kx,                     &
+                           Ky,                     &
+                           rx,                     &
+                           ry,                     &
+                           rro,                    &
+                           coef,                   &
+                           preconditioner_on)
 
   IMPLICIT NONE
 
+  LOGICAL :: preconditioner_on
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: density
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: energy
@@ -108,7 +110,7 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
    ENDDO
 !$OMP END DO
 
-!$OMP DO REDUCTION(+:rro)
+!$OMP DO
     DO k=y_min,y_max
         DO j=x_min,x_max
             w(j, k) = (1.0_8                                      &
@@ -118,7 +120,14 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
                 - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
 
             r(j, k) = u(j, k) - w(j, k)
+        ENDDO
+    ENDDO
+!$OMP END DO
 
+  IF (preconditioner_on) then
+!$OMP DO REDUCTION(+:rro)
+    DO k=y_min,y_max
+        DO j=x_min,x_max
             ! inverse diagonal used as preconditioner
             Mi(j, k) = (1.0_8                                     &
                 + ry*(Ky(j, k+1) + Ky(j, k))                      &
@@ -128,25 +137,36 @@ SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,             &
             z(j, k) = Mi(j, k)*r(j, k)
             p(j, k) = z(j, k)
 
-            rro = rro + r(j, k)*z(j, k);
+            rro = rro + r(j, k)*p(j, k);
         ENDDO
     ENDDO
 !$OMP END DO
+  ELSE
+!$OMP DO REDUCTION(+:rro)
+    DO k=y_min,y_max
+        DO j=x_min,x_max
+            p(j, k) = r(j, k)
+
+            rro = rro + r(j, k)*p(j, k);
+        ENDDO
+    ENDDO
+!$OMP END DO
+  ENDIF
 !$OMP END PARALLEL
 
 END SUBROUTINE tea_leaf_kernel_init_cg_fortran
 
 SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w(x_min,             &
-                           x_max,             &
-                           y_min,             &
-                           y_max,             &
-                           p,            &
-                           w,     &
-                           Kx,  &
-                           Ky,            &
-                           rx, &
-                           ry, &
-                           pw)
+                                                   x_max,             &
+                                                   y_min,             &
+                                                   y_max,             &
+                                                   p,                 &
+                                                   w,                 &
+                                                   Kx,                &
+                                                   Ky,                &
+                                                   rx,                &
+                                                   ry,                &
+                                                   pw                 )
 
   IMPLICIT NONE
 
@@ -182,20 +202,22 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w(x_min,             &
 END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w
 
 SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
-                           x_max,             &
-                           y_min,             &
-                           y_max,             &
-                           u,                &
-                           p,            &
-                           r,            &
-                           Mi,                &
-                           w,     &
-                           z,     &
-                           alpha, &
-                           rrn)
+                                                    x_max,             &
+                                                    y_min,             &
+                                                    y_max,             &
+                                                    u,                 &
+                                                    p,                 &
+                                                    r,                 &
+                                                    Mi,                &
+                                                    w,                 &
+                                                    z,                 &
+                                                    alpha,             &
+                                                    rrn,               &
+                                                    preconditioner_on)
 
   IMPLICIT NONE
 
+  LOGICAL :: preconditioner_on
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
@@ -210,32 +232,45 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
     rrn = 0.0_08
 
 !$OMP PARALLEL
+  IF (preconditioner_on) THEN
 !$OMP DO REDUCTION(+:rrn)
     DO k=y_min,y_max
         DO j=x_min,x_max
             u(j, k) = u(j, k) + alpha*p(j, k)
             r(j, k) = r(j, k) - alpha*w(j, k)
             z(j, k) = Mi(j, k)*r(j, k)
-
             rrn = rrn + r(j, k)*z(j, k)
         ENDDO
     ENDDO
 !$OMP END DO
+  ELSE
+!$OMP DO REDUCTION(+:rrn)
+    DO k=y_min,y_max
+        DO j=x_min,x_max
+            u(j, k) = u(j, k) + alpha*p(j, k)
+            r(j, k) = r(j, k) - alpha*w(j, k)
+            rrn = rrn + r(j, k)*r(j, k)
+        ENDDO
+    ENDDO
+!$OMP END DO
+  ENDIF
 !$OMP END PARALLEL
 
 END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur
 
 SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
-                           x_max,             &
-                           y_min,             &
-                           y_max,             &
-                           p,            &
-                           r,            &
-                           z,     &
-                           beta)
+                                                   x_max,             &
+                                                   y_min,             &
+                                                   y_max,             &
+                                                   p,                 &
+                                                   r,                 &
+                                                   z,                 &
+                                                   beta,              &
+                                                   preconditioner_on)
 
   IMPLICIT NONE
 
+  LOGICAL :: preconditioner_on
   INTEGER(KIND=4):: x_min,x_max,y_min,y_max
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
@@ -247,6 +282,7 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
     REAL(kind=8) :: beta
 
 !$OMP PARALLEL
+  IF (preconditioner_on) THEN
 !$OMP DO
     DO k=y_min,y_max
         DO j=x_min,x_max
@@ -254,6 +290,15 @@ SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
         ENDDO
     ENDDO
 !$OMP END DO
+  ELSE
+!$OMP DO
+    DO k=y_min,y_max
+        DO j=x_min,x_max
+            p(j, k) = r(j, k) + beta*p(j, k)
+        ENDDO
+    ENDDO
+!$OMP END DO
+  ENDIF
 !$OMP END PARALLEL
 
 END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p
