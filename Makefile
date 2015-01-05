@@ -132,8 +132,6 @@ MPI_COMPILER=mpif90
 C_MPI_COMPILER=mpicc
 CXX_MPI_COMPILER=mpiCC
 
-CXXFLAGS+=$(CFLAGS)
-
 # requires CUDA_HOME to be set - not the same on all machines
 NV_FLAGS=-I$(CUDA_HOME)/include $(CODE_GEN_$(NV_ARCH)) -restrict -Xcompiler "$(CFLAGS_GNU)" -D MPI_HDR
 NV_FLAGS+=-DNO_ERR_CHK
@@ -144,35 +142,16 @@ else
 NV_FLAGS+=-O3
 endif
 
+CXXFLAGS+=$(CFLAGS)
+
 C_FILES=\
-	accelerate_kernel_c.o           \
-	pack_kernel_c.o \
-	PdV_kernel_c.o                  \
-	timer_c.o                  \
-	initialise_chunk_kernel_c.o                  \
-	calc_dt_kernel_c.o                  \
-	field_summary_kernel_c.o                  \
-	update_halo_kernel_c.o                  \
-	generate_chunk_kernel_c.o                  \
-	flux_calc_kernel_c.o            \
-	tea_leaf_kernel_c.o			\
-	revert_kernel_c.o               \
-	reset_field_kernel_c.o          \
-	set_field_kernel_c.o          \
-	ideal_gas_kernel_c.o            \
-	viscosity_kernel_c.o            \
-	advec_cell_kernel_c.o			\
-	advec_mom_kernel_c.o
+	timer_c.o
 
 FORTRAN_FILES=\
-	clover.o \
-	pack_kernel.o \
 	data.o			\
 	definitions.o			\
-	tea_leaf_jacobi.o			\
-	tea_leaf_cg.o			\
-	tea_leaf_cheby.o			\
-	tea.o			\
+	pack_kernel.o			\
+	tea.o				\
 	report.o			\
 	timer.o			\
 	parse.o			\
@@ -182,61 +161,36 @@ FORTRAN_FILES=\
 	build_field.o			\
 	update_halo_kernel.o		\
 	update_halo.o			\
-	ideal_gas_kernel.o		\
-	ideal_gas.o			\
 	start.o			\
 	generate_chunk_kernel.o	\
 	generate_chunk.o		\
 	initialise.o			\
 	field_summary_kernel.o	\
 	field_summary.o		\
-	viscosity_kernel.o		\
-	viscosity.o			\
-	calc_dt_kernel.o		\
 	calc_dt.o			\
 	timestep.o			\
-	accelerate_kernel.o		\
-	accelerate.o			\
-	revert_kernel.o		\
-	revert.o			\
-	PdV_kernel.o			\
-	PdV.o				\
-	flux_calc_kernel.o		\
-	flux_calc.o			\
-	advec_cell_kernel.o		\
-	advec_cell_driver.o		\
-	advec_mom_kernel.o		\
-	advec_mom_driver.o		\
-	advection.o			\
-	reset_field_kernel.o		\
-	set_field_kernel.o		\
-	reset_field.o			\
-	set_field.o			\
-	hydro.o			\
+	set_field_kernel.o            \
+	set_field.o                   \
+	tea_leaf_jacobi.o             \
+	tea_leaf_cg.o             	\
+	tea_leaf_cheby.o             	\
+	tea_leaf_ppcg.o             	\
+	tea_solve.o                   \
 	visit.o			\
-	tea_leaf.o
+	tea_leaf.o			\
+	diffuse.o
 
 CUDA_FILES= \
-	accelerate_kernel_cuda.o \
-	advec_cell_kernel_cuda.o \
-	advec_mom_kernel_cuda.o \
-	calc_dt_kernel_cuda.o \
 	cuda_errors.o \
 	cuda_strings.o \
 	field_summary_kernel_cuda.o \
-	flux_calc_kernel_cuda.o \
 	generate_chunk_kernel_cuda.o \
-	ideal_gas_kernel_cuda.o \
 	init_cuda.o \
 	initialise_chunk_kernel_cuda.o \
 	pack_kernel_cuda.o \
-	PdV_kernel_cuda.o \
-	reset_field_kernel_cuda.o \
-	revert_kernel_cuda.o \
 	set_field_kernel_cuda.o \
 	tea_leaf_kernel_cuda.o \
-	update_halo_kernel_cuda.o \
-	viscosity_kernel_cuda.o
+	update_halo_kernel_cuda.o
 
 tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES) $(CUDA_FILES)
 	$(MPI_COMPILER) $(FLAGS)	\
