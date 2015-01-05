@@ -176,7 +176,7 @@ void CloverleafCudaChunk::tea_leaf_init_cg
 
     calcrxry(dt, rx, ry);
 
-    CUDALAUNCH(device_tea_leaf_cg_init_u, density1, energy1, u,
+    CUDALAUNCH(device_tea_leaf_cg_init_u, density, energy1, u,
         work_array_1, work_array_2, work_array_3, coefficient);
 
     // init Kx, Ky
@@ -243,7 +243,7 @@ void CloverleafCudaChunk::tea_leaf_init_jacobi
 
     calcrxry(dt, rx, ry);
 
-    CUDALAUNCH(device_tea_leaf_jacobi_init, density1, energy1,
+    CUDALAUNCH(device_tea_leaf_jacobi_init, density, energy1,
         work_array_5, work_array_6, work_array_3, u, coefficient);
 }
 
@@ -271,6 +271,6 @@ extern "C" void tea_leaf_kernel_finalise_cuda_
 void CloverleafCudaChunk::tea_leaf_finalise
 (void)
 {
-    CUDALAUNCH(device_tea_leaf_finalise, density1, u, energy1);
+    CUDALAUNCH(device_tea_leaf_finalise, density, u, energy1);
 }
 

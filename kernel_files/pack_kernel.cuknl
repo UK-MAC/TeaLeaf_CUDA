@@ -38,6 +38,12 @@
 // for left/right
 #define VERT_IDX(add) ((add) + (row + depth - 1)*depth - 2)
 
+typedef void (*pack_func_t)(int x_min,int x_max,int y_min,int y_max,
+    cell_info_t type,
+    const double* array,
+          double* left_buffer,
+    const int depth);
+
 __global__ void device_packleftBuffer
 (int x_min,int x_max,int y_min,int y_max,
 cell_info_t type,

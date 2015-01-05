@@ -144,11 +144,9 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
 
     CUDA_ARRAY_ALLOC(volume, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(soundspeed, BUFSZ2D(0, 0));
-    CUDA_ARRAY_ALLOC(pressure, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(viscosity, BUFSZ2D(0, 0));
 
-    CUDA_ARRAY_ALLOC(density0, BUFSZ2D(0, 0));
-    CUDA_ARRAY_ALLOC(density1, BUFSZ2D(0, 0));
+    CUDA_ARRAY_ALLOC(density, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(energy0, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(energy1, BUFSZ2D(0, 0));
 
@@ -157,18 +155,8 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     CUDA_ARRAY_ALLOC(u0, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(z, BUFSZ2D(0, 0));
 
-    CUDA_ARRAY_ALLOC(xvel0, BUFSZ2D(1, 1));
-    CUDA_ARRAY_ALLOC(xvel1, BUFSZ2D(1, 1));
-    CUDA_ARRAY_ALLOC(yvel0, BUFSZ2D(1, 1));
-    CUDA_ARRAY_ALLOC(yvel1, BUFSZ2D(1, 1));
-
     CUDA_ARRAY_ALLOC(xarea, BUFSZ2D(1, 0));
-    CUDA_ARRAY_ALLOC(vol_flux_x, BUFSZ2D(1, 0));
-    CUDA_ARRAY_ALLOC(mass_flux_x, BUFSZ2D(1, 0));
-
     CUDA_ARRAY_ALLOC(yarea, BUFSZ2D(0, 1));
-    CUDA_ARRAY_ALLOC(vol_flux_y, BUFSZ2D(0, 1));
-    CUDA_ARRAY_ALLOC(mass_flux_y, BUFSZ2D(0, 1));
 
     CUDA_ARRAY_ALLOC(cellx, BUFSZX(0));
     CUDA_ARRAY_ALLOC(celldx, BUFSZX(0));
@@ -206,31 +194,15 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
 
     thr_cellx = thrust::device_ptr< double >(cellx);
     thr_celly = thrust::device_ptr< double >(celly);
-    thr_xvel0 = thrust::device_ptr< double >(xvel0);
-    thr_yvel0 = thrust::device_ptr< double >(yvel0);
-    thr_xvel1 = thrust::device_ptr< double >(xvel1);
-    thr_yvel1 = thrust::device_ptr< double >(yvel1);
-    thr_density0 = thrust::device_ptr< double >(density0);
+    thr_density = thrust::device_ptr< double >(density);
     thr_energy0 = thrust::device_ptr< double >(energy0);
-    thr_pressure = thrust::device_ptr< double >(pressure);
     thr_soundspeed = thrust::device_ptr< double >(soundspeed);
-
-    CUDA_ARRAY_ALLOC(dev_left_send_buffer, sizeof(double)*(y_max+5)*2);
-    CUDA_ARRAY_ALLOC(dev_right_send_buffer, sizeof(double)*(y_max+5)*2);
-    CUDA_ARRAY_ALLOC(dev_top_send_buffer, sizeof(double)*(x_max+5)*2);
-    CUDA_ARRAY_ALLOC(dev_bottom_send_buffer, sizeof(double)*(x_max+5)*2);
-
-    CUDA_ARRAY_ALLOC(dev_left_recv_buffer, sizeof(double)*(y_max+5)*2);
-    CUDA_ARRAY_ALLOC(dev_right_recv_buffer, sizeof(double)*(y_max+5)*2);
-    CUDA_ARRAY_ALLOC(dev_top_recv_buffer, sizeof(double)*(x_max+5)*2);
-    CUDA_ARRAY_ALLOC(dev_bottom_recv_buffer, sizeof(double)*(x_max+5)*2);
 
     #undef CUDA_ARRAY_ALLOC
 
 #define ADD_BUFFER_DBG_MAP(name) arr_names[#name] = name;
     ADD_BUFFER_DBG_MAP(volume);
     ADD_BUFFER_DBG_MAP(soundspeed);
-    ADD_BUFFER_DBG_MAP(pressure);
     ADD_BUFFER_DBG_MAP(viscosity);
 
     ADD_BUFFER_DBG_MAP(u);
@@ -242,20 +214,11 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     ADD_BUFFER_DBG_MAP(work_array_5);
     ADD_BUFFER_DBG_MAP(work_array_6);
 
-    ADD_BUFFER_DBG_MAP(density0);
-    ADD_BUFFER_DBG_MAP(density1);
+    ADD_BUFFER_DBG_MAP(density);
     ADD_BUFFER_DBG_MAP(energy0);
     ADD_BUFFER_DBG_MAP(energy1);
-    ADD_BUFFER_DBG_MAP(xvel0);
-    ADD_BUFFER_DBG_MAP(xvel1);
-    ADD_BUFFER_DBG_MAP(yvel0);
-    ADD_BUFFER_DBG_MAP(yvel1);
     ADD_BUFFER_DBG_MAP(xarea);
     ADD_BUFFER_DBG_MAP(yarea);
-    ADD_BUFFER_DBG_MAP(vol_flux_x);
-    ADD_BUFFER_DBG_MAP(vol_flux_y);
-    ADD_BUFFER_DBG_MAP(mass_flux_x);
-    ADD_BUFFER_DBG_MAP(mass_flux_y);
 
     ADD_BUFFER_DBG_MAP(cellx);
     ADD_BUFFER_DBG_MAP(celly);

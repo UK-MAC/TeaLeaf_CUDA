@@ -1,264 +1,184 @@
-/*Crown Copyright 2012 AWE.
- *
- * This file is part of CloverLeaf.
- *
- * CloverLeaf is free software: you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your option)
- * any later version.
- *
- * CloverLeaf is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * CloverLeaf. If not, see http://www.gnu.org/licenses/.
- */
-
-/*
- *  @brief CUDA mpi buffer transfer
- *  @author Michael Boulton
- *  @details Transfers the buffers required for the mpi halo exchange
- */
-
 #include "cuda_common.hpp"
-#include "kernel_files/pack_kernel.cuknl"
-
 #include <numeric>
 
-/**********************/
+#include "kernel_files/pack_kernel.cuknl"
 
-// define a generic interface for fortran
-#define C_PACK_INTERFACE(operation, dir)                            \
-extern "C" void operation##_##dir##_buffers_cuda_                   \
-(int *xmin, int *xmax, int *ymin, int *ymax,                        \
- int *chunk_1, int *chunk_2, int *external_face,                    \
- int *x_inc, int *y_inc, int *depth, int *which_field,              \
- double *field_ptr, double *buffer_1, double *buffer_2)             \
-{                                                                   \
-    cuda_chunk.operation##_##dir(*chunk_1, *chunk_2, *external_face,\
-                            *x_inc, *y_inc, *depth,                 \
-                            *which_field, buffer_1, buffer_2);      \
+extern "C" void cuda_pack_buffers_
+(int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int * depth,
+ int * face, double * buffer)
+{
+    cuda_chunk.packUnpackAllBuffers(fields, offsets, *depth, *face, 1, buffer);
 }
 
-C_PACK_INTERFACE(pack, left_right)
-C_PACK_INTERFACE(unpack, left_right)
-C_PACK_INTERFACE(pack, top_bottom)
-C_PACK_INTERFACE(unpack, top_bottom)
-
-/*****************************/
-
-void CloverleafCudaChunk::packRect
-(double* host_buffer, dir_t direction,
- int x_inc, int y_inc, int edge, int dest,
- int which_field, int depth)
+extern "C" void cuda_unpack_buffers_
+(int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int * depth,
+ int * face, double * buffer)
 {
-    // TODO just call packBuffer/unpackBuffer from this
+    cuda_chunk.packUnpackAllBuffers(fields, offsets, *depth, *face, 0, buffer);
 }
 
-void CloverleafCudaChunk::packBuffer
-(const int which_array,
-const int which_side,
-double* buffer,
-const int buffer_size,
-const int depth)
+void CloverleafCudaChunk::packUnpackAllBuffers
+(int fields[NUM_FIELDS], int offsets[NUM_FIELDS],
+ const int depth, const int face, const int pack,
+ double * buffer)
 {
-    #define CALL_PACK(dev_ptr, type, face, dir)\
-	{\
-        const int launch_sz = (ceil((dir##_max+4+type.dir##_extra)/static_cast<float>(BLOCK_SZ))) * depth; \
-        device_pack##face##Buffer<<< launch_sz, BLOCK_SZ >>> \
-        (x_min, x_max, y_min, y_max, type, \
-        dev_ptr, dev_##face##_send_buffer, depth); \
-        CUDA_ERR_CHECK; \
-        cudaDeviceSynchronize();\
-        cudaMemcpy(buffer, dev_##face##_send_buffer, buffer_size*sizeof(double), cudaMemcpyDeviceToHost); \
-        CUDA_ERR_CHECK; \
-        break; \
-	}
+    const int n_exchanged = std::accumulate(fields, fields + NUM_FIELDS, 0);
 
-    #define PACK_CUDA_BUFFERS(dev_ptr, type) \
-        switch(which_side) \
-        { \
-            case CHUNK_LEFT: \
-                CALL_PACK(dev_ptr, type, left, y);\
-            case CHUNK_RIGHT:\
-                CALL_PACK(dev_ptr, type, right, y);\
-            case CHUNK_BOTTOM:\
-                CALL_PACK(dev_ptr, type, bottom, x);\
-            case CHUNK_TOP:\
-                CALL_PACK(dev_ptr, type, top, x);\
-            default: \
-                DIE("Invalid side %d passed to buffer packing", which_side); \
-        }
-
-    switch(which_array)
+    if (n_exchanged < 1)
     {
-        case FIELD_density0: PACK_CUDA_BUFFERS(density0, CELL); break;
-        case FIELD_density1: PACK_CUDA_BUFFERS(density1, CELL); break;
-        case FIELD_energy0: PACK_CUDA_BUFFERS(energy0, CELL); break;
-        case FIELD_energy1: PACK_CUDA_BUFFERS(energy1, CELL); break;
-        case FIELD_pressure: PACK_CUDA_BUFFERS(pressure, CELL); break;
-        case FIELD_viscosity: PACK_CUDA_BUFFERS(viscosity, CELL); break;
-        case FIELD_soundspeed: PACK_CUDA_BUFFERS(soundspeed, CELL); break;
-        case FIELD_xvel0: PACK_CUDA_BUFFERS(xvel0, VERTEX_X); break;
-        case FIELD_xvel1: PACK_CUDA_BUFFERS(xvel1, VERTEX_X); break;
-        case FIELD_yvel0: PACK_CUDA_BUFFERS(yvel0, VERTEX_Y); break;
-        case FIELD_yvel1: PACK_CUDA_BUFFERS(yvel1, VERTEX_Y); break;
-        case FIELD_vol_flux_x: PACK_CUDA_BUFFERS(vol_flux_x, X_FACE); break;
-        case FIELD_vol_flux_y: PACK_CUDA_BUFFERS(vol_flux_y, Y_FACE); break;
-        case FIELD_mass_flux_x: PACK_CUDA_BUFFERS(mass_flux_x, X_FACE); break;
-        case FIELD_mass_flux_y: PACK_CUDA_BUFFERS(mass_flux_y, Y_FACE); break;
-        case FIELD_u: PACK_CUDA_BUFFERS(u, CELL); break;
-        case FIELD_p: PACK_CUDA_BUFFERS(work_array_1, CELL); break;
-        default: DIE("Invalid which_array identifier '%d' passed to CUDA - valid range is %d-%d", which_array, FIELD_density0, FIELD_p);
+        return;
     }
 
-    #undef CALL_PACK
-    #undef PACK_CUDA_BUFFERS
-}
+    // which buffer is being used for this operation
+    double * side_buffer = NULL;
 
-void CloverleafCudaChunk::unpackBuffer
-(const int which_array,
-const int which_side,
-double* buffer,
-const int buffer_size,
-const int depth)
-{
-    #define CALL_UNPACK(dev_ptr, type, face, dir)\
-	{ \
-        cudaMemcpy(dev_##face##_recv_buffer, buffer, buffer_size*sizeof(double), cudaMemcpyHostToDevice); \
-        CUDA_ERR_CHECK; \
-        cudaDeviceSynchronize();\
-        const int launch_sz = (ceil((dir##_max+4+type.dir##_extra)/static_cast<float>(BLOCK_SZ))) * depth; \
-        device_unpack##face##Buffer<<< launch_sz, BLOCK_SZ >>> \
-        (x_min, x_max, y_min, y_max, type, \
-        dev_ptr, dev_##face##_recv_buffer, depth); \
-        CUDA_ERR_CHECK; \
-        break; \
-	}
-
-    #define UNPACK_CUDA_BUFFERS(dev_ptr, type) \
-        switch(which_side) \
-        { \
-            case CHUNK_LEFT: \
-                CALL_UNPACK(dev_ptr, type, left, y);\
-            case CHUNK_RIGHT:\
-                CALL_UNPACK(dev_ptr, type, right, y);\
-            case CHUNK_BOTTOM:\
-                CALL_UNPACK(dev_ptr, type, bottom, x);\
-            case CHUNK_TOP:\
-                CALL_UNPACK(dev_ptr, type, top, x);\
-            default: \
-                DIE("Invalid side %d passed to buffer unpacking", which_side); \
-        }
-
-    switch(which_array)
+    switch (face)
     {
-        case FIELD_density0: UNPACK_CUDA_BUFFERS(density0, CELL); break;
-        case FIELD_density1: UNPACK_CUDA_BUFFERS(density1, CELL); break;
-        case FIELD_energy0: UNPACK_CUDA_BUFFERS(energy0, CELL); break;
-        case FIELD_energy1: UNPACK_CUDA_BUFFERS(energy1, CELL); break;
-        case FIELD_pressure: UNPACK_CUDA_BUFFERS(pressure, CELL); break;
-        case FIELD_viscosity: UNPACK_CUDA_BUFFERS(viscosity, CELL); break;
-        case FIELD_soundspeed: UNPACK_CUDA_BUFFERS(soundspeed, CELL); break;
-        case FIELD_xvel0: UNPACK_CUDA_BUFFERS(xvel0, VERTEX_X); break;
-        case FIELD_xvel1: UNPACK_CUDA_BUFFERS(xvel1, VERTEX_X); break;
-        case FIELD_yvel0: UNPACK_CUDA_BUFFERS(yvel0, VERTEX_Y); break;
-        case FIELD_yvel1: UNPACK_CUDA_BUFFERS(yvel1, VERTEX_Y); break;
-        case FIELD_vol_flux_x: UNPACK_CUDA_BUFFERS(vol_flux_x, X_FACE); break;
-        case FIELD_vol_flux_y: UNPACK_CUDA_BUFFERS(vol_flux_y, Y_FACE); break;
-        case FIELD_mass_flux_x: UNPACK_CUDA_BUFFERS(mass_flux_x, X_FACE); break;
-        case FIELD_mass_flux_y: UNPACK_CUDA_BUFFERS(mass_flux_y, Y_FACE); break;
-        case FIELD_u: UNPACK_CUDA_BUFFERS(u, CELL); break;
-        case FIELD_p: UNPACK_CUDA_BUFFERS(work_array_1, CELL); break;
-        default: DIE("Invalid which_array identifier '%d' passed to CUDA - valid range is %d-%d", which_array, FIELD_density0, FIELD_p);
-    }
-
-    #undef CALL_UNPACK
-    #undef UNPACK_CUDA_BUFFERS
-}
-
-int CloverleafCudaChunk::getBufferSize
-(int edge, int depth, int x_inc, int y_inc)
-{
-    int region[2];
-
-    switch (edge)
-    {
-    // depth*y_max+... region - 1 or 2 columns
     case CHUNK_LEFT:
-        region[0] = depth;
-        region[1] = y_max + y_inc + (2*depth);
+        side_buffer = left_buffer;
         break;
     case CHUNK_RIGHT:
-        region[0] = depth;
-        region[1] = y_max + y_inc + (2*depth);
+        side_buffer = right_buffer;
         break;
-
-    // depth*x_max+... region - 1 or 2 rows
     case CHUNK_BOTTOM:
-        region[0] = x_max + x_inc + (2*depth);
-        region[1] = depth;
+        side_buffer = bottom_buffer;
         break;
     case CHUNK_TOP:
-        region[0] = x_max + x_inc + (2*depth);
-        region[1] = depth;
+        side_buffer = top_buffer;
         break;
     default:
-        DIE("Invalid face identifier (%d) passed to getBufferSize\n", edge);
+        DIE("Invalid face identifier %d passed to mpi buffer packing\n", face);
     }
 
-    return region[0]*region[1];
-}
+    pack_func_t * pack_kernel = NULL;
 
-#define CHECK_PACK(op, side1, side2)                            \
-    if (external_face != chunk_1 || external_face != chunk_2)   \
-    {                                                           \
-        cudaDeviceSynchronize();                                \
-    }                                                           \
-    if (external_face != chunk_1)                               \
-    {                                                           \
-        op##Buffer(which_field,                                 \
-                   side1,                                       \
-                   buffer_1,                                    \
-                   getBufferSize(side1, depth, x_inc, y_inc),   \
-                   depth);                                      \
-    }                                                           \
-    if (external_face != chunk_2)                               \
-    {                                                           \
-        op##Buffer(which_field,                                 \
-                   side2,                                       \
-                   buffer_2,                                    \
-                   getBufferSize(side2, depth, x_inc, y_inc),   \
-                   depth);                                      \
-    }                                                           \
-    if (external_face != chunk_1 || external_face != chunk_2)   \
-    {                                                           \
-        cudaDeviceSynchronize();                                \
+    // set which kernel to call
+    if (pack)
+    {
+        switch (face)
+        {
+        case CHUNK_LEFT:
+            pack_kernel = &device_packleftBuffer;
+            break;
+        case CHUNK_RIGHT:
+            pack_kernel = &device_packrightBuffer;
+            break;
+        case CHUNK_BOTTOM:
+            pack_kernel = &device_packbottomBuffer;
+            break;
+        case CHUNK_TOP:
+            pack_kernel = &device_packtopBuffer;
+            break;
+        default:
+            DIE("Invalid face identifier %d passed to pack\n", face);
+        }
+    }
+    else
+    {
+        switch (face)
+        {
+        case CHUNK_LEFT:
+            pack_kernel = &device_unpackleftBuffer;
+            break;
+        case CHUNK_RIGHT:
+            pack_kernel = &device_unpackrightBuffer;
+            break;
+        case CHUNK_BOTTOM:
+            pack_kernel = &device_unpackbottomBuffer;
+            break;
+        case CHUNK_TOP:
+            pack_kernel = &device_unpacktopBuffer;
+            break;
+        default:
+            DIE("Invalid face identifier %d passed to unpack\n", face);
+        }
     }
 
-void CloverleafCudaChunk::pack_left_right
-(PACK_ARGS)
-{
-    CHECK_PACK(pack, CHUNK_LEFT, CHUNK_RIGHT);
-}
+    // size of this buffer
+    size_t side_size = 0;
+    // reuse the halo update kernels sizes to launch packing kernels
+    dim3 pack_global, pack_local;
 
-void CloverleafCudaChunk::unpack_left_right
-(PACK_ARGS)
-{
-    CHECK_PACK(unpack, CHUNK_LEFT, CHUNK_RIGHT);
-}
+    switch (face)
+    {
+    case CHUNK_LEFT:
+    case CHUNK_RIGHT:
+        side_size = lr_mpi_buf_sz;
+        pack_global = update_lr_global_size[depth-1];
+        pack_local = update_lr_local_size[depth-1];
+        break;
+    case CHUNK_BOTTOM:
+    case CHUNK_TOP:
+        side_size = bt_mpi_buf_sz;
+        pack_global = update_ud_global_size[depth-1];
+        pack_local = update_ud_local_size[depth-1];
+        break;
+    default:
+        DIE("Invalid face identifier %d passed to mpi buffer packing\n", face);
+    }
 
-void CloverleafCudaChunk::pack_top_bottom
-(PACK_ARGS)
-{
-    CHECK_PACK(pack, CHUNK_BOTTOM, CHUNK_TOP);
-}
+    if (!pack)
+    {
+        // FIXME write buffer from host to device
+    }
 
-void CloverleafCudaChunk::unpack_top_bottom
-(PACK_ARGS)
-{
-    CHECK_PACK(unpack, CHUNK_BOTTOM, CHUNK_TOP);
+    for (int ii = 0; ii < NUM_FIELDS; ii++)
+    {
+        int which_field = ii+1;
+
+        if (fields[ii])
+        {
+            if (offsets[ii] < 0 || offsets[ii] > NUM_FIELDS*side_size)
+            {
+                DIE("Tried to pack/unpack field %d but invalid offset %d given\n",
+                    ii, offsets[ii]);
+            }
+
+            int x_inc = 0, y_inc = 0;
+
+            // set x/y/z inc for array
+            switch (which_field)
+            {
+            case FIELD_density:
+            case FIELD_energy0:
+            case FIELD_energy1:
+            case FIELD_u:
+            case FIELD_p:
+            case FIELD_sd:
+                break;
+            default:
+                DIE("Invalid field number %d in choosing _inc values\n", which_field);
+            }
+
+            #define CASE_BUF(which_array)   \
+            case FIELD_##which_array:       \
+            {                               \
+                device_array = which_array;\
+            }
+
+            double * device_array = NULL;
+
+            switch (which_field)
+            {
+            CASE_BUF(density); break;
+            CASE_BUF(energy0); break;
+            CASE_BUF(energy1); break;
+            CASE_BUF(u); break;
+            CASE_BUF(work_array_1); break;
+            CASE_BUF(work_array_8); break;
+            default:
+                DIE("Invalid face %d passed to left/right pack buffer\n", which_field);
+            }
+
+            #undef CASE_BUF
+
+            // FIXME launch kernel
+        }
+    }
+
+    if (pack)
+    {
+        // FIXME read buffer
+    }
 }
 

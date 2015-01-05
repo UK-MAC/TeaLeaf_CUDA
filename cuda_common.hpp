@@ -32,25 +32,17 @@
 #include <vector>
 
 // used in update_halo and for copying back to host for mpi transfers
-#define FIELD_density0      1
-#define FIELD_density1      2
-#define FIELD_energy0       3
-#define FIELD_energy1       4
-#define FIELD_pressure      5
-#define FIELD_viscosity     6
-#define FIELD_soundspeed    7
-#define FIELD_xvel0         8
-#define FIELD_xvel1         9
-#define FIELD_yvel0         10
-#define FIELD_yvel1         11
-#define FIELD_vol_flux_x    12
-#define FIELD_vol_flux_y    13
-#define FIELD_mass_flux_x   14
-#define FIELD_mass_flux_y   15
-#define FIELD_u             16
-#define FIELD_p             17
-#define NUM_FIELDS          17
+#define FIELD_density       1
+#define FIELD_energy0       2
+#define FIELD_energy1       3
+#define FIELD_u             4
+#define FIELD_p             5
+#define FIELD_sd            6
+#define NUM_FIELDS          6
 #define FIELD_work_array_1 FIELD_p
+#define FIELD_work_array_8 FIELD_sd
+
+#define NUM_BUFFERED_FIELDS 3
 
 // which side to pack - keep the same as in fortran file
 #define CHUNK_LEFT 1
@@ -159,23 +151,13 @@ private:
     // work arrays
     double* volume;
     double* soundspeed;
-    double* pressure;
     double* viscosity;
 
-    double* density0;
-    double* density1;
+    double* density;
     double* energy0;
     double* energy1;
-    double* xvel0;
-    double* xvel1;
-    double* yvel0;
-    double* yvel1;
     double* xarea;
     double* yarea;
-    double* vol_flux_x;
-    double* vol_flux_y;
-    double* mass_flux_x;
-    double* mass_flux_y;
 
     double* cellx;
     double* celly;
@@ -193,13 +175,8 @@ private:
     // used in calc_dt to retrieve values
     thrust::device_ptr< double > thr_cellx;
     thrust::device_ptr< double > thr_celly;
-    thrust::device_ptr< double > thr_xvel0;
-    thrust::device_ptr< double > thr_yvel0;
-    thrust::device_ptr< double > thr_xvel1;
-    thrust::device_ptr< double > thr_yvel1;
-    thrust::device_ptr< double > thr_density0;
+    thrust::device_ptr< double > thr_density;
     thrust::device_ptr< double > thr_energy0;
-    thrust::device_ptr< double > thr_pressure;
     thrust::device_ptr< double > thr_soundspeed;
 
     // holding temporary stuff like post_vol etc.
@@ -211,14 +188,10 @@ private:
     double* work_array_6;
 
     // buffers used in mpi transfers
-    double* dev_left_send_buffer;
-    double* dev_right_send_buffer;
-    double* dev_top_send_buffer;
-    double* dev_bottom_send_buffer;
-    double* dev_left_recv_buffer;
-    double* dev_right_recv_buffer;
-    double* dev_top_recv_buffer;
-    double* dev_bottom_recv_buffer;
+    double * left_buffer;
+    double * right_buffer;
+    double * bottom_buffer;
+    double * top_buffer;
 
     // holding temporary stuff like post_vol etc.
     double* reduce_buf_1;
@@ -257,28 +230,6 @@ private:
     float taken;
     cudaEvent_t _t0, _t1;
 
-    // mpi packing
-    #define PACK_ARGS                                       \
-        int chunk_1, int chunk_2, int external_face,        \
-        int x_inc, int y_inc, int depth, int which_field,   \
-        double *buffer_1, double *buffer_2
-    int getBufferSize
-    (int edge, int depth, int x_inc, int y_inc);
-
-    void unpackBuffer
-    (const int which_array,
-    const int which_side,
-    double* buffer,
-    const int buffer_size,
-    const int depth);
-
-    void packBuffer
-    (const int which_array,
-    const int which_side,
-    double* buffer,
-    const int buffer_size,
-    const int depth);
-
     // tolerance specified in tea.in
     float tolerance;
 
@@ -302,21 +253,11 @@ private:
     (int line, const char* filename, const char* format, ...);
 public:
     // kernels
-    void calc_dt_kernel(double g_small, double g_big, double dtmin,
-        double dtc_safe, double dtu_safe, double dtv_safe,
-        double dtdiv_safe, double* dt_min_val, int* dtl_control,
-        double* xl_pos, double* yl_pos, int* jldt, int* kldt, int* small);
-
     void field_summary_kernel(double* vol, double* mass,
-        double* ie, double* ke, double* press, double* temp);
-
-    void PdV_kernel(int* error_condition, int predict, double dbyt);
-
-    void ideal_gas_kernel(int predict);
+        double* ie, double* temp);
 
     void generate_chunk_kernel(const int number_of_states, 
         const double* state_density, const double* state_energy,
-        const double* state_xvel, const double* state_yvel,
         const double* state_xmin, const double* state_xmax,
         const double* state_ymin, const double* state_ymax,
         const double* state_radius, const int* state_geometry,
@@ -328,20 +269,7 @@ public:
     void update_halo_kernel(const int* fields, int depth,
         const int* chunk_neighbours);
 
-    void accelerate_kernel(double dbyt);
-
-    void advec_mom_kernel(int which_vel, int sweep_number, int direction);
-
-    void flux_calc_kernel(double dbyt);
-
-    void advec_cell_kernel(int dr, int swp_nmbr);
-
-    void revert_kernel();
-
     void set_field_kernel();
-    void reset_field_kernel();
-
-    void viscosity_kernel();
 
     // Tea leaf
     void tea_leaf_init_jacobi(int, double, double*, double*);
@@ -376,16 +304,9 @@ public:
     std::vector<double> dumpArray
     (const std::string& arr_name, int x_extra, int y_extra);
 
-    typedef enum {PACK, UNPACK} dir_t;
-    void packRect
-    (double* host_buffer, dir_t direction,
-     int x_inc, int y_inc, int edge, int dest,
-     int which_field, int depth);
-
-    void pack_left_right(PACK_ARGS);
-    void unpack_left_right(PACK_ARGS);
-    void pack_top_bottom(PACK_ARGS);
-    void unpack_top_bottom(PACK_ARGS);
+    void packUnpackAllBuffers
+    (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
+     int face, int pack, double * buffer);
 
     CloverleafCudaChunk
     (INITIALISE_ARGS);

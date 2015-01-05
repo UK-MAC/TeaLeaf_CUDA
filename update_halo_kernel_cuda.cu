@@ -94,8 +94,7 @@ const int* chunk_neighbours)
             grid_type, chunk_neighbours, arr, depth);   \
     }}
 
-    HALO_UPDATE_RESIDENT(density0, CELL);
-    HALO_UPDATE_RESIDENT(density1, CELL);
+    HALO_UPDATE_RESIDENT(density, CELL);
     HALO_UPDATE_RESIDENT(energy0, CELL);
     HALO_UPDATE_RESIDENT(energy1, CELL);
     HALO_UPDATE_RESIDENT(pressure, CELL);
