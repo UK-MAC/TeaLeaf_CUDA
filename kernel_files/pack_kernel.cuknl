@@ -39,7 +39,7 @@
 #define VERT_IDX(add) ((add) + (row + depth - 1)*depth - 2)
 
 typedef void (*pack_func_t)(int x_min,int x_max,int y_min,int y_max,
-    cell_info_t type,
+     int x_extra, int y_extra,
           double* array,
           double* left_buffer,
     const int depth);
@@ -48,14 +48,11 @@ typedef void (*pack_func_t)(int x_min,int x_max,int y_min,int y_max,
 
 __global__ void device_packleftBuffer
 (int x_min,int x_max,int y_min,int y_max,
-cell_info_t type,
+ int x_extra, int y_extra,
       double* array,
       double* left_buffer,
 const int depth)
 {
-    int x_extra = type.x_extra;
-    int y_extra = type.y_extra;
-
     //__kernel_indexes;
     const int glob_id = threadIdx.x + blockIdx.x * blockDim.x;
     const int row = glob_id / depth;
@@ -71,14 +68,11 @@ const int depth)
 
 __global__ void device_unpackleftBuffer
 (int x_min,int x_max,int y_min,int y_max,
-cell_info_t type,
+ int x_extra, int y_extra,
       double* array,
       double* left_buffer,
 const int depth)
 {
-    int x_extra = type.x_extra;
-    int y_extra = type.y_extra;
-
     //__kernel_indexes;
     const int glob_id = threadIdx.x + blockIdx.x * blockDim.x;
     const int row = glob_id / depth;
@@ -96,14 +90,11 @@ const int depth)
 
 __global__ void device_packrightBuffer
 (int x_min,int x_max,int y_min,int y_max,
-cell_info_t type,
+ int x_extra, int y_extra,
       double* array,
       double* right_buffer,
 const int depth)
 {
-    int x_extra = type.x_extra;
-    int y_extra = type.y_extra;
-
     //__kernel_indexes;
     const int glob_id = threadIdx.x + blockIdx.x * blockDim.x;
     const int row = glob_id / depth;
@@ -119,14 +110,11 @@ const int depth)
 
 __global__ void device_unpackrightBuffer
 (int x_min,int x_max,int y_min,int y_max,
-cell_info_t type,
+ int x_extra, int y_extra,
       double* array,
       double* right_buffer,
 const int depth)
 {
-    int x_extra = type.x_extra;
-    int y_extra = type.y_extra;
-
     //__kernel_indexes;
     const int glob_id = threadIdx.x + blockIdx.x * blockDim.x;
     const int row = glob_id / depth;
@@ -144,14 +132,11 @@ const int depth)
 
 __global__ void device_packbottomBuffer
 (int x_min,int x_max,int y_min,int y_max,
-cell_info_t type,
+ int x_extra, int y_extra,
             double* array,
             double* bottom_buffer,
 const int depth)
 {
-    int x_extra = type.x_extra;
-    int y_extra = type.y_extra;
-
     __kernel_indexes;
 
     if (column >= (x_min + 1) - depth && column <= (x_max + 1) + x_extra + depth)
@@ -165,13 +150,11 @@ const int depth)
 
 __global__ void device_unpackbottomBuffer
 (int x_min,int x_max,int y_min,int y_max,
-cell_info_t type,
+ int x_extra, int y_extra,
             double* array,
             double* bottom_buffer,
 const int depth)
 {
-    int x_extra = type.x_extra;
-
     __kernel_indexes;
 
     if (column >= (x_min + 1) - depth && column <= (x_max + 1) + x_extra + depth)
@@ -187,13 +170,11 @@ const int depth)
 
 __global__ void device_packtopBuffer
 (int x_min,int x_max,int y_min,int y_max,
-cell_info_t type,
+ int x_extra, int y_extra,
             double* array,
             double* top_buffer,
 const int depth)
 {
-    int x_extra = type.x_extra;
-
     __kernel_indexes;
 
     if (column >= (x_min + 1) - depth && column <= (x_max + 1) + x_extra + depth)
@@ -207,14 +188,11 @@ const int depth)
 
 __global__ void device_unpacktopBuffer
 (int x_min,int x_max,int y_min,int y_max,
-cell_info_t type,
+ int x_extra, int y_extra,
             double* array,
             double* top_buffer,
 const int depth)
 {
-    int x_extra = type.x_extra;
-    int y_extra = type.y_extra;
-
     __kernel_indexes;
 
     if (column >= (x_min + 1) - depth && column <= (x_max + 1) + x_extra + depth)

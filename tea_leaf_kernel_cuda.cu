@@ -1,11 +1,10 @@
 #include "cuda_common.hpp"
 
-#define CG_DO_PRECONDITION
-
 #include "kernel_files/tea_leaf_common.cuknl"
 #include "kernel_files/tea_leaf_jacobi.cuknl"
 #include "kernel_files/tea_leaf_cg.cuknl"
 #include "kernel_files/tea_leaf_cheby.cuknl"
+#include "kernel_files/tea_leaf_ppcg.cuknl"
 
 #include <cassert>
 
@@ -99,12 +98,10 @@ void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel
     *norm = thrust::reduce(reduce_ptr_1, reduce_ptr_1 + num_blocks, 0.0);
 }
 
-void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
-(const double * ch_alphas, const double * ch_betas, int n_coefs,
- const double rx, const double ry, const double theta, double* error)
+void CloverleafCudaChunk::upload_ch_coefs
+(const double * ch_alphas, const double * ch_betas,
+ const int n_coefs)
 {
-    assert(tea_solver == TEA_ENUM_CHEBYSHEV);
-
     size_t ch_buf_sz = n_coefs*sizeof(double);
 
     // upload to device
@@ -112,6 +109,15 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
     cudaMalloc((void**) &ch_betas_device, ch_buf_sz);
     cudaMemcpy(ch_alphas_device, ch_alphas, ch_buf_sz, cudaMemcpyHostToDevice);
     cudaMemcpy(ch_betas_device, ch_betas, ch_buf_sz, cudaMemcpyHostToDevice);
+}
+
+void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
+(const double * ch_alphas, const double * ch_betas, int n_coefs,
+ const double rx, const double ry, const double theta, double* error)
+{
+    assert(tea_solver == TEA_ENUM_CHEBYSHEV);
+
+    upload_ch_coefs(ch_alphas, ch_betas, n_coefs);
 
     CUDA_ERR_CHECK;
 
@@ -267,10 +273,92 @@ extern "C" void tea_leaf_kernel_finalise_cuda_
     cuda_chunk.tea_leaf_finalise();
 }
 
+extern "C" void tea_leaf_calc_residual_cuda_
+(void)
+{
+    cuda_chunk.tea_leaf_calc_residual();
+}
+
 // both
 void CloverleafCudaChunk::tea_leaf_finalise
 (void)
 {
     CUDALAUNCH(device_tea_leaf_finalise, density, u, energy1);
 }
+
+void CloverleafCudaChunk::tea_leaf_calc_residual
+(void)
+{
+    CUDALAUNCH(device_tea_leaf_calc_residual, u, u0, work_array_3,
+        work_array_5, work_array_6);
+}
+
+/********************/
+
+extern "C" void tea_leaf_kernel_ppcg_init_cuda_
+(const double * ch_alphas, const double * ch_betas,
+ double* theta, int* n_inner_steps)
+{
+    cuda_chunk.ppcg_init(ch_alphas, ch_betas, *theta, *n_inner_steps);
+}
+
+extern "C" void tea_leaf_kernel_ppcg_init_p_cuda_
+(double * rro)
+{
+    cuda_chunk.ppcg_init_p(rro);
+}
+
+extern "C" void tea_leaf_kernel_ppcg_init_sd_cuda_
+(const double * theta)
+{
+    cuda_chunk.ppcg_init_sd(*theta);
+}
+
+extern "C" void tea_leaf_kernel_ppcg_inner_cuda_
+(int * ppcg_cur_step)
+{
+    cuda_chunk.ppcg_inner(*ppcg_cur_step);
+}
+
+void CloverleafCudaChunk::ppcg_init
+(const double * ch_alphas, const double * ch_betas,
+ const double theta, const int n_inner_steps)
+{
+    // FIXME
+    //tea_leaf_ppcg_solve_init_sd_device.setArg(3, theta);
+
+    upload_ch_coefs(ch_alphas, ch_betas, n_inner_steps);
+
+    // FIXME
+    //tea_leaf_ppcg_solve_calc_sd_device.setArg(3, ch_alphas_device);
+    //tea_leaf_ppcg_solve_calc_sd_device.setArg(4, ch_betas_device);
+}
+
+void CloverleafCudaChunk::ppcg_init_p
+(double * rro)
+{
+    // FIXME
+    //ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_p_device);
+
+    *rro = thrust::reduce(reduce_ptr_1, reduce_ptr_1 + num_blocks, 0.0);
+}
+
+void CloverleafCudaChunk::ppcg_init_sd
+(double theta)
+{
+    CUDALAUNCH(device_tea_leaf_ppcg_solve_init_sd, work_array_3,
+        work_array_4, work_array_8, theta);
+}
+
+void CloverleafCudaChunk::ppcg_inner
+(int ppcg_cur_step)
+{
+    // FIXME
+    //ENQUEUE_OFFSET(tea_leaf_ppcg_solve_update_r_device);
+
+    // FIXME
+    //tea_leaf_ppcg_solve_calc_sd_device.setArg(5, ppcg_cur_step - 1);
+    //ENQUEUE_OFFSET(tea_leaf_ppcg_solve_calc_sd_device);
+}
+
 

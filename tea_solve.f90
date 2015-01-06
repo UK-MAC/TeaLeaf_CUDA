@@ -620,7 +620,7 @@ SUBROUTINE tea_leaF_run_ppcg_inner_steps(ch_alphas, ch_betas, theta, &
         chunks(c)%field%vector_sd,                          &
         theta)
   ELSEIF(use_cuda_kernels) THEN
-    CALL tea_leaf_kernel_ppcg_init_sd_cuda()
+    CALL tea_leaf_kernel_ppcg_init_sd_cuda(theta)
   ENDIF
 
   fields = 0

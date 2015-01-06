@@ -103,17 +103,20 @@ void CloverleafCudaChunk::packUnpackAllBuffers
 
     switch (face)
     {
-        // FIXME side size
     case CHUNK_LEFT:
     case CHUNK_RIGHT:
-        needed_launch_size = (x_max + 5);
+        needed_launch_size = (y_max + 5);
+        pack_global = dim3(depth, needed_launch_size + (32 - (needed_launch_size % 32)));
+        pack_local = dim3(1, 32);
+        side_size = sizeof(double)*(y_max + 5);
         // pad it to fit in 32 local work group size (always on NVIDIA hardware)
-        pack_global = dim3(needed_launch_size + (32 - (needed_launch_size % 32)), depth);
         break;
     case CHUNK_BOTTOM:
     case CHUNK_TOP:
-        needed_launch_size = (y_max + 5);
-        pack_global = dim3(depth, needed_launch_size + (32 - (needed_launch_size % 32)));
+        needed_launch_size = (x_max + 5);
+        pack_global = dim3(needed_launch_size + (32 - (needed_launch_size % 32)), depth);
+        pack_local = dim3(32, 1);
+        side_size = sizeof(double)*(x_max + 5);
         break;
     default:
         DIE("Invalid face identifier %d passed to mpi buffer packing\n", face);
@@ -121,7 +124,8 @@ void CloverleafCudaChunk::packUnpackAllBuffers
 
     if (!pack)
     {
-        // FIXME write buffer from host to device
+        cudaMemcpy(side_buffer, buffer, n_exchanged*depth*side_size,
+            cudaMemcpyHostToDevice);
     }
 
     for (int ii = 0; ii < NUM_FIELDS; ii++)
@@ -137,6 +141,8 @@ void CloverleafCudaChunk::packUnpackAllBuffers
             }
 
             int x_inc = 0, y_inc = 0;
+
+            // x_inc / y_inc not used for tea leaf
 
             // set x/y/z inc for array
             switch (which_field)
@@ -155,7 +161,7 @@ void CloverleafCudaChunk::packUnpackAllBuffers
             #define CASE_BUF(which_array)   \
             case FIELD_##which_array:       \
             {                               \
-                device_array = which_array;\
+                device_array = which_array; \
             }
 
             double * device_array = NULL;
@@ -174,13 +180,15 @@ void CloverleafCudaChunk::packUnpackAllBuffers
 
             #undef CASE_BUF
 
-            // FIXME launch kernel
+            pack_kernel<<< pack_global, pack_local >>>(x_min, x_max, y_min, y_max,
+                x_inc, y_inc, device_array, side_buffer+offsets[ii], depth);
         }
     }
 
     if (pack)
     {
-        // FIXME read buffer
+        cudaMemcpy(buffer, side_buffer, n_exchanged*depth*side_size,
+            cudaMemcpyDeviceToHost);
     }
 }
 

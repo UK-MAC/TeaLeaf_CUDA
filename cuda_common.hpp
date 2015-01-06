@@ -244,6 +244,11 @@ private:
      double* cur_array_d,
      int depth);
 
+    // upload ch_alphas and ch_betas to device
+    void upload_ch_coefs
+    (const double * ch_alphas, const double * ch_betas,
+     const int n_coefs);
+
     // this function gets called when something goes wrong
     #define DIE(...) cloverDie(__LINE__, __FILE__, __VA_ARGS__)
     void cloverDie
@@ -287,6 +292,19 @@ public:
     void tea_leaf_kernel_cheby_iterate
     (const double * ch_alphas, const double * ch_betas, int n_coefs,
      const double rx, const double ry, const int cheby_calc_steps);
+
+    void tea_leaf_calc_residual
+    (void);
+
+    void ppcg_init
+    (const double * ch_alphas, const double * ch_betas,
+     const double theta, const int n_inner_steps);
+    void ppcg_init_p
+    (double * rro);
+    void ppcg_init_sd
+    (double theta);
+    void ppcg_inner
+    (int ppcg_cur_step);
 
     double * ch_alphas_device, * ch_betas_device;
 

@@ -48,7 +48,7 @@ SUBROUTINE tea_barrier
 
 END SUBROUTINE tea_barrier
 
-SUBROUTINE tea_abort
+SUBROUTINE tea_abort() bind(C, name="tea_abort_")
 
   INTEGER :: ierr,err
 
@@ -94,7 +94,7 @@ SUBROUTINE tea_init_comms
 
 END SUBROUTINE tea_init_comms
 
-SUBROUTINE tea_get_rank(rank)
+SUBROUTINE tea_get_rank(rank) bind(C, name="tea_get_rank_")
   IMPLICIT NONE
   INTEGER :: rank, err
   CALL MPI_COMM_RANK(MPI_COMM_WORLD,rank,err)
