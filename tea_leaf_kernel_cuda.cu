@@ -324,21 +324,15 @@ void CloverleafCudaChunk::ppcg_init
 (const double * ch_alphas, const double * ch_betas,
  const double theta, const int n_inner_steps)
 {
-    // FIXME
-    //tea_leaf_ppcg_solve_init_sd_device.setArg(3, theta);
-
     upload_ch_coefs(ch_alphas, ch_betas, n_inner_steps);
-
-    // FIXME
-    //tea_leaf_ppcg_solve_calc_sd_device.setArg(3, ch_alphas_device);
-    //tea_leaf_ppcg_solve_calc_sd_device.setArg(4, ch_betas_device);
 }
 
 void CloverleafCudaChunk::ppcg_init_p
 (double * rro)
 {
-    // FIXME
-    //ENQUEUE_OFFSET(tea_leaf_ppcg_solve_init_p_device);
+    // FIXME work_arrays - rename to u, p, r, etc
+    CUDALAUNCH(device_tea_leaf_ppcg_solve_init_p, work_array_1,
+        work_array_3, work_array_4, reduce_buf_1);
 
     *rro = thrust::reduce(reduce_ptr_1, reduce_ptr_1 + num_blocks, 0.0);
 }
@@ -353,12 +347,12 @@ void CloverleafCudaChunk::ppcg_init_sd
 void CloverleafCudaChunk::ppcg_inner
 (int ppcg_cur_step)
 {
-    // FIXME
-    //ENQUEUE_OFFSET(tea_leaf_ppcg_solve_update_r_device);
+    CUDALAUNCH(device_tea_leaf_ppcg_solve_update_r, u, work_array_3,
+        work_array_5, work_array_6, work_array_8);
 
-    // FIXME
-    //tea_leaf_ppcg_solve_calc_sd_device.setArg(5, ppcg_cur_step - 1);
-    //ENQUEUE_OFFSET(tea_leaf_ppcg_solve_calc_sd_device);
+    CUDALAUNCH(device_tea_leaf_ppcg_solve_calc_sd, work_array_3,
+        work_array_4, work_array_8, ch_alphas_device, ch_betas_device,
+        ppcg_cur_step - 1);
 }
 
 

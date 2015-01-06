@@ -58,6 +58,7 @@ __global__ void device_tea_leaf_ppcg_solve_calc_sd
     && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
         sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
+// FIXME find out some way to do this in cuda - templates?
 #if defined(USE_PRECONDITIONER)
 #error Preconditioner does not yet work with ppcg solver - disable preconditioner in input file to run
                             + beta[step]*Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
