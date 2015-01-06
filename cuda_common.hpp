@@ -140,10 +140,6 @@ typedef struct cell_info {
 
 // types of array data
 const static cell_info_t CELL(    0, 0,  1,  1, 0, 0, CELL_DATA);
-const static cell_info_t VERTEX_X(1, 1, -1,  1, 0, 0, VERTEX_DATA);
-const static cell_info_t VERTEX_Y(1, 1,  1, -1, 0, 0, VERTEX_DATA);
-const static cell_info_t X_FACE(  1, 0, -1,  1, 1, 0, X_FACE_DATA);
-const static cell_info_t Y_FACE(  0, 1,  1, -1, 0, 1, Y_FACE_DATA);
 
 class CloverleafCudaChunk
 {

@@ -23,7 +23,7 @@
  */
 
 #if defined(MPI_HDR)
-extern "C" void clover_get_rank_(int*);
+extern "C" void tea_get_rank_(int*);
 #endif
 
 #include "cuda_common.hpp"
@@ -65,7 +65,7 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
 
     int rank;
 #if defined(MPI_HDR)
-    clover_get_rank_(&rank);
+    tea_get_rank_(&rank);
 #else
     rank = 0;
 #endif

@@ -40,14 +40,16 @@
 
 typedef void (*pack_func_t)(int x_min,int x_max,int y_min,int y_max,
     cell_info_t type,
-    const double* array,
+          double* array,
           double* left_buffer,
     const int depth);
+
+// FIXME change these functions to be similar to the OpenCL equivalent
 
 __global__ void device_packleftBuffer
 (int x_min,int x_max,int y_min,int y_max,
 cell_info_t type,
-const double* array,
+      double* array,
       double* left_buffer,
 const int depth)
 {
@@ -71,7 +73,7 @@ __global__ void device_unpackleftBuffer
 (int x_min,int x_max,int y_min,int y_max,
 cell_info_t type,
       double* array,
-const double* left_buffer,
+      double* left_buffer,
 const int depth)
 {
     int x_extra = type.x_extra;
@@ -95,7 +97,7 @@ const int depth)
 __global__ void device_packrightBuffer
 (int x_min,int x_max,int y_min,int y_max,
 cell_info_t type,
-const double* array,
+      double* array,
       double* right_buffer,
 const int depth)
 {
@@ -119,7 +121,7 @@ __global__ void device_unpackrightBuffer
 (int x_min,int x_max,int y_min,int y_max,
 cell_info_t type,
       double* array,
-const double* right_buffer,
+      double* right_buffer,
 const int depth)
 {
     int x_extra = type.x_extra;
@@ -143,8 +145,8 @@ const int depth)
 __global__ void device_packbottomBuffer
 (int x_min,int x_max,int y_min,int y_max,
 cell_info_t type,
-double* array,
-double* bottom_buffer,
+            double* array,
+            double* bottom_buffer,
 const int depth)
 {
     int x_extra = type.x_extra;
@@ -164,8 +166,8 @@ const int depth)
 __global__ void device_unpackbottomBuffer
 (int x_min,int x_max,int y_min,int y_max,
 cell_info_t type,
-double* array,
-double* bottom_buffer,
+            double* array,
+            double* bottom_buffer,
 const int depth)
 {
     int x_extra = type.x_extra;
@@ -186,8 +188,8 @@ const int depth)
 __global__ void device_packtopBuffer
 (int x_min,int x_max,int y_min,int y_max,
 cell_info_t type,
-double* array,
-double* top_buffer,
+            double* array,
+            double* top_buffer,
 const int depth)
 {
     int x_extra = type.x_extra;
@@ -206,8 +208,8 @@ const int depth)
 __global__ void device_unpacktopBuffer
 (int x_min,int x_max,int y_min,int y_max,
 cell_info_t type,
-double* array,
-double* top_buffer,
+            double* array,
+            double* top_buffer,
 const int depth)
 {
     int x_extra = type.x_extra;

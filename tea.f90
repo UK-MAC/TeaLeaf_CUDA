@@ -94,6 +94,12 @@ SUBROUTINE tea_init_comms
 
 END SUBROUTINE tea_init_comms
 
+SUBROUTINE tea_get_rank(rank)
+  IMPLICIT NONE
+  INTEGER :: rank, err
+  CALL MPI_COMM_RANK(MPI_COMM_WORLD,rank,err)
+END SUBROUTINE tea_get_rank
+
 SUBROUTINE tea_get_num_chunks(count)
 
   IMPLICIT NONE

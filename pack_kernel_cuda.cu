@@ -50,7 +50,7 @@ void CloverleafCudaChunk::packUnpackAllBuffers
         DIE("Invalid face identifier %d passed to mpi buffer packing\n", face);
     }
 
-    pack_func_t * pack_kernel = NULL;
+    pack_func_t pack_kernel = NULL;
 
     // set which kernel to call
     if (pack)
@@ -96,22 +96,24 @@ void CloverleafCudaChunk::packUnpackAllBuffers
 
     // size of this buffer
     size_t side_size = 0;
-    // reuse the halo update kernels sizes to launch packing kernels
+    // actual number of elements in column/row
+    size_t needed_launch_size = 0;
+    // launch sizes for packing/unpacking arrays
     dim3 pack_global, pack_local;
 
     switch (face)
     {
+        // FIXME side size
     case CHUNK_LEFT:
     case CHUNK_RIGHT:
-        side_size = lr_mpi_buf_sz;
-        pack_global = update_lr_global_size[depth-1];
-        pack_local = update_lr_local_size[depth-1];
+        needed_launch_size = (x_max + 5);
+        // pad it to fit in 32 local work group size (always on NVIDIA hardware)
+        pack_global = dim3(needed_launch_size + (32 - (needed_launch_size % 32)), depth);
         break;
     case CHUNK_BOTTOM:
     case CHUNK_TOP:
-        side_size = bt_mpi_buf_sz;
-        pack_global = update_ud_global_size[depth-1];
-        pack_local = update_ud_local_size[depth-1];
+        needed_launch_size = (y_max + 5);
+        pack_global = dim3(depth, needed_launch_size + (32 - (needed_launch_size % 32)));
         break;
     default:
         DIE("Invalid face identifier %d passed to mpi buffer packing\n", face);

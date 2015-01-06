@@ -97,23 +97,10 @@ const int* chunk_neighbours)
     HALO_UPDATE_RESIDENT(density, CELL);
     HALO_UPDATE_RESIDENT(energy0, CELL);
     HALO_UPDATE_RESIDENT(energy1, CELL);
-    HALO_UPDATE_RESIDENT(pressure, CELL);
-    HALO_UPDATE_RESIDENT(viscosity, CELL);
-
-    HALO_UPDATE_RESIDENT(xvel0, VERTEX_X);
-    HALO_UPDATE_RESIDENT(xvel1, VERTEX_X);
-
-    HALO_UPDATE_RESIDENT(yvel0, VERTEX_Y);
-    HALO_UPDATE_RESIDENT(yvel1, VERTEX_Y);
-
-    HALO_UPDATE_RESIDENT(vol_flux_x, X_FACE);
-    HALO_UPDATE_RESIDENT(mass_flux_x, X_FACE);
-
-    HALO_UPDATE_RESIDENT(vol_flux_y, Y_FACE);
-    HALO_UPDATE_RESIDENT(mass_flux_y, Y_FACE);
 
     HALO_UPDATE_RESIDENT(u, CELL);
     HALO_UPDATE_RESIDENT(work_array_1, CELL);
+    HALO_UPDATE_RESIDENT(work_array_8, CELL);
 
     #undef HALO_UPDATE_RESIDENT
 }
