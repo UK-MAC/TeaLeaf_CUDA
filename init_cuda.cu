@@ -82,9 +82,16 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     bool tl_use_jacobi = clover::paramEnabled(input, "tl_use_jacobi");
     bool tl_use_cg = clover::paramEnabled(input, "tl_use_cg");
     bool tl_use_chebyshev = clover::paramEnabled(input, "tl_use_chebyshev");
+    bool tl_use_ppcg = clover::paramEnabled(input, "tl_use_ppcg");
+    preconditioner_on = clover::paramEnabled(input, "tl_preconditioner_on");
 
     if(!rank)fprintf(stdout, "Solver to use: ");
-    if (tl_use_chebyshev)
+    if (tl_use_ppcg)
+    {
+        tea_solver = TEA_ENUM_PPCG;
+        if(!rank)fprintf(stdout, "PPCG\n");
+    }
+    else if (tl_use_chebyshev)
     {
         tea_solver = TEA_ENUM_CHEBYSHEV;
         if(!rank)fprintf(stdout, "Chebyshev + CG\n");

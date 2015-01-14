@@ -168,6 +168,8 @@ private:
     double* z;
     double* u0;
 
+    bool preconditioner_on;
+
     // used in calc_dt to retrieve values
     thrust::device_ptr< double > thr_cellx;
     thrust::device_ptr< double > thr_celly;
@@ -307,6 +309,7 @@ public:
     #define TEA_ENUM_JACOBI     1
     #define TEA_ENUM_CG         2
     #define TEA_ENUM_CHEBYSHEV  3
+    #define TEA_ENUM_PPCG       4
     int tea_solver;
 
     void tea_leaf_finalise();

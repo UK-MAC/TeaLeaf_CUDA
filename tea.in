@@ -26,8 +26,9 @@
   test_problem 1
   tl_eps=0.00000000001
 
-  tl_use_cg
+  !tl_use_cg
   !tl_use_chebyshev
+  tl_use_ppcg
 
   tl_ch_cg_errswitch
   tl_ch_cg_presteps=35

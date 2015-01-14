@@ -16,16 +16,6 @@
 void CloverleafCudaChunk::calcrxry
 (double dt, double * rx, double * ry)
 {
-    static int initd = 0;
-    if (!initd)
-    {
-        // FIXME remove this check - only relaly done once, one sync doesnt do much anyway
-        // make sure intialise chunk has finished
-        cudaDeviceSynchronize();
-        // celldx doesnt change after that so check once
-        initd = 1;
-    }
-
     double dx, dy;
 
     cudaMemcpy(&dx, celldx, sizeof(double), cudaMemcpyDeviceToHost);
@@ -124,7 +114,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
     CUDALAUNCH(device_tea_leaf_cheby_solve_init_p, u, u0,
         work_array_1, work_array_2, work_array_3, work_array_4,
         work_array_5, work_array_6,
-        theta, rx, ry);
+        theta, rx, ry, preconditioner_on);
 
     // update p
     CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, work_array_1);
@@ -138,7 +128,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
         work_array_1, work_array_2, work_array_3, work_array_4,
         work_array_5, work_array_6,
         ch_alphas_device, ch_betas_device,
-        rx, ry, cheby_calc_step-1);
+        rx, ry, cheby_calc_step-1, preconditioner_on);
 
     CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, work_array_1);
 }
@@ -178,7 +168,7 @@ void CloverleafCudaChunk::tea_leaf_init_cg
         DIE("Unknown coefficient %d passed to tea leaf\n", coefficient);
     }
 
-    assert(tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV);
+    assert(tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV || tea_solver == TEA_ENUM_PPCG);
 
     calcrxry(dt, rx, ry);
 
@@ -194,7 +184,7 @@ void CloverleafCudaChunk::tea_leaf_init_cg
     // get initial guess in w, r, etc
     CUDALAUNCH(device_tea_leaf_cg_init_others, reduce_buf_2, u,
         work_array_1, work_array_2, work_array_3, work_array_4, z,
-        work_array_5, work_array_6, *rx, *ry);
+        work_array_5, work_array_6, *rx, *ry, preconditioner_on);
 
     *rro = thrust::reduce(reduce_ptr_2, reduce_ptr_2 + num_blocks, 0.0);
 }
@@ -212,7 +202,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
 (double alpha, double* rrn)
 {
     CUDALAUNCH(device_tea_leaf_cg_solve_calc_ur, alpha, reduce_buf_4, u, work_array_1,
-        work_array_2, work_array_4, z, work_array_3);
+        work_array_2, work_array_4, z, work_array_3, preconditioner_on);
 
     *rrn = thrust::reduce(reduce_ptr_4, reduce_ptr_4 + num_blocks, 0.0);
 }
@@ -220,7 +210,8 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_p
 (double beta)
 {
-    CUDALAUNCH(device_tea_leaf_cg_solve_calc_p, beta, work_array_1, work_array_2, z);
+    CUDALAUNCH(device_tea_leaf_cg_solve_calc_p, beta, work_array_1, work_array_2, z,
+        preconditioner_on);
 }
 
 /********************/
@@ -324,6 +315,11 @@ void CloverleafCudaChunk::ppcg_init
 (const double * ch_alphas, const double * ch_betas,
  const double theta, const int n_inner_steps)
 {
+    if(preconditioner_on)
+    {
+        DIE("Preconditioner does not work with PPCG solver - disable in input file");
+    }
+
     upload_ch_coefs(ch_alphas, ch_betas, n_inner_steps);
 }
 

@@ -9,7 +9,8 @@ __global__ void device_tea_leaf_cheby_solve_init_p
        double * __restrict const w,
  const double * __restrict const Kx,
  const double * __restrict const Ky,
- double theta, double rx, double ry)
+ double theta, double rx, double ry,
+ bool preconditioner_on)
 {
     __kernel_indexes;
 
@@ -23,9 +24,18 @@ __global__ void device_tea_leaf_cheby_solve_init_p
             - (Kx[THARR2D(1, 0, 0)]*u[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*u[THARR2D(-1, 0, 0)]);
 
         r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
-        p[THARR2D(0, 0, 0)] = (Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)])/theta;
+
+        if (preconditioner_on)
+        {
+            p[THARR2D(0, 0, 0)] = (Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)])/theta;
+        }
+        else
+        {
+            p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]/theta;
+        }
     }
 }
+
 
 __global__ void device_tea_leaf_cheby_solve_calc_u
 (int x_min, int x_max, int y_min, int y_max,
@@ -54,7 +64,7 @@ __global__ void device_tea_leaf_cheby_solve_calc_p
  const double * __restrict const alpha,
  const double * __restrict const beta,
  double rx, double ry,
- int step)
+ int step, bool preconditioner_on)
 {
     __kernel_indexes;
 
@@ -68,8 +78,17 @@ __global__ void device_tea_leaf_cheby_solve_calc_p
             - (Kx[THARR2D(1, 0, 0)]*u[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*u[THARR2D(-1, 0, 0)]);
 
         r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
-        p[THARR2D(0, 0, 0)] = alpha[step]*p[THARR2D(0, 0, 0)]
-                            + beta[step]*Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+
+        if (preconditioner_on)
+        {
+            p[THARR2D(0, 0, 0)] = alpha[step]*p[THARR2D(0, 0, 0)]
+                                + beta[step]*Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+        }
+        else
+        {
+            p[THARR2D(0, 0, 0)] = alpha[step]*p[THARR2D(0, 0, 0)]
+                                + beta[step]*r[THARR2D(0, 0, 0)];
+        }
     }
 }
 

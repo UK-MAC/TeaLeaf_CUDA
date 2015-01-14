@@ -11,11 +11,7 @@ __global__ void device_tea_leaf_ppcg_solve_init_sd
     if (/*row >= (y_min + 1) - 0 && */row <= (y_max + 1) + 0
     && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
-#if defined(USE_PRECONDITIONER)
-        sd[THARR2D(0, 0, 0)] = (Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)])/theta;
-#else
         sd[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]/theta;
-#endif
     }
 }
 
@@ -58,13 +54,7 @@ __global__ void device_tea_leaf_ppcg_solve_calc_sd
     && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
         sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
-// FIXME find out some way to do this in cuda - templates?
-#if defined(USE_PRECONDITIONER)
-#error Preconditioner does not yet work with ppcg solver - disable preconditioner in input file to run
-                            + beta[step]*Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
-#else
                             + beta[step]*r[THARR2D(0, 0, 0)];
-#endif
     }
 }
 
@@ -83,11 +73,7 @@ __global__ void device_tea_leaf_ppcg_solve_init_p
     if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
     && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
     {
-#if defined(USE_PRECONDITIONER)
-        p[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
-#else
         p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)];
-#endif
         rro_shared[lid] = p[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
     }
 

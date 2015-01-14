@@ -65,7 +65,8 @@ __global__ void device_tea_leaf_cg_init_others
        double * __restrict const z,
  const double * __restrict const Kx,
  const double * __restrict const Ky,
- double rx, double ry)
+ double rx, double ry,
+ bool preconditioner_on)
 {
     __kernel_indexes;
 
@@ -86,19 +87,22 @@ __global__ void device_tea_leaf_cg_init_others
 
         r[THARR2D(0, 0, 0)] = u[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
 
-#if defined(CG_DO_PRECONDITION)
-        Mi[THARR2D(0, 0, 0)] = (1.0
-            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
-            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]));
-        Mi[THARR2D(0, 0, 0)] = 1.0/Mi[THARR2D(0, 0, 0)];
+        if (preconditioner_on)
+        {
+            Mi[THARR2D(0, 0, 0)] = (1.0
+                + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
+                + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]));
+            Mi[THARR2D(0, 0, 0)] = 1.0/Mi[THARR2D(0, 0, 0)];
 
-        z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
-        p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)];
-        rro_val = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
-#else
-        p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)];
-        rro_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
-#endif
+            z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+            p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)];
+            rro_val = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
+        }
+        else
+        {
+            p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)];
+            rro_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+        }
 
         rro_shared[lid] = rro_val;
     }
@@ -148,7 +152,8 @@ __global__ void device_tea_leaf_cg_solve_calc_ur
        double * __restrict const r,
  const double * __restrict const w,
        double * __restrict const z,
- const double * __restrict const Mi)
+ const double * __restrict const Mi,
+ bool preconditioner_on)
 {
     __kernel_indexes;
 
@@ -163,12 +168,16 @@ __global__ void device_tea_leaf_cg_solve_calc_ur
     {
         u[THARR2D(0, 0, 0)] += alpha*p[THARR2D(0, 0, 0)];
         r[THARR2D(0, 0, 0)] -= alpha*w[THARR2D(0, 0, 0)];
-#ifdef CG_DO_PRECONDITION
-        z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
-        rrn_val = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
-#else
-        rrn_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
-#endif
+        
+        if (preconditioner_on)
+        {
+            z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+            rrn_val = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
+        }
+        else
+        {
+            rrn_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+        }
 
         rrn_shared[lid] = rrn_val;
     }
@@ -183,18 +192,22 @@ __global__ void device_tea_leaf_cg_solve_calc_p
  double beta,
        double * __restrict const p,
  const double * __restrict const r,
- const double * __restrict const z)
+ const double * __restrict const z,
+ bool preconditioner_on)
 {
     __kernel_indexes;
 
     if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
     && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
     {
-#ifdef CG_DO_PRECONDITION
-        p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)] + beta*p[THARR2D(0, 0, 0)];
-#else
-        p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)] + beta*p[THARR2D(0, 0, 0)];
-#endif
+        if (preconditioner_on)
+        {
+            p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)] + beta*p[THARR2D(0, 0, 0)];
+        }
+        else
+        {
+            p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)] + beta*p[THARR2D(0, 0, 0)];
+        }
     }
 }
 
