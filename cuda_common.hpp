@@ -195,16 +195,12 @@ private:
     double* reduce_buf_2;
     double* reduce_buf_3;
     double* reduce_buf_4;
-    double* reduce_buf_5;
-    double* reduce_buf_6;
 
     // used for reductions in calc dt, pdv, field summary
     thrust::device_ptr< double > reduce_ptr_1;
     thrust::device_ptr< double > reduce_ptr_2;
     thrust::device_ptr< double > reduce_ptr_3;
     thrust::device_ptr< double > reduce_ptr_4;
-    thrust::device_ptr< double > reduce_ptr_5;
-    thrust::device_ptr< double > reduce_ptr_6;
 
     // number of blocks for work space
     unsigned int num_blocks;
