@@ -76,7 +76,7 @@ void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel
     else if (norm_array == 1)
     {
         // norm of r
-        CUDALAUNCH(device_tea_leaf_cheby_solve_calc_resid, work_array_2, reduce_buf_1);
+        CUDALAUNCH(device_tea_leaf_cheby_solve_calc_resid, vector_r, reduce_buf_1);
     }
     else
     {
@@ -112,12 +112,12 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
     CUDA_ERR_CHECK;
 
     CUDALAUNCH(device_tea_leaf_cheby_solve_init_p, u, u0,
-        work_array_1, work_array_2, work_array_3, work_array_4,
-        work_array_5, work_array_6,
+        vector_p, vector_r, vector_w, vector_Mi,
+        vector_Kx, vector_Ky,
         theta, rx, ry, preconditioner_on);
 
     // update p
-    CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, work_array_1);
+    CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, vector_p);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
@@ -125,12 +125,12 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
  const double rx, const double ry, const int cheby_calc_step)
 {
     CUDALAUNCH(device_tea_leaf_cheby_solve_calc_p, u, u0,
-        work_array_1, work_array_2, work_array_3, work_array_4,
-        work_array_5, work_array_6,
+        vector_p, vector_r, vector_w, vector_Mi,
+        vector_Kx, vector_Ky,
         ch_alphas_device, ch_betas_device,
         rx, ry, cheby_calc_step-1, preconditioner_on);
 
-    CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, work_array_1);
+    CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, vector_p);
 }
 
 /********************/
@@ -173,18 +173,18 @@ void CloverleafCudaChunk::tea_leaf_init_cg
     calcrxry(dt, rx, ry);
 
     CUDALAUNCH(device_tea_leaf_cg_init_u, density, energy1, u,
-        work_array_1, work_array_2, work_array_3, coefficient);
+        vector_p, vector_r, vector_w, coefficient);
 
     // init Kx, Ky
-    CUDALAUNCH(device_tea_leaf_cg_init_directions, work_array_3, work_array_5, work_array_6);
+    CUDALAUNCH(device_tea_leaf_cg_init_directions, vector_w, vector_Kx, vector_Ky);
 
     // premultiply Kx/Ky
-    CUDALAUNCH(device_tea_leaf_init_diag, work_array_5, work_array_6, *rx, *ry);
+    CUDALAUNCH(device_tea_leaf_init_diag, vector_Kx, vector_Ky, *rx, *ry);
 
     // get initial guess in w, r, etc
     CUDALAUNCH(device_tea_leaf_cg_init_others, reduce_buf_2, u,
-        work_array_1, work_array_2, work_array_3, work_array_4, z,
-        work_array_5, work_array_6, *rx, *ry, preconditioner_on);
+        vector_p, vector_r, vector_w, vector_Mi, z,
+        vector_Kx, vector_Ky, *rx, *ry, preconditioner_on);
 
     *rro = thrust::reduce(reduce_ptr_2, reduce_ptr_2 + num_blocks, 0.0);
 }
@@ -193,7 +193,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_w
 (double rx, double ry, double* pw)
 {
     CUDALAUNCH(device_tea_leaf_cg_solve_calc_w, reduce_buf_3,
-        work_array_1, work_array_4, work_array_5, work_array_6, rx, ry);
+        vector_p, vector_Mi, vector_Kx, vector_Ky, rx, ry);
 
     *pw = thrust::reduce(reduce_ptr_3, reduce_ptr_3 + num_blocks, 0.0);
 }
@@ -201,8 +201,8 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_w
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
 (double alpha, double* rrn)
 {
-    CUDALAUNCH(device_tea_leaf_cg_solve_calc_ur, alpha, reduce_buf_4, u, work_array_1,
-        work_array_2, work_array_4, z, work_array_3, preconditioner_on);
+    CUDALAUNCH(device_tea_leaf_cg_solve_calc_ur, alpha, reduce_buf_4, u, vector_p,
+        vector_r, vector_Mi, z, vector_w, preconditioner_on);
 
     *rrn = thrust::reduce(reduce_ptr_4, reduce_ptr_4 + num_blocks, 0.0);
 }
@@ -210,7 +210,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_p
 (double beta)
 {
-    CUDALAUNCH(device_tea_leaf_cg_solve_calc_p, beta, work_array_1, work_array_2, z,
+    CUDALAUNCH(device_tea_leaf_cg_solve_calc_p, beta, vector_p, vector_r, z,
         preconditioner_on);
 }
 
@@ -241,16 +241,16 @@ void CloverleafCudaChunk::tea_leaf_init_jacobi
     calcrxry(dt, rx, ry);
 
     CUDALAUNCH(device_tea_leaf_jacobi_init, density, energy1,
-        work_array_5, work_array_6, work_array_3, u, coefficient);
+        vector_Kx, vector_Ky, vector_w, u, coefficient);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_jacobi
 (double rx, double ry, double* error)
 {
-    CUDALAUNCH(device_tea_leaf_jacobi_copy_u, u, work_array_4);
+    CUDALAUNCH(device_tea_leaf_jacobi_copy_u, u, vector_Mi);
 
-    CUDALAUNCH(device_tea_leaf_jacobi_solve, rx, ry, work_array_5, work_array_6,
-        work_array_3, u, work_array_4, reduce_buf_1);
+    CUDALAUNCH(device_tea_leaf_jacobi_solve, rx, ry, vector_Kx, vector_Ky,
+        vector_w, u, vector_Mi, reduce_buf_1);
 
     *error = *thrust::max_element(reduce_ptr_1, reduce_ptr_1 + num_blocks);
 }
@@ -280,8 +280,8 @@ void CloverleafCudaChunk::tea_leaf_finalise
 void CloverleafCudaChunk::tea_leaf_calc_residual
 (void)
 {
-    CUDALAUNCH(device_tea_leaf_calc_residual, u, u0, work_array_3,
-        work_array_5, work_array_6);
+    CUDALAUNCH(device_tea_leaf_calc_residual, u, u0, vector_w,
+        vector_Kx, vector_Ky);
 }
 
 /********************/
@@ -326,9 +326,8 @@ void CloverleafCudaChunk::ppcg_init
 void CloverleafCudaChunk::ppcg_init_p
 (double * rro)
 {
-    // FIXME work_arrays - rename to u, p, r, etc
-    CUDALAUNCH(device_tea_leaf_ppcg_solve_init_p, work_array_1,
-        work_array_3, work_array_4, reduce_buf_1);
+    CUDALAUNCH(device_tea_leaf_ppcg_solve_init_p, vector_p,
+        vector_w, vector_Mi, reduce_buf_1);
 
     *rro = thrust::reduce(reduce_ptr_1, reduce_ptr_1 + num_blocks, 0.0);
 }
@@ -336,18 +335,18 @@ void CloverleafCudaChunk::ppcg_init_p
 void CloverleafCudaChunk::ppcg_init_sd
 (double theta)
 {
-    CUDALAUNCH(device_tea_leaf_ppcg_solve_init_sd, work_array_3,
-        work_array_4, work_array_8, theta);
+    CUDALAUNCH(device_tea_leaf_ppcg_solve_init_sd, vector_w,
+        vector_Mi, vector_sd, theta);
 }
 
 void CloverleafCudaChunk::ppcg_inner
 (int ppcg_cur_step)
 {
-    CUDALAUNCH(device_tea_leaf_ppcg_solve_update_r, u, work_array_3,
-        work_array_5, work_array_6, work_array_8);
+    CUDALAUNCH(device_tea_leaf_ppcg_solve_update_r, u, vector_w,
+        vector_Kx, vector_Ky, vector_sd);
 
-    CUDALAUNCH(device_tea_leaf_ppcg_solve_calc_sd, work_array_3,
-        work_array_4, work_array_8, ch_alphas_device, ch_betas_device,
+    CUDALAUNCH(device_tea_leaf_ppcg_solve_calc_sd, vector_w,
+        vector_Mi, vector_sd, ch_alphas_device, ch_betas_device,
         ppcg_cur_step - 1);
 }
 

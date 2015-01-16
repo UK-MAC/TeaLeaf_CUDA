@@ -175,12 +175,12 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     CUDA_ARRAY_ALLOC(vertexy, BUFSZY(1));
     CUDA_ARRAY_ALLOC(vertexdy, BUFSZY(1));
 
-    CUDA_ARRAY_ALLOC(work_array_1, BUFSZ2D(1, 1));
-    CUDA_ARRAY_ALLOC(work_array_2, BUFSZ2D(1, 1));
-    CUDA_ARRAY_ALLOC(work_array_3, BUFSZ2D(1, 1));
-    CUDA_ARRAY_ALLOC(work_array_4, BUFSZ2D(1, 1));
-    CUDA_ARRAY_ALLOC(work_array_5, BUFSZ2D(1, 1));
-    CUDA_ARRAY_ALLOC(work_array_6, BUFSZ2D(1, 1));
+    CUDA_ARRAY_ALLOC(vector_p, BUFSZ2D(1, 1));
+    CUDA_ARRAY_ALLOC(vector_r, BUFSZ2D(1, 1));
+    CUDA_ARRAY_ALLOC(vector_w, BUFSZ2D(1, 1));
+    CUDA_ARRAY_ALLOC(vector_Mi, BUFSZ2D(1, 1));
+    CUDA_ARRAY_ALLOC(vector_Kx, BUFSZ2D(1, 1));
+    CUDA_ARRAY_ALLOC(vector_Ky, BUFSZ2D(1, 1));
 
     CUDA_ARRAY_ALLOC(reduce_buf_1, num_blocks*sizeof(double));
     CUDA_ARRAY_ALLOC(reduce_buf_2, num_blocks*sizeof(double));
@@ -209,13 +209,13 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     ADD_BUFFER_DBG_MAP(viscosity);
 
     ADD_BUFFER_DBG_MAP(u);
-    arr_names["p"] = work_array_1;
+    arr_names["p"] = vector_p;
 
-    ADD_BUFFER_DBG_MAP(work_array_2);
-    ADD_BUFFER_DBG_MAP(work_array_3);
-    ADD_BUFFER_DBG_MAP(work_array_4);
-    ADD_BUFFER_DBG_MAP(work_array_5);
-    ADD_BUFFER_DBG_MAP(work_array_6);
+    ADD_BUFFER_DBG_MAP(vector_r);
+    ADD_BUFFER_DBG_MAP(vector_w);
+    ADD_BUFFER_DBG_MAP(vector_Mi);
+    ADD_BUFFER_DBG_MAP(vector_Kx);
+    ADD_BUFFER_DBG_MAP(vector_Ky);
 
     ADD_BUFFER_DBG_MAP(density);
     ADD_BUFFER_DBG_MAP(energy0);

@@ -151,8 +151,8 @@ void CloverleafCudaChunk::packUnpackAllBuffers
             case FIELD_energy0:
             case FIELD_energy1:
             case FIELD_u:
-            case FIELD_p:
-            case FIELD_sd:
+            case FIELD_vector_p:
+            case FIELD_vector_sd:
                 break;
             default:
                 DIE("Invalid field number %d in choosing _inc values\n", which_field);
@@ -172,8 +172,8 @@ void CloverleafCudaChunk::packUnpackAllBuffers
             CASE_BUF(energy0); break;
             CASE_BUF(energy1); break;
             CASE_BUF(u); break;
-            CASE_BUF(work_array_1); break;
-            CASE_BUF(work_array_8); break;
+            CASE_BUF(vector_p); break;
+            CASE_BUF(vector_sd); break;
             default:
                 DIE("Invalid face %d passed to left/right pack buffer\n", which_field);
             }

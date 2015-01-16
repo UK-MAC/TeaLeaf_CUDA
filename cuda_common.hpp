@@ -36,11 +36,9 @@
 #define FIELD_energy0       2
 #define FIELD_energy1       3
 #define FIELD_u             4
-#define FIELD_p             5
-#define FIELD_sd            6
+#define FIELD_vector_p      5
+#define FIELD_vector_sd     6
 #define NUM_FIELDS          6
-#define FIELD_work_array_1 FIELD_p
-#define FIELD_work_array_8 FIELD_sd
 
 #define NUM_BUFFERED_FIELDS 3
 
@@ -178,13 +176,13 @@ private:
     thrust::device_ptr< double > thr_soundspeed;
 
     // holding temporary stuff like post_vol etc.
-    double* work_array_1;
-    double* work_array_2;
-    double* work_array_3;
-    double* work_array_4;
-    double* work_array_5;
-    double* work_array_6;
-    double* work_array_8;
+    double* vector_p;
+    double* vector_r;
+    double* vector_w;
+    double* vector_Mi;
+    double* vector_Kx;
+    double* vector_Ky;
+    double* vector_sd;
 
     // buffers used in mpi transfers
     double * left_buffer;
