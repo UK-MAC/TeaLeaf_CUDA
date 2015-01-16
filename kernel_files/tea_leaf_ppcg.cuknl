@@ -8,8 +8,8 @@ __global__ void device_tea_leaf_ppcg_solve_init_sd
 {
     __kernel_indexes;
 
-    if (/*row >= (y_min + 1) - 0 && */row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
+    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
     {
         sd[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]/theta;
     }
@@ -25,8 +25,8 @@ __global__ void device_tea_leaf_ppcg_solve_update_r
 {
     __kernel_indexes;
 
-    if (/*row >= (y_min + 1) - 0 && */row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
+    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
     {
         const double result = (1.0
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
@@ -50,8 +50,8 @@ __global__ void device_tea_leaf_ppcg_solve_calc_sd
 {
     __kernel_indexes;
 
-    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
+    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
     {
         sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
                             + beta[step]*r[THARR2D(0, 0, 0)];
@@ -70,8 +70,8 @@ __global__ void device_tea_leaf_ppcg_solve_init_p
     __shared__ double rro_shared[BLOCK_SZ];
     rro_shared[lid] = 0.0;
 
-    if (/*row >= (y_min + 1) - 0 &&*/ row <= (y_max + 1) + 0
-    && /*column >= (x_min + 1) - 0 &&*/ column <= (x_max + 1) + 0)
+    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
+    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
     {
         p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)];
         rro_shared[lid] = p[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];

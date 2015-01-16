@@ -157,11 +157,6 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     CUDA_ARRAY_ALLOC(energy0, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(energy1, BUFSZ2D(0, 0));
 
-    // TODO checks on whether these are actually used before allocating them (needs reading from input file again...?)
-    CUDA_ARRAY_ALLOC(u, BUFSZ2D(0, 0));
-    CUDA_ARRAY_ALLOC(u0, BUFSZ2D(0, 0));
-    CUDA_ARRAY_ALLOC(z, BUFSZ2D(0, 0));
-
     CUDA_ARRAY_ALLOC(xarea, BUFSZ2D(1, 0));
     CUDA_ARRAY_ALLOC(yarea, BUFSZ2D(0, 1));
 
@@ -175,12 +170,17 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     CUDA_ARRAY_ALLOC(vertexy, BUFSZY(1));
     CUDA_ARRAY_ALLOC(vertexdy, BUFSZY(1));
 
-    CUDA_ARRAY_ALLOC(vector_p, BUFSZ2D(1, 1));
-    CUDA_ARRAY_ALLOC(vector_r, BUFSZ2D(1, 1));
-    CUDA_ARRAY_ALLOC(vector_w, BUFSZ2D(1, 1));
-    CUDA_ARRAY_ALLOC(vector_Mi, BUFSZ2D(1, 1));
-    CUDA_ARRAY_ALLOC(vector_Kx, BUFSZ2D(1, 1));
-    CUDA_ARRAY_ALLOC(vector_Ky, BUFSZ2D(1, 1));
+    CUDA_ARRAY_ALLOC(u, BUFSZ2D(0, 0));
+    CUDA_ARRAY_ALLOC(u0, BUFSZ2D(0, 0));
+    CUDA_ARRAY_ALLOC(z, BUFSZ2D(0, 0));
+
+    CUDA_ARRAY_ALLOC(vector_p, BUFSZ2D(0, 0));
+    CUDA_ARRAY_ALLOC(vector_r, BUFSZ2D(0, 0));
+    CUDA_ARRAY_ALLOC(vector_w, BUFSZ2D(0, 0));
+    CUDA_ARRAY_ALLOC(vector_Mi, BUFSZ2D(0, 0));
+    CUDA_ARRAY_ALLOC(vector_Kx, BUFSZ2D(0, 0));
+    CUDA_ARRAY_ALLOC(vector_Ky, BUFSZ2D(0, 0));
+    CUDA_ARRAY_ALLOC(vector_sd, BUFSZ2D(0, 0));
 
     CUDA_ARRAY_ALLOC(reduce_buf_1, num_blocks*sizeof(double));
     CUDA_ARRAY_ALLOC(reduce_buf_2, num_blocks*sizeof(double));

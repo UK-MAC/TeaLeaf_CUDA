@@ -324,7 +324,7 @@ void CloverleafCudaChunk::ppcg_init_p
 (double * rro)
 {
     CUDALAUNCH(device_tea_leaf_ppcg_solve_init_p, vector_p,
-        vector_w, vector_Mi, reduce_buf_1);
+        vector_r, vector_Mi, reduce_buf_1);
 
     *rro = thrust::reduce(reduce_ptr_1, reduce_ptr_1 + num_blocks, 0.0);
 }
@@ -332,17 +332,17 @@ void CloverleafCudaChunk::ppcg_init_p
 void CloverleafCudaChunk::ppcg_init_sd
 (double theta)
 {
-    CUDALAUNCH(device_tea_leaf_ppcg_solve_init_sd, vector_w,
+    CUDALAUNCH(device_tea_leaf_ppcg_solve_init_sd, vector_r,
         vector_Mi, vector_sd, theta);
 }
 
 void CloverleafCudaChunk::ppcg_inner
 (int ppcg_cur_step)
 {
-    CUDALAUNCH(device_tea_leaf_ppcg_solve_update_r, u, vector_w,
+    CUDALAUNCH(device_tea_leaf_ppcg_solve_update_r, u, vector_r,
         vector_Kx, vector_Ky, vector_sd);
 
-    CUDALAUNCH(device_tea_leaf_ppcg_solve_calc_sd, vector_w,
+    CUDALAUNCH(device_tea_leaf_ppcg_solve_calc_sd, vector_r,
         vector_Mi, vector_sd, ch_alphas_device, ch_betas_device,
         ppcg_cur_step - 1);
 }
