@@ -312,7 +312,7 @@ void CloverleafCudaChunk::ppcg_init
 (const double * ch_alphas, const double * ch_betas,
  const int n_inner_steps)
 {
-    if(preconditioner_on)
+    if (preconditioner_on)
     {
         DIE("Preconditioner does not work with PPCG solver - disable in input file");
     }
@@ -346,5 +346,4 @@ void CloverleafCudaChunk::ppcg_inner
         vector_Mi, vector_sd, ch_alphas_device, ch_betas_device,
         ppcg_cur_step - 1);
 }
-
 
