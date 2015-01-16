@@ -142,7 +142,7 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     std::cout << "CUDA using " << prop.name << std::endl;
 
     #define CUDA_ARRAY_ALLOC(arr, size)     \
-            cudaMalloc((void**) &arr, size) == cudaSuccess;\
+            cudaMalloc((void**) &arr, size);\
             errorHandler(__LINE__, __FILE__);\
             cudaDeviceSynchronize();        \
             cudaMemset(arr, 0, size);       \

@@ -39,17 +39,14 @@ MODULE tea_leaf_module
       real(kind=8) :: norm
     end subroutine
     subroutine tea_leaf_kernel_cheby_init_cuda(ch_alphas, ch_betas, n_coefs, &
-        rx, ry, theta, error)
-      real(kind=8) :: rx, ry, theta, error
+        rx, ry, theta)
+      real(kind=8) :: rx, ry, theta
       integer :: n_coefs
       real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
     end subroutine
-    subroutine tea_leaf_kernel_cheby_iterate_cuda(ch_alphas, ch_betas, n_coefs, &
-        rx, ry, cheby_calc_step)
+    subroutine tea_leaf_kernel_cheby_iterate_cuda(rx, ry, cheby_calc_step)
       real(kind=8) :: rx, ry
       integer :: cheby_calc_step
-      integer :: n_coefs
-      real(kind=8), dimension(n_coefs) :: ch_alphas, ch_betas
     end subroutine
   end interface
 
@@ -276,8 +273,7 @@ SUBROUTINE tea_leaf()
                                   ch_alphas, ch_betas, max_cheby_iters,        &
                                   rx, ry, cheby_calc_steps, tl_preconditioner_on)
                   ELSEIF(use_cuda_kernels) THEN
-                      CALL tea_leaf_kernel_cheby_iterate_cuda(ch_alphas, ch_betas, max_cheby_iters, &
-                        rx, ry, cheby_calc_steps)
+                      CALL tea_leaf_kernel_cheby_iterate_cuda(rx, ry, cheby_calc_steps)
                   ENDIF
 
                   ! after estimated number of iterations has passed, calc resid.
@@ -306,7 +302,7 @@ SUBROUTINE tea_leaf()
 
               IF(use_cuda_kernels) THEN
                 call tea_leaf_kernel_ppcg_init_cuda(ch_alphas, ch_betas, &
-                    theta, tl_ppcg_inner_steps)
+                    tl_ppcg_inner_steps)
               ENDIF
 
               IF(use_fortran_kernels) THEN
@@ -693,10 +689,10 @@ SUBROUTINE tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
           chunks(c)%field%vector_Kx,                      &
           chunks(c)%field%vector_Ky,                      &
           ch_alphas, ch_betas, max_cheby_iters,           &
-          rx, ry, theta, error, tl_preconditioner_on)
+          rx, ry, theta, tl_preconditioner_on)
   ELSEIF(use_cuda_kernels) THEN
     CALL tea_leaf_kernel_cheby_init_cuda(ch_alphas, ch_betas, &
-      max_cheby_iters, rx, ry, theta, error)
+      max_cheby_iters, rx, ry, theta)
   ENDIF
 
   CALL update_halo(fields,1)
@@ -718,8 +714,7 @@ SUBROUTINE tea_leaf_cheby_first_step(c, ch_alphas, ch_betas, fields, &
           ch_alphas, ch_betas, max_cheby_iters,                &
           rx, ry, 1, tl_preconditioner_on)
   ELSEIF(use_cuda_kernels) THEN
-      CALL tea_leaf_kernel_cheby_iterate_cuda(ch_alphas, ch_betas, max_cheby_iters, &
-        rx, ry, 1)
+      CALL tea_leaf_kernel_cheby_iterate_cuda(rx, ry, 1)
   ENDIF
 
   IF(use_fortran_kernels) THEN

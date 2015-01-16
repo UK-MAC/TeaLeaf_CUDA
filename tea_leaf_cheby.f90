@@ -72,7 +72,6 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,  &
                            rx,                &
                            ry,                &
                            theta,             &
-                           error,             &
                            preconditioner_on)
   IMPLICIT NONE
 
@@ -84,7 +83,7 @@ SUBROUTINE tea_leaf_kernel_cheby_init(x_min,  &
   REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx, Ky
 
   INTEGER :: j,k, max_cheby_iters
-  REAL(KIND=8) ::  rx, ry, error, theta
+  REAL(KIND=8) ::  rx, ry, theta
   REAL(KIND=8), DIMENSION(max_cheby_iters) :: ch_alphas, ch_betas
 
 !$OMP PARALLEL

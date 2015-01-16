@@ -44,18 +44,16 @@ extern "C" void tea_leaf_calc_2norm_kernel_cuda_
 
 extern "C" void tea_leaf_kernel_cheby_init_cuda_
 (const double * ch_alphas, const double * ch_betas, int* n_coefs,
- const double * rx, const double * ry, const double * theta, double* error)
+ const double * rx, const double * ry, const double * theta)
 {
     cuda_chunk.tea_leaf_kernel_cheby_init(ch_alphas, ch_betas, *n_coefs,
-        *rx, *ry, *theta, error);
+        *rx, *ry, *theta);
 }
 
 extern "C" void tea_leaf_kernel_cheby_iterate_cuda_
-(const double * ch_alphas, const double * ch_betas, int *n_coefs,
- const double * rx, const double * ry, const int * cheby_calc_step)
+(const double * rx, const double * ry, const int * cheby_calc_step)
 {
-    cuda_chunk.tea_leaf_kernel_cheby_iterate(ch_alphas, ch_betas, *n_coefs,
-        *rx, *ry, *cheby_calc_step);
+    cuda_chunk.tea_leaf_kernel_cheby_iterate(*rx, *ry, *cheby_calc_step);
 }
 
 void CloverleafCudaChunk::tea_leaf_cheby_copy_u
@@ -103,7 +101,7 @@ void CloverleafCudaChunk::upload_ch_coefs
 
 void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
 (const double * ch_alphas, const double * ch_betas, int n_coefs,
- const double rx, const double ry, const double theta, double* error)
+ const double rx, const double ry, const double theta)
 {
     assert(tea_solver == TEA_ENUM_CHEBYSHEV);
 
@@ -121,8 +119,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
-(const double * ch_alphas, const double * ch_betas, int n_coefs,
- const double rx, const double ry, const int cheby_calc_step)
+(const double rx, const double ry, const int cheby_calc_step)
 {
     CUDALAUNCH(device_tea_leaf_cheby_solve_calc_p, u, u0,
         vector_p, vector_r, vector_w, vector_Mi,
@@ -288,9 +285,9 @@ void CloverleafCudaChunk::tea_leaf_calc_residual
 
 extern "C" void tea_leaf_kernel_ppcg_init_cuda_
 (const double * ch_alphas, const double * ch_betas,
- double* theta, int* n_inner_steps)
+ int* n_inner_steps)
 {
-    cuda_chunk.ppcg_init(ch_alphas, ch_betas, *theta, *n_inner_steps);
+    cuda_chunk.ppcg_init(ch_alphas, ch_betas, *n_inner_steps);
 }
 
 extern "C" void tea_leaf_kernel_ppcg_init_p_cuda_
@@ -313,7 +310,7 @@ extern "C" void tea_leaf_kernel_ppcg_inner_cuda_
 
 void CloverleafCudaChunk::ppcg_init
 (const double * ch_alphas, const double * ch_betas,
- const double theta, const int n_inner_steps)
+ const int n_inner_steps)
 {
     if(preconditioner_on)
     {
