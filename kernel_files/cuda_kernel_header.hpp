@@ -30,7 +30,7 @@
     ( glob_id                               \
     + (x_offset)                            \
     + ((y_offset) * (x_max + 4))            \
-    + (big_row * (row + (y_offset))) )
+    + ((big_row) * (row + (y_offset))) )
 
 // kernel indexes uses in all kernels
 #define __kernel_indexes                    \

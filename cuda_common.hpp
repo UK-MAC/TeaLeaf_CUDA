@@ -205,10 +205,6 @@ private:
     // number of blocks for work space
     unsigned int num_blocks;
 
-    //as above, but for pdv kernel only
-    int* pdv_reduce_array;
-    thrust::device_ptr< int > reduce_pdv;
-
     // values used to control operation
     int x_min;
     int x_max;

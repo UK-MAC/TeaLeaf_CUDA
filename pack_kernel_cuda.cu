@@ -1,26 +1,27 @@
 #include "cuda_common.hpp"
+#include <cstdio>
 #include <numeric>
 
 #include "kernel_files/pack_kernel.cuknl"
 
 extern "C" void cuda_pack_buffers_
 (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int * depth,
- int * face, double * buffer)
+ int * face, double * host_buffer)
 {
-    cuda_chunk.packUnpackAllBuffers(fields, offsets, *depth, *face, 1, buffer);
+    cuda_chunk.packUnpackAllBuffers(fields, offsets, *depth, *face, 1, host_buffer);
 }
 
 extern "C" void cuda_unpack_buffers_
 (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int * depth,
- int * face, double * buffer)
+ int * face, double * host_buffer)
 {
-    cuda_chunk.packUnpackAllBuffers(fields, offsets, *depth, *face, 0, buffer);
+    cuda_chunk.packUnpackAllBuffers(fields, offsets, *depth, *face, 0, host_buffer);
 }
 
 void CloverleafCudaChunk::packUnpackAllBuffers
 (int fields[NUM_FIELDS], int offsets[NUM_FIELDS],
  const int depth, const int face, const int pack,
- double * buffer)
+ double * host_buffer)
 {
     const int n_exchanged = std::accumulate(fields, fields + NUM_FIELDS, 0);
 
@@ -30,21 +31,21 @@ void CloverleafCudaChunk::packUnpackAllBuffers
     }
 
     // which buffer is being used for this operation
-    double * side_buffer = NULL;
+    double * device_buffer = NULL;
 
     switch (face)
     {
     case CHUNK_LEFT:
-        side_buffer = left_buffer;
+        device_buffer = left_buffer;
         break;
     case CHUNK_RIGHT:
-        side_buffer = right_buffer;
+        device_buffer = right_buffer;
         break;
     case CHUNK_BOTTOM:
-        side_buffer = bottom_buffer;
+        device_buffer = bottom_buffer;
         break;
     case CHUNK_TOP:
-        side_buffer = top_buffer;
+        device_buffer = top_buffer;
         break;
     default:
         DIE("Invalid face identifier %d passed to mpi buffer packing\n", face);
@@ -103,28 +104,28 @@ void CloverleafCudaChunk::packUnpackAllBuffers
 
     switch (face)
     {
+    // pad it to fit in 32 local work group size (always on NVIDIA hardware)
     case CHUNK_LEFT:
     case CHUNK_RIGHT:
         needed_launch_size = (y_max + 5);
         pack_global = dim3(depth, needed_launch_size + (32 - (needed_launch_size % 32)));
         pack_local = dim3(1, 32);
-        side_size = sizeof(double)*(y_max + 5);
-        // pad it to fit in 32 local work group size (always on NVIDIA hardware)
         break;
     case CHUNK_BOTTOM:
     case CHUNK_TOP:
         needed_launch_size = (x_max + 5);
         pack_global = dim3(needed_launch_size + (32 - (needed_launch_size % 32)), depth);
         pack_local = dim3(32, 1);
-        side_size = sizeof(double)*(x_max + 5);
         break;
     default:
         DIE("Invalid face identifier %d passed to mpi buffer packing\n", face);
     }
 
+    side_size = sizeof(double)*needed_launch_size*depth;
+
     if (!pack)
     {
-        cudaMemcpy(side_buffer, buffer, n_exchanged*depth*side_size,
+        cudaMemcpy(device_buffer, host_buffer, n_exchanged*depth*side_size,
             cudaMemcpyHostToDevice);
     }
 
@@ -142,29 +143,15 @@ void CloverleafCudaChunk::packUnpackAllBuffers
 
             int x_inc = 0, y_inc = 0;
 
-            // x_inc / y_inc not used for tea leaf
+            // x_inc / y_inc set to 0 in tea leaf
 
-            // set x/y/z inc for array
-            switch (which_field)
-            {
-            case FIELD_density:
-            case FIELD_energy0:
-            case FIELD_energy1:
-            case FIELD_u:
-            case FIELD_vector_p:
-            case FIELD_vector_sd:
-                break;
-            default:
-                DIE("Invalid field number %d in choosing _inc values\n", which_field);
-            }
+            double * device_array = NULL;
 
             #define CASE_BUF(which_array)   \
             case FIELD_##which_array:       \
             {                               \
                 device_array = which_array; \
             }
-
-            double * device_array = NULL;
 
             switch (which_field)
             {
@@ -175,19 +162,19 @@ void CloverleafCudaChunk::packUnpackAllBuffers
             CASE_BUF(vector_p); break;
             CASE_BUF(vector_sd); break;
             default:
-                DIE("Invalid face %d passed to left/right pack buffer\n", which_field);
+                DIE("Invalid face %d passed to pack buffer function\n", which_field);
             }
 
             #undef CASE_BUF
 
             pack_kernel<<< pack_global, pack_local >>>(x_min, x_max, y_min, y_max,
-                x_inc, y_inc, device_array, side_buffer+offsets[ii], depth);
+                x_inc, y_inc, device_array, device_buffer+offsets[ii], depth);
         }
     }
 
     if (pack)
     {
-        cudaMemcpy(buffer, side_buffer, n_exchanged*depth*side_size,
+        cudaMemcpy(host_buffer, device_buffer, n_exchanged*depth*side_size,
             cudaMemcpyDeviceToHost);
     }
 }

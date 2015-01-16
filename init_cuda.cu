@@ -117,7 +117,7 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
 
     fclose(input);
 
-#ifdef MANUALLY_CHOOSE_GPU
+//#ifdef MANUALLY_CHOOSE_GPU
     // choose device 0 unless specified
     cudaThreadExit();
     int num_devices;
@@ -135,7 +135,7 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
         fprintf(stderr, "Setting device id to %d in rank %d failed with error code %d\n", device_id, rank, err);
         errorHandler(__LINE__, __FILE__);
     }
-#endif
+//#endif
 
     struct cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, device_id);
@@ -182,6 +182,11 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     CUDA_ARRAY_ALLOC(vector_Ky, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(vector_sd, BUFSZ2D(0, 0));
 
+    CUDA_ARRAY_ALLOC(left_buffer, BUFSZ2D(0, 0)/(x_max/2));
+    CUDA_ARRAY_ALLOC(right_buffer, BUFSZ2D(0, 0)/(x_max/2));
+    CUDA_ARRAY_ALLOC(bottom_buffer, BUFSZ2D(0, 0)/(y_max/2));
+    CUDA_ARRAY_ALLOC(top_buffer, BUFSZ2D(0, 0)/(y_max/2));
+
     CUDA_ARRAY_ALLOC(reduce_buf_1, num_blocks*sizeof(double));
     CUDA_ARRAY_ALLOC(reduce_buf_2, num_blocks*sizeof(double));
     CUDA_ARRAY_ALLOC(reduce_buf_3, num_blocks*sizeof(double));
@@ -191,9 +196,6 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     reduce_ptr_2 = thrust::device_ptr< double >(reduce_buf_2);
     reduce_ptr_3 = thrust::device_ptr< double >(reduce_buf_3);
     reduce_ptr_4 = thrust::device_ptr< double >(reduce_buf_4);
-
-    CUDA_ARRAY_ALLOC(pdv_reduce_array, num_blocks*sizeof(int));
-    reduce_pdv = thrust::device_ptr< int >(pdv_reduce_array);
 
     thr_cellx = thrust::device_ptr< double >(cellx);
     thr_celly = thrust::device_ptr< double >(celly);
