@@ -144,6 +144,11 @@ else
 NV_FLAGS+=-O3
 endif
 
+# manually choosing GPU with either device_id or automatic based on mpi rank
+ifdef MANUALLY_CHOOSE_GPU
+NV_FLAGS+=-D MANUALLY_CHOOSE_GPU
+endif
+
 CXXFLAGS+=$(CFLAGS)
 
 C_FILES=\

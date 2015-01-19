@@ -112,14 +112,14 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
         if(!rank)fprintf(stdout, "Jacobi (no solver specified in tea.in)\n");
     }
 
+#ifdef MANUALLY_CHOOSE_GPU
     int device_id = clover::preferredDevice(input);
-    device_id = device_id < 0 ? 0 : device_id;
 
-    fclose(input);
+    device_id = (device_id < 0) ? 0 : device_id;
 
-//#ifdef MANUALLY_CHOOSE_GPU
-    // choose device 0 unless specified
     cudaThreadExit();
+
+    // account for MPI
     int num_devices;
     cudaGetDeviceCount(&num_devices);
 
@@ -135,7 +135,12 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
         fprintf(stderr, "Setting device id to %d in rank %d failed with error code %d\n", device_id, rank, err);
         errorHandler(__LINE__, __FILE__);
     }
-//#endif
+#else
+    // choose device 0 unless specified
+    int device_id = 0;
+#endif
+
+    fclose(input);
 
     struct cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, device_id);
