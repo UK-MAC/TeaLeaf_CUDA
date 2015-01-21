@@ -127,6 +127,8 @@ void CloverleafCudaChunk::packUnpackAllBuffers
     {
         cudaMemcpy(device_buffer, host_buffer, n_exchanged*depth*side_size,
             cudaMemcpyHostToDevice);
+
+        CUDA_ERR_CHECK;
     }
 
     for (int ii = 0; ii < NUM_FIELDS; ii++)
@@ -169,6 +171,8 @@ void CloverleafCudaChunk::packUnpackAllBuffers
 
             pack_kernel<<< pack_global, pack_local >>>(x_min, x_max, y_min, y_max,
                 x_inc, y_inc, device_array, device_buffer+offsets[ii], depth);
+
+            CUDA_ERR_CHECK;
         }
     }
 
@@ -176,6 +180,8 @@ void CloverleafCudaChunk::packUnpackAllBuffers
     {
         cudaMemcpy(host_buffer, device_buffer, n_exchanged*depth*side_size,
             cudaMemcpyDeviceToHost);
+
+        CUDA_ERR_CHECK;
     }
 }
 

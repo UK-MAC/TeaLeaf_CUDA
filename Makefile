@@ -120,7 +120,6 @@ endif
 
 # flags for nvcc
 # set NV_ARCH to select the correct one
-NV_ARCH=KEPLER
 CODE_GEN_FERMI=-gencode arch=compute_20,code=sm_21
 CODE_GEN_KEPLER=-gencode arch=compute_35,code=sm_35
 CODE_GEN_KEPLER_CONSUMER=-gencode arch=compute_30,code=sm_30

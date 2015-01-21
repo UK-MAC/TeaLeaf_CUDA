@@ -51,10 +51,18 @@ typedef void (*pack_func_t)(int x_min,int x_max,int y_min,int y_max,
 // special ones for 2d indexing as used in buffer packing
 #undef __kernel_indexes
 #define __kernel_indexes                    \
-    const int glob_id = (blockIdx.x + blockIdx.y*gridDim.x)*(blockDim.x*blockDim.y) + \
-        (threadIdx.y*blockDim.x) + threadIdx.x-1; \
     const int column = threadIdx.x + blockIdx.x*blockDim.x;          \
     const int row = threadIdx.y + blockIdx.y*blockDim.y;
+
+#undef THARR2D
+#define THARR2D(x_offset, y_offset, big_row)        \
+    (                                               \
+      column                      /* horizontal  */ \
+    + row*(x_max + 4)             /* vertical    */ \
+    + (x_offset)                  /* horz offset */ \
+    + (y_offset)*(x_max + 4)      /* vert offset */ \
+    + (big_row)*(row + (y_offset))/* big row   */   \
+    )
 
 __global__ void device_packleftBuffer
 (int x_min,int x_max,int y_min,int y_max,
@@ -69,7 +77,6 @@ const int depth)
     {
         left_buffer[VERT_IDX] = array[THARR2D((x_min + 1) + x_extra, 0, x_extra)];
     }
-        left_buffer[VERT_IDX] = glob_id;
 }
 
 __global__ void device_unpackleftBuffer

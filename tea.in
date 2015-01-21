@@ -12,18 +12,13 @@
   ymax=10.0
   initial_timestep=0.004
   end_step=87
-  tl_max_iters=1000
-  tl_eps 1.0e-15
-  test_problem 2
+  tl_max_iters=10000
   tl_use_cg
+  tl_ppcg_inner_steps=249
+  tl_eps=1.0e-15
 
   cuda_device=0
   use_cuda_kernels
-
-  tl_ch_cg_errswitch
-  tl_ch_cg_presteps=35
-  tl_ch_cg_epslim=0.00001
-
-  !profiler_on
-
+  
+test_problem 2
 *endtea

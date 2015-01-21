@@ -58,7 +58,7 @@ x_max(*in_x_max),
 y_min(*in_y_min),
 y_max(*in_y_max),
 profiler_on(*in_profiler_on),
-num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
+num_blocks(std::ceil((((*in_x_max)+5.)*((*in_y_max)+5.))/BLOCK_SZ))
 {
     // FIXME (and opencl really)
     // make a better platform agnostic way of selecting devices
@@ -187,10 +187,10 @@ num_blocks((((*in_x_max)+5)*((*in_y_max)+5))/BLOCK_SZ)
     CUDA_ARRAY_ALLOC(vector_Ky, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(vector_sd, BUFSZ2D(0, 0));
 
-    CUDA_ARRAY_ALLOC(left_buffer, BUFSZ2D(0, 0)/(x_max/2));
-    CUDA_ARRAY_ALLOC(right_buffer, BUFSZ2D(0, 0)/(x_max/2));
-    CUDA_ARRAY_ALLOC(bottom_buffer, BUFSZ2D(0, 0)/(y_max/2));
-    CUDA_ARRAY_ALLOC(top_buffer, BUFSZ2D(0, 0)/(y_max/2));
+    CUDA_ARRAY_ALLOC(left_buffer, (y_max+5)*2*NUM_BUFFERED_FIELDS*sizeof(double));
+    CUDA_ARRAY_ALLOC(right_buffer, (y_max+5)*2*NUM_BUFFERED_FIELDS*sizeof(double));
+    CUDA_ARRAY_ALLOC(bottom_buffer, (x_max+5)*2*NUM_BUFFERED_FIELDS*sizeof(double));
+    CUDA_ARRAY_ALLOC(top_buffer, (x_max+5)*2*NUM_BUFFERED_FIELDS*sizeof(double));
 
     CUDA_ARRAY_ALLOC(reduce_buf_1, num_blocks*sizeof(double));
     CUDA_ARRAY_ALLOC(reduce_buf_2, num_blocks*sizeof(double));
