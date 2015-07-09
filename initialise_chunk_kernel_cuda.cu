@@ -36,12 +36,11 @@ void CloverleafCudaChunk::initialise_chunk_kernel
 {
     CUDALAUNCH(device_initialise_chunk_kernel_vertex_cuda,
         d_xmin, d_ymin, d_dx, d_dy, 
-        vertexx, vertexdx, vertexy, vertexdy);
+        vertexx, vertexdx, vertexy, vertexdy,
+        cellx, celldx, celly, celldy);
 
     CUDALAUNCH(device_initialise_chunk_kernel_cuda,
         d_xmin, d_ymin, d_dx, d_dy, 
-        vertexx, vertexdx, vertexy, vertexdy,
-        cellx, celldx, celly, celldy,
         volume, xarea, yarea);
 }
 
