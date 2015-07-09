@@ -73,8 +73,7 @@
     int* in_x_min, \
     int* in_x_max, \
     int* in_y_min, \
-    int* in_y_max, \
-    bool* in_profiler_on
+    int* in_y_max
 
 /*******************/
 
@@ -208,6 +207,7 @@ private:
     unsigned int num_blocks;
 
     int preconditioner_type;
+    int halo_exchange_depth;
 
     // values used to control operation
     int x_min;

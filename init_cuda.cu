@@ -38,8 +38,7 @@ extern "C" void initialise_cuda_
     cuda_chunk = CloverleafCudaChunk(in_x_min,
                                 in_x_max,
                                 in_y_min,
-                                in_y_max,
-                                in_profiler_on);
+                                in_y_max);
 }
 
 CloverleafCudaChunk::CloverleafCudaChunk
@@ -53,32 +52,61 @@ CloverleafCudaChunk::CloverleafCudaChunk
 :x_min(*in_x_min),
 x_max(*in_x_max),
 y_min(*in_y_min),
-y_max(*in_y_max),
-profiler_on(*in_profiler_on),
-num_blocks(std::ceil((((*in_x_max)+5.)*((*in_y_max)+5.))/BLOCK_SZ))
+y_max(*in_y_max)
 {
     // FIXME (and opencl really)
     // make a better platform agnostic way of selecting devices
 
     int rank;
-
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     // Read in from file - easier than passing in from fortran
-    FILE* input = fopen("tea.in", "r");
-    if (NULL == input)
+    std::ifstream input("tea.in");
+    input.exceptions(std::ifstream::badbit);
+
+    if (!input.is_open())
     {
         // should never happen
         DIE("Input file not found\n");
     }
 
-    // find out which solver to use
-    bool tl_use_jacobi = clover::paramEnabled(input, "tl_use_jacobi");
-    bool tl_use_cg = clover::paramEnabled(input, "tl_use_cg");
-    bool tl_use_chebyshev = clover::paramEnabled(input, "tl_use_chebyshev");
-    bool tl_use_ppcg = clover::paramEnabled(input, "tl_use_ppcg");
-    preconditioner_type = clover::paramEnabled(input, "tl_preconditioner_type");
+    profiler_on = paramEnabled(input, "profiler_on");
 
+    int device_id = readInt(input, "cuda_device");
+    device_id = (device_id < 0) ? 0 : device_id;
+
+    cudaThreadExit();
+
+    // account for MPI
+    int num_devices;
+    cudaGetDeviceCount(&num_devices);
+
+    if (num_devices < device_id)
+    {
+        DIE("Device id %d specified in tea.in, but only %d devices available", device_id, num_devices);
+    }
+
+    int err = cudaSetDevice(device_id);
+
+    if (err != cudaSuccess)
+    {
+        DIE("Setting device id to %d in rank %d failed with error code %d\n", device_id, rank, err);
+    }
+
+    int file_halo_depth = readInt(input, "halo_depth");
+    halo_exchange_depth = file_halo_depth;
+
+    if (halo_exchange_depth < 1)
+    {
+        DIE("Halo exchange depth unspecified or was too small");
+    }
+
+    bool tl_use_jacobi = paramEnabled(input, "tl_use_jacobi");
+    bool tl_use_cg = paramEnabled(input, "tl_use_cg");
+    bool tl_use_chebyshev = paramEnabled(input, "tl_use_chebyshev");
+    bool tl_use_ppcg = paramEnabled(input, "tl_use_ppcg");
+
+    // set solve
     if(!rank)fprintf(stdout, "Solver to use: ");
     if (tl_use_ppcg)
     {
@@ -106,35 +134,32 @@ num_blocks(std::ceil((((*in_x_max)+5.)*((*in_y_max)+5.))/BLOCK_SZ))
         if(!rank)fprintf(stdout, "Jacobi (no solver specified in tea.in)\n");
     }
 
-#ifdef MANUALLY_CHOOSE_GPU
-    int device_id = clover::preferredDevice(input);
+    std::string desired_preconditioner = readString(input, "tl_preconditioner_type");
 
-    device_id = (device_id < 0) ? 0 : device_id;
-
-    cudaThreadExit();
-
-    // account for MPI
-    int num_devices;
-    cudaGetDeviceCount(&num_devices);
-
-    fprintf(stdout, "%d devices available in rank %d - would use %d - adding %d - choosing %d\n",
-            num_devices, rank, device_id, rank%num_devices, device_id + rank % num_devices);
-    fflush(stdout);
-    device_id += rank % num_devices;
-
-    int err = cudaSetDevice(device_id);
-
-    if (err != cudaSuccess)
+    // set preconditioner type
+    if(!rank)fprintf(stdout, "Preconditioner to use: ");
+    if (desired_preconditioner.find("jac_diag") != std::string::npos)
     {
-        fprintf(stderr, "Setting device id to %d in rank %d failed with error code %d\n", device_id, rank, err);
-        errorHandler(__LINE__, __FILE__);
+        preconditioner_type = TL_PREC_JAC_DIAG;
+        if(!rank)fprintf(stdout, "Diagonal Jacobi\n");
     }
-#else
-    // choose device 0 unless specified
-    int device_id = 0;
-#endif
+    else if (desired_preconditioner.find("jac_block") != std::string::npos)
+    {
+        preconditioner_type = TL_PREC_JAC_BLOCK;
+        if(!rank)fprintf(stdout, "Block Jacobi\n");
+    }
+    else if (desired_preconditioner.find("none") != std::string::npos)
+    {
+        preconditioner_type = TL_PREC_NONE;
+        if(!rank)fprintf(stdout, "None\n");
+    }
+    else
+    {
+        preconditioner_type = TL_PREC_NONE;
+        if(!rank)fprintf(stdout, "None (no preconditioner specified in tea.in)\n");
+    }
 
-    fclose(input);
+    num_blocks = std::ceil((((*in_x_max)+halo_exchange_depth*1.0)*((*in_y_max)+halo_exchange_depth*1.0))/BLOCK_SZ);
 
     struct cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, device_id);

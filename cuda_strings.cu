@@ -1,78 +1,84 @@
 #include "cuda_strings.hpp"
 
 #include <algorithm>
-#include <cstring>
 #include <sstream>
-
-namespace clover{
+#include <iostream>
 
 std::string matchParam
-(FILE * input,
- const char* param_name)
+(std::ifstream& input, const char* param_name)
 {
     std::string param_string;
-    static char name_buf[101];
-    rewind(input);
+    std::string line;
+
     /* read in line from file */
-    while (NULL != fgets(name_buf, 100, input))
+    while (std::getline(input, line))
     {
-        /* ignore line */
-        if (NULL != strstr(name_buf, "!"))
-        {
-            continue;
-        }
+        if (line.find("!") != std::string::npos) continue;
         /* if it has the parameter name, its the line we want */
-        if (NULL != strstr(name_buf, param_name))
+        if (line.find(param_name) != std::string::npos)
         {
-            if (NULL != strstr(name_buf, "="))
+            if (line.find("=") != std::string::npos)
             {
-                *(strstr(name_buf, "=")) = ' ';
-                char param_buf[100];
-                sscanf(name_buf, "%*s %s", param_buf);
-                param_string = std::string(param_buf);
-                break;
+                param_string = std::string(line.erase(0, 1+line.find("=")));
             }
             else
             {
-                param_string = std::string("NO_SETTING");
-                break;
+                param_string = std::string(param_name);
             }
+            break;
         }
     }
+
+    // getline() sets failbit - clear it
+    input.clear();
+    input.seekg(0);
 
     return param_string;
 }
 
-bool paramEnabled
-(FILE* input, const char* param)
+std::string readString
+(std::ifstream& input, const char * setting)
 {
-    std::string param_string = matchParam(input, param);
-    return param_string.size() > 0 ? true : false;
+    std::string plat_name = matchParam(input, setting);
+
+    // convert to lower case
+    std::transform(plat_name.begin(),
+                   plat_name.end(),
+                   plat_name.begin(),
+                   tolower);
+
+    return plat_name;
 }
 
-int preferredDevice
-(FILE* input)
+int readInt
+(std::ifstream& input, const char * setting)
 {
-    std::string param_string = matchParam(input, "cuda_device");
+    std::string param_string = matchParam(input, setting);
 
-    int preferred_device;
+    int param_value;
 
     if (param_string.size() == 0)
     {
         // not found in file
-        preferred_device = -1;
+        param_value = -1;
     }
     else
     {
         std::stringstream converter(param_string);
 
-        if (!(converter >> preferred_device))
+        if (!(converter >> param_value))
         {
-            preferred_device = -1;
+            param_value = -1;
         }
     }
 
-    return preferred_device;
+    return param_value;
 }
 
+bool paramEnabled
+(std::ifstream& input, const char* param)
+{
+    std::string param_string = matchParam(input, param);
+    return (param_string.size() != 0);
 }
+
