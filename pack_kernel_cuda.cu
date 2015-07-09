@@ -96,9 +96,9 @@ void CloverleafCudaChunk::packUnpackAllBuffers
     }
 
     // size of this buffer
-    size_t side_size = 0;
+    int side_size = 0;
     // actual number of elements in column/row
-    size_t needed_launch_size = 0;
+    int needed_launch_size = 0;
     // launch sizes for packing/unpacking arrays
     dim3 pack_global, pack_local;
 
