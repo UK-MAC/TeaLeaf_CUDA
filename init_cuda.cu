@@ -22,13 +22,10 @@
  *  @details Initialises CUDA devices and global storage
  */
 
-#if defined(MPI_HDR)
-extern "C" void tea_get_rank_(int*);
-#endif
-
 #include "cuda_common.hpp"
 #include "cuda_strings.hpp"
 
+#include "mpi.h"
 #include <sstream>
 #include <cstdio>
 #include <cassert>
@@ -64,11 +61,8 @@ num_blocks(std::ceil((((*in_x_max)+5.)*((*in_y_max)+5.))/BLOCK_SZ))
     // make a better platform agnostic way of selecting devices
 
     int rank;
-#if defined(MPI_HDR)
-    tea_get_rank_(&rank);
-#else
-    rank = 0;
-#endif
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     // Read in from file - easier than passing in from fortran
     FILE* input = fopen("tea.in", "r");

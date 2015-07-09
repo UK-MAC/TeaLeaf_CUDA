@@ -27,22 +27,15 @@ void CloverleafCudaChunk::calcrxry
     *ry = dt/(dy*dy);
 }
 
-/********************/
-
-// Chebyshev solver
-extern "C" void tea_leaf_kernel_cheby_copy_u_cuda_
-(void)
-{
-    cuda_chunk.tea_leaf_cheby_copy_u();
-}
-
 extern "C" void tea_leaf_calc_2norm_kernel_cuda_
 (int* norm_array, double* norm)
 {
     cuda_chunk.tea_leaf_calc_2norm_kernel(*norm_array, norm);
 }
 
-extern "C" void tea_leaf_kernel_cheby_init_cuda_
+/********************/
+
+extern "C" void tea_leaf_cheby_init_kernel_cuda_
 (const double * ch_alphas, const double * ch_betas, int* n_coefs,
  const double * rx, const double * ry, const double * theta)
 {
@@ -50,17 +43,10 @@ extern "C" void tea_leaf_kernel_cheby_init_cuda_
         *rx, *ry, *theta);
 }
 
-extern "C" void tea_leaf_kernel_cheby_iterate_cuda_
+extern "C" void tea_leaf_cheby_iterate_kernel_cuda_
 (const double * rx, const double * ry, const int * cheby_calc_step)
 {
     cuda_chunk.tea_leaf_kernel_cheby_iterate(*rx, *ry, *cheby_calc_step);
-}
-
-void CloverleafCudaChunk::tea_leaf_cheby_copy_u
-(void)
-{
-    cudaDeviceSynchronize();
-    cudaMemcpy(u0, u, BUFSZ2D(0, 0), cudaMemcpyDeviceToDevice);
 }
 
 void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel
@@ -69,14 +55,19 @@ void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel
     if (norm_array == 0)
     {
         // norm of u0
-        CUDALAUNCH(device_tea_leaf_cheby_solve_calc_resid, u0, reduce_buf_1);
+        CUDALAUNCH(device_tea_leaf_common_calc_2norm, u0, u0, reduce_buf_1);
     }
     else if (norm_array == 1)
     {
         // norm of r
-        CUDALAUNCH(device_tea_leaf_cheby_solve_calc_resid, vector_r, reduce_buf_1);
+        CUDALAUNCH(device_tea_leaf_common_calc_2norm, vector_r, vector_r, reduce_buf_1);
+    }
+    else if (norm_array == 2)
+    {
+        CUDALAUNCH(device_tea_leaf_common_calc_2norm, vector_r, vector_z, reduce_buf_1);
     }
     else
+    // TODO
     {
         DIE("Invalid value '%d' for norm_array passed, should be [1, 2]", norm_array);
     }
@@ -133,23 +124,23 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
 /********************/
 
 // CG solver functions
-extern "C" void tea_leaf_kernel_init_cg_cuda_
-(const int * coefficient, double * dt, double * rx, double * ry, double * rro)
+extern "C" void tea_leaf_cg_init_kernel_cuda_
+(double * rro)
 {
-    cuda_chunk.tea_leaf_init_cg(*coefficient, *dt, rx, ry, rro);
+    cuda_chunk.tea_leaf_init_cg(rro);
 }
 
-extern "C" void tea_leaf_kernel_solve_cg_cuda_calc_w_
-(const double * rx, const double * ry, double * pw)
+extern "C" void tea_leaf_cg_calc_w_kernel_cuda_
+(double * pw)
 {
-    cuda_chunk.tea_leaf_kernel_cg_calc_w(*rx, *ry, pw);
+    cuda_chunk.tea_leaf_kernel_cg_calc_w(pw);
 }
-extern "C" void tea_leaf_kernel_solve_cg_cuda_calc_ur_
+extern "C" void tea_leaf_cg_calc_ur_kernel_cuda_
 (double * alpha, double * rrn)
 {
     cuda_chunk.tea_leaf_kernel_cg_calc_ur(*alpha, rrn);
 }
-extern "C" void tea_leaf_kernel_solve_cg_cuda_calc_p_
+extern "C" void tea_leaf_cg_calc_p_kernel_cuda_
 (double * beta)
 {
     cuda_chunk.tea_leaf_kernel_cg_calc_p(*beta);
@@ -160,28 +151,12 @@ extern "C" void tea_leaf_kernel_solve_cg_cuda_calc_p_
 void CloverleafCudaChunk::tea_leaf_init_cg
 (int coefficient, double dt, double * rx, double * ry, double * rro)
 {
-    if (coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY)
-    {
-        DIE("Unknown coefficient %d passed to tea leaf\n", coefficient);
-    }
-
     assert(tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV || tea_solver == TEA_ENUM_PPCG);
 
-    calcrxry(dt, rx, ry);
-
-    CUDALAUNCH(device_tea_leaf_cg_init_u, density, energy1, u,
-        vector_p, vector_r, vector_w, coefficient);
+    // TODO preconditioners
 
     // init Kx, Ky
-    CUDALAUNCH(device_tea_leaf_cg_init_directions, vector_w, vector_Kx, vector_Ky);
-
-    // premultiply Kx/Ky
-    CUDALAUNCH(device_tea_leaf_init_diag, vector_Kx, vector_Ky, *rx, *ry);
-
-    // get initial guess in w, r, etc
-    CUDALAUNCH(device_tea_leaf_cg_init_others, reduce_buf_2, u,
-        vector_p, vector_r, vector_w, vector_Mi, z,
-        vector_Kx, vector_Ky, *rx, *ry, preconditioner_on);
+    CUDALAUNCH(device_tea_leaf_cg_init_p, vector_w, vector_Kx, vector_Ky);
 
     *rro = thrust::reduce(reduce_ptr_2, reduce_ptr_2 + num_blocks, 0.0);
 }
@@ -213,20 +188,46 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_p
 
 /********************/
 
-// jacobi solver functions
-extern "C" void tea_leaf_kernel_init_cuda_
-(const int * coefficient, double * dt, double * rx, double * ry)
+extern "C" void tea_leaf_jacobi_solve_kernel_cuda_
+(double * error)
 {
-    cuda_chunk.tea_leaf_init_jacobi(*coefficient, *dt, rx, ry);
+    cuda_chunk.tea_leaf_kernel_jacobi(error);
 }
 
-extern "C" void tea_leaf_kernel_solve_cuda_
-(const double * rx, const double * ry, double * error)
+void CloverleafCudaChunk::tea_leaf_kernel_jacobi
+(double* error)
 {
-    cuda_chunk.tea_leaf_kernel_jacobi(*rx, *ry, error);
+    CUDALAUNCH(device_tea_leaf_jacobi_copy_u, u, vector_Mi);
+
+    CUDALAUNCH(device_tea_leaf_jacobi_solve, rx, ry, vector_Kx, vector_Ky,
+        vector_w, u, vector_Mi, reduce_buf_1);
+
+    *error = *thrust::max_element(reduce_ptr_1, reduce_ptr_1 + num_blocks);
 }
 
-// jacobi
+/********************/
+
+extern "C" void tea_leaf_common_init_kernel_cuda_
+(const int * coefficient, double * dt, double * rx, double * ry,
+ int * chunk_neighbours, int * zero_boundary, int * reflective_boundary)
+{
+    cuda_chunk.tea_leaf_common_init(*coefficient, *dt, rx, ry,
+        chunk_neighbours, zero_boundary, *reflective_boundary);
+}
+
+// used by both
+extern "C" void tea_leaf_common_finalise_kernel_cuda_
+(void)
+{
+    cuda_chunk.tea_leaf_finalise();
+}
+
+extern "C" void tea_leaf_calc_residual_cuda_
+(void)
+{
+    cuda_chunk.tea_leaf_calc_residual();
+}
+
 void CloverleafCudaChunk::tea_leaf_init_jacobi
 (int coefficient, double dt, double * rx, double * ry)
 {
@@ -239,32 +240,6 @@ void CloverleafCudaChunk::tea_leaf_init_jacobi
 
     CUDALAUNCH(device_tea_leaf_jacobi_init, density, energy1,
         vector_Kx, vector_Ky, vector_w, u, coefficient);
-}
-
-void CloverleafCudaChunk::tea_leaf_kernel_jacobi
-(double rx, double ry, double* error)
-{
-    CUDALAUNCH(device_tea_leaf_jacobi_copy_u, u, vector_Mi);
-
-    CUDALAUNCH(device_tea_leaf_jacobi_solve, rx, ry, vector_Kx, vector_Ky,
-        vector_w, u, vector_Mi, reduce_buf_1);
-
-    *error = *thrust::max_element(reduce_ptr_1, reduce_ptr_1 + num_blocks);
-}
-
-/********************/
-
-// used by both
-extern "C" void tea_leaf_kernel_finalise_cuda_
-(void)
-{
-    cuda_chunk.tea_leaf_finalise();
-}
-
-extern "C" void tea_leaf_calc_residual_cuda_
-(void)
-{
-    cuda_chunk.tea_leaf_calc_residual();
 }
 
 // both
@@ -290,19 +265,13 @@ extern "C" void tea_leaf_kernel_ppcg_init_cuda_
     cuda_chunk.ppcg_init(ch_alphas, ch_betas, *n_inner_steps);
 }
 
-extern "C" void tea_leaf_kernel_ppcg_init_p_cuda_
-(double * rro)
-{
-    cuda_chunk.ppcg_init_p(rro);
-}
-
-extern "C" void tea_leaf_kernel_ppcg_init_sd_cuda_
+extern "C" void tea_leaf_ppcg_init_sd_kernel_cuda_
 (const double * theta)
 {
     cuda_chunk.ppcg_init_sd(*theta);
 }
 
-extern "C" void tea_leaf_kernel_ppcg_inner_cuda_
+extern "C" void tea_leaf_ppcg_inner_kernel_cuda
 (int * ppcg_cur_step)
 {
     cuda_chunk.ppcg_inner(*ppcg_cur_step);
@@ -312,21 +281,7 @@ void CloverleafCudaChunk::ppcg_init
 (const double * ch_alphas, const double * ch_betas,
  const int n_inner_steps)
 {
-    if (preconditioner_on)
-    {
-        DIE("Preconditioner does not work with PPCG solver - disable in input file");
-    }
-
     upload_ch_coefs(ch_alphas, ch_betas, n_inner_steps);
-}
-
-void CloverleafCudaChunk::ppcg_init_p
-(double * rro)
-{
-    CUDALAUNCH(device_tea_leaf_ppcg_solve_init_p, vector_p,
-        vector_r, vector_Mi, reduce_buf_1);
-
-    *rro = thrust::reduce(reduce_ptr_1, reduce_ptr_1 + num_blocks, 0.0);
 }
 
 void CloverleafCudaChunk::ppcg_init_sd
@@ -339,6 +294,7 @@ void CloverleafCudaChunk::ppcg_init_sd
 void CloverleafCudaChunk::ppcg_inner
 (int ppcg_cur_step)
 {
+    // TODO offsets
     CUDALAUNCH(device_tea_leaf_ppcg_solve_update_r, u, vector_r,
         vector_Kx, vector_Ky, vector_sd);
 

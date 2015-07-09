@@ -234,6 +234,12 @@ SUBROUTINE tea_leaf()
           ENDIF
         ENDIF
       ELSE IF (tl_use_ppcg) THEN
+        IF (cheby_calc_steps .EQ. 0) THEN
+          IF (use_cuda_kernels) THEN
+            CALL tea_leaf_ppcg_init_cuda(ch_alphas, ch_betas, &
+                tl_ppcg_inner_steps)
+          ENDIF
+        ENDIF
 
         CALL tea_leaf_cg_calc_w(pw)
 

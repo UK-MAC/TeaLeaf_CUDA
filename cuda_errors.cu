@@ -1,7 +1,4 @@
-#if defined(MPI_HDR)
-extern "C" void tea_abort_();
-#endif
-
+#include "mpi.h"
 #include "cuda_common.hpp"
 #include <cstdarg>
 #include <cstdio>
@@ -147,10 +144,6 @@ void CloverleafCudaChunk::cloverDie
 
     fprintf(stderr, "\nExiting\n");
 
-#if defined(MPI_HDR)
-    tea_abort_();
-#else
-    exit(1);
-#endif
+    MPI_Abort(MPI_COMM_WORLD, 1);
 }
 

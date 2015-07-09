@@ -205,7 +205,7 @@ tea_leaf: Makefile $(FORTRAN_FILES) $(C_FILES) $(CUDA_FILES)
 include makefile.deps
 
 %.o: %.cu Makefile makefile.deps
-	nvcc $(NV_FLAGS) -c $< -o $@
+	nvcc -ccbin $(CXX_MPI_COMPILER) $(NV_FLAGS) -c $< -o $@
 %_module.mod: %.f90 %.o
 	@true
 %.o: %.f90 Makefile makefile.deps

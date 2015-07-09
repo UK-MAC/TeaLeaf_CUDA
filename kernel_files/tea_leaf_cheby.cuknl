@@ -92,22 +92,3 @@ __global__ void device_tea_leaf_cheby_solve_calc_p
     }
 }
 
-__global__ void device_tea_leaf_cheby_solve_calc_resid
-(int x_min, int x_max, int y_min, int y_max,
- const double * __restrict const r,
-       double * __restrict const rro)
-{
-    __kernel_indexes;
-
-    __shared__ double rro_shared[BLOCK_SZ];
-    rro_shared[lid] = 0.0;
-
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
-    {
-        rro_shared[lid] = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
-    }
-
-    Reduce< double, BLOCK_SZ/2 >::run(rro_shared, rro, SUM);
-}
-
