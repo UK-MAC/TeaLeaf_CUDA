@@ -20,7 +20,7 @@ SUBROUTINE tea_leaf_cheby_init(theta, ch_alphas, ch_betas, max_cheby_iters)
   IF (use_cuda_kernels) THEN
     DO t=1,tiles_per_task
       CALL tea_leaf_cheby_init_kernel_cuda(ch_alphas, ch_betas, &
-        max_cheby_iters, chunk%tiles(t)%field%rx, chunk%tiles(t)%field%ry, theta)
+        max_cheby_iters, theta)
     ENDDO
   ENDIF
 

@@ -37,16 +37,16 @@ extern "C" void tea_leaf_calc_2norm_kernel_cuda_
 
 extern "C" void tea_leaf_cheby_init_kernel_cuda_
 (const double * ch_alphas, const double * ch_betas, int* n_coefs,
- const double * rx, const double * ry, const double * theta)
+ const double * theta)
 {
     cuda_chunk.tea_leaf_kernel_cheby_init(ch_alphas, ch_betas, *n_coefs,
-        *rx, *ry, *theta);
+        *theta);
 }
 
 extern "C" void tea_leaf_cheby_iterate_kernel_cuda_
-(const double * rx, const double * ry, const int * cheby_calc_step)
+(const int * cheby_calc_step)
 {
-    cuda_chunk.tea_leaf_kernel_cheby_iterate(*rx, *ry, *cheby_calc_step);
+    cuda_chunk.tea_leaf_kernel_cheby_iterate(*cheby_calc_step);
 }
 
 void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel
@@ -92,7 +92,7 @@ void CloverleafCudaChunk::upload_ch_coefs
 
 void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
 (const double * ch_alphas, const double * ch_betas, int n_coefs,
- const double rx, const double ry, const double theta)
+ const double theta)
 {
     assert(tea_solver == TEA_ENUM_CHEBYSHEV);
 
@@ -103,20 +103,20 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
     CUDALAUNCH(device_tea_leaf_cheby_solve_init_p, u, u0,
         vector_p, vector_r, vector_w, vector_Mi,
         vector_Kx, vector_Ky,
-        theta, rx, ry, preconditioner_type);
+        theta, preconditioner_type);
 
     // update p
     CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, vector_p);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
-(const double rx, const double ry, const int cheby_calc_step)
+(const int cheby_calc_step)
 {
     CUDALAUNCH(device_tea_leaf_cheby_solve_calc_p, u, u0,
         vector_p, vector_r, vector_w, vector_Mi,
         vector_Kx, vector_Ky,
         ch_alphas_device, ch_betas_device,
-        rx, ry, cheby_calc_step-1, preconditioner_type);
+        cheby_calc_step-1, preconditioner_type);
 
     CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, vector_p);
 }

@@ -9,7 +9,7 @@ __global__ void device_tea_leaf_cheby_solve_init_p
        double * __restrict const w,
  const double * __restrict const Kx,
  const double * __restrict const Ky,
- double theta, double rx, double ry,
+ double theta,
  bool preconditioner_on)
 {
     __kernel_indexes;
@@ -61,7 +61,6 @@ __global__ void device_tea_leaf_cheby_solve_calc_p
  const double * __restrict const Ky,
  const double * __restrict const alpha,
  const double * __restrict const beta,
- double rx, double ry,
  int step, bool preconditioner_on)
 {
     __kernel_indexes;
