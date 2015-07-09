@@ -288,7 +288,8 @@ public:
     void ppcg_init_sd
     (double theta);
     void ppcg_inner
-    (int ppcg_cur_step);
+    (int ppcg_cur_step, int bounds_extra,
+     int * chunk_neighbours);
 
     void tea_leaf_finalise();
     void tea_leaf_common_init

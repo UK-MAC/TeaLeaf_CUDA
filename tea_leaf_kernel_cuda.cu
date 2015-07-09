@@ -260,7 +260,7 @@ void CloverleafCudaChunk::tea_leaf_calc_residual
 
 /********************/
 
-extern "C" void tea_leaf_kernel_ppcg_init_cuda_
+extern "C" void tea_leaf_ppcg_init_cuda_
 (const double * ch_alphas, const double * ch_betas,
  int* n_inner_steps)
 {
@@ -273,10 +273,11 @@ extern "C" void tea_leaf_ppcg_init_sd_kernel_cuda_
     cuda_chunk.ppcg_init_sd(*theta);
 }
 
-extern "C" void tea_leaf_ppcg_inner_kernel_cuda
-(int * ppcg_cur_step)
+extern "C" void tea_leaf_ppcg_inner_kernel_cuda_
+(int * ppcg_cur_step, int * bounds_extra,
+ int * chunk_neighbours)
 {
-    cuda_chunk.ppcg_inner(*ppcg_cur_step);
+    cuda_chunk.ppcg_inner(*ppcg_cur_step, *bounds_extra, chunk_neighbours);
 }
 
 void CloverleafCudaChunk::ppcg_init
@@ -294,7 +295,8 @@ void CloverleafCudaChunk::ppcg_init_sd
 }
 
 void CloverleafCudaChunk::ppcg_inner
-(int ppcg_cur_step)
+(int ppcg_cur_step, int bounds_extra,
+ int * chunk_neighbours)
 {
     // TODO offsets
     CUDALAUNCH(device_tea_leaf_ppcg_solve_update_r, u, vector_r,

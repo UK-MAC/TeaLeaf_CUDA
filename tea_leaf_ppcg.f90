@@ -17,7 +17,7 @@ SUBROUTINE tea_leaf_ppcg_init_sd(theta)
 
   IF (use_cuda_kernels) THEN
     DO t=1,tiles_per_task
-      CALL tea_leaf_ppcg_init_sd_kernel_cuda()
+      CALL tea_leaf_ppcg_init_sd_kernel_cuda(theta)
     ENDDO
   ENDIF
 
