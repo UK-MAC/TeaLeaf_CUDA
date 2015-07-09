@@ -2,24 +2,13 @@
 
 // size of workgroup/block - 256 seems to be optimal
 #ifndef BLOCK_SZ 
-    #define BLOCK_SZ 256
+    #define BLOCK_SZ 128
 #endif
 
-// number of bytes to allocate for x size array
-#define BUFSZX(x_extra)   \
-    ( ((x_max) + 4 + x_extra)       \
-    * sizeof(double) )
+#define LOCAL_Y (4)
+#define LOCAL_X (BLOCK_SZ/LOCAL_Y)
 
-// number of bytes to allocate for y size array
-#define BUFSZY(y_extra)   \
-    ( ((y_max) + 4 + y_extra)       \
-    * sizeof(double) )
-
-// number of bytes to allocate for 2d array
-#define BUFSZ2D(x_extra, y_extra)   \
-    ( ((x_max) + 4 + x_extra)       \
-    * ((y_max) + 4 + y_extra)       \
-    * sizeof(double) )
+const static dim3 block_shape(LOCAL_X, LOCAL_Y);
 
 #define WITHIN_BOUNDS \
     (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0 \
@@ -38,11 +27,11 @@
 
 // kernel indexes uses in all kernels
 #define __kernel_indexes                    \
-    const int glob_id = threadIdx.x         \
-        + blockIdx.x * blockDim.x;          \
-    __attribute__((__unused__)) const int lid = threadIdx.x;            \
-    const int row = glob_id / (x_max + 4);  \
-    const int column = glob_id % (x_max + 4);
+    const int row = blockIdx.y*blockDim.y + threadIdx.y; \
+    const int column = blockIdx.x*blockDim.x + threadIdx.x; \
+    const int glob_id = (blockIdx.y*gridDim.x + blockIdx.x)*blockDim.x*blockDim.y + \
+        threadIdx.y*blockDim.x + threadIdx.x; \
+    __attribute__((__unused__)) const int lid = threadIdx.x;
 
 __device__ inline double SUM(double a, double b){return a+b;}
 

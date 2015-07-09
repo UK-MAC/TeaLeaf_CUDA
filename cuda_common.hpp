@@ -100,7 +100,7 @@
         cudaEventCreate(&_t0);                                  \
         cudaEventRecord(_t0);                                   \
     }                                                           \
-    funcname<<<num_blocks, BLOCK_SZ>>>(x_min, x_max, y_min, y_max, __VA_ARGS__); \
+    funcname<<<grid_dim, block_shape>>>(x_min, x_max, y_min, y_max, __VA_ARGS__); \
     CUDA_ERR_CHECK;                                             \
     if (profiler_on)                                            \
     {                                                           \
@@ -204,7 +204,8 @@ private:
     thrust::device_ptr< double > reduce_ptr_4;
 
     // number of blocks for work space
-    unsigned int num_blocks;
+    int num_blocks;
+    dim3 grid_dim;
 
     int preconditioner_type;
     int halo_exchange_depth;

@@ -28,6 +28,8 @@
 #include "cuda_common.hpp"
 #include "kernel_files/update_halo_kernel.cuknl"
 
+#define UPDATE_HALO_BLOCK_SZ 32
+
 extern "C" void update_halo_kernel_cuda_
 (const int* chunk_neighbours,
 const int* fields,
@@ -51,10 +53,10 @@ int depth)
             cudaEventCreate(&_t0);                                      \
             cudaEventRecord(_t0);                                       \
         }                                                               \
-        const int launch_sz = (ceil((dir##_max+5+grid_type.dir##_extra) \
-            /static_cast<float>(BLOCK_SZ))) * depth;                    \
+        const int launch_sz = (ceil((dir##_max + (2*depth) + grid_type.dir##_extra) \
+            /static_cast<float>(UPDATE_HALO_BLOCK_SZ))) * depth;                    \
         device_update_halo_kernel_##face##_cuda                         \
-        <<<launch_sz, BLOCK_SZ >>>                                      \
+        <<<launch_sz, UPDATE_HALO_BLOCK_SZ >>>                                      \
             (x_min, x_max, y_min, y_max, grid_type, cur_array_d, depth);\
         CUDA_ERR_CHECK;                                                 \
         if (profiler_on)                                                \

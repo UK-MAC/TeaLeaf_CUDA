@@ -18,6 +18,6 @@ tl_use_cg
 tl_check_result
 tl_eps=1.0e-12
 !profiler_on
-halo_depth=1
+halo_depth=2
 cuda_device=0
 *endtea

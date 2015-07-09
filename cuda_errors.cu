@@ -106,6 +106,12 @@ CloverleafCudaChunk::~CloverleafCudaChunk
 std::vector<double> CloverleafCudaChunk::dumpArray
 (const std::string& arr_name, int x_extra, int y_extra)
 {
+    // number of bytes to allocate for 2d array
+    #define BUFSZ2D(x_extra, y_extra)   \
+        ( ((x_max) + 4 + x_extra)       \
+        * ((y_max) + 4 + y_extra)       \
+        * sizeof(double) )
+
     std::vector<double> host_arr(BUFSZ2D(x_extra, y_extra)/sizeof(double));
 
     cudaDeviceSynchronize();

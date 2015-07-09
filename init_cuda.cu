@@ -159,7 +159,9 @@ y_max(*in_y_max)
         if(!rank)fprintf(stdout, "None (no preconditioner specified in tea.in)\n");
     }
 
-    num_blocks = std::ceil((((*in_x_max)+halo_exchange_depth*1.0)*((*in_y_max)+halo_exchange_depth*1.0))/BLOCK_SZ);
+    grid_dim = dim3(std::ceil((x_max + 2.0*halo_exchange_depth)/LOCAL_X),
+        std::ceil((y_max + 2.0*halo_exchange_depth)/LOCAL_Y));
+    num_blocks = grid_dim.x*grid_dim.y;
 
     struct cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, device_id);
@@ -172,6 +174,22 @@ y_max(*in_y_max)
             cudaMemset(arr, 0, size);       \
             cudaDeviceSynchronize();        \
             CUDA_ERR_CHECK;
+
+    // number of bytes to allocate for x size array
+    #define BUFSZX(x_extra)   \
+        ( ((x_max) + 4 + x_extra)       \
+        * sizeof(double) )
+
+    // number of bytes to allocate for y size array
+    #define BUFSZY(y_extra)   \
+        ( ((y_max) + 4 + y_extra)       \
+        * sizeof(double) )
+
+    // number of bytes to allocate for 2d array
+    #define BUFSZ2D(x_extra, y_extra)   \
+        ( ((x_max) + 4 + x_extra)       \
+        * ((y_max) + 4 + y_extra)       \
+        * sizeof(double) )
 
     CUDA_ARRAY_ALLOC(volume, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(soundspeed, BUFSZ2D(0, 0));
