@@ -2,17 +2,17 @@
 !
 ! This file is part of TeaLeaf.
 !
-! TeaLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! TeaLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! TeaLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! TeaLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! TeaLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Holds parameters definitions
@@ -23,7 +23,7 @@ MODULE data_module
 
    IMPLICIT NONE
 
-   REAL(KIND=8), PARAMETER :: g_version=1.1
+   REAL(KIND=8), PARAMETER :: g_version=1.3
 
    INTEGER,      PARAMETER :: g_ibig=640000
 
@@ -47,7 +47,8 @@ MODULE data_module
                                 ,FIELD_U          = 4         &
                                 ,FIELD_P          = 5         &
                                 ,FIELD_SD         = 6         &
-                                ,NUM_FIELDS       = 6
+                                ,FIELD_R          = 7         &
+                                ,NUM_FIELDS       = 7
 
    INTEGER,         PARAMETER :: CELL_DATA     = 1,        &
                                  VERTEX_DATA   = 2,        &
@@ -68,19 +69,34 @@ MODULE data_module
    INTEGER         ::            CONDUCTIVITY        = 1 &
                                 ,RECIP_CONDUCTIVITY  = 2
 
-   TYPE parallel_type
-      LOGICAL           ::      parallel &
-                               ,boss
-      INTEGER         ::        max_task &
-                               ,task     &
-                               ,boss_task
+   ! 3 different options for preconditioners
+   INTEGER,PARAMETER::           TL_PREC_NONE       = 1 &
+                                ,TL_PREC_JAC_DIAG   = 2 &
+                                ,TL_PREC_JAC_BLOCK  = 3
 
+   TYPE parallel_type
+      LOGICAL         ::        boss
+      INTEGER         ::        max_task &
+                               ,boss_task &
+                               ,task
    END TYPE parallel_type
 
    TYPE(parallel_type) :: parallel
 
    INTEGER,        PARAMETER ::g_len_max=500
-   INTEGER,        PARAMETER ::chunks_per_task=1
+
+   ! Hardcoded in OpenCL (and CUDA) version
+   INTEGER, PARAMETER        ::tiles_per_task=1
+
+   ! cartesian communicator
+   INTEGER                   ::mpi_cart_comm
+   ! dimensions of mpi grid
+   INTEGER, dimension(2)     ::mpi_dims
+   ! this rank's coordinates
+   INTEGER, dimension(2)     ::mpi_coords
+
+   ! depth of halo for matrix powers
+   INTEGER :: halo_exchange_depth
 
    INTEGER                   ::lr_pack_buffer_size,bt_pack_buffer_size
 

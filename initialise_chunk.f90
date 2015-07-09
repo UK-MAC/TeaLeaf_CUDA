@@ -2,61 +2,45 @@
 !
 ! This file is part of TeaLeaf.
 !
-! TeaLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! TeaLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! TeaLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! TeaLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! TeaLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Driver for chunk initialisation.
 !>  @author David Beckingsale, Wayne Gaudin
 !>  @details Invokes the user specified chunk initialisation kernel.
 
-SUBROUTINE initialise_chunk(chunk)
+SUBROUTINE initialise_chunk()
 
+  USE definitions_module
   USE tea_module
-  USE initialise_chunk_kernel_module
 
   IMPLICIT NONE
 
-  INTEGER :: chunk
+  INTEGER :: t
 
   REAL(KIND=8) :: xmin,ymin,dx,dy
 
-  dx=(grid%xmax-grid%xmin)/float(grid%x_cells)
-  dy=(grid%ymax-grid%ymin)/float(grid%y_cells)
+  dx=(grid%xmax - grid%xmin)/REAL(grid%x_cells)
+  dy=(grid%ymax - grid%ymin)/REAL(grid%y_cells)
 
-  xmin=grid%xmin+dx*float(chunks(chunk)%field%left-1)
+  IF(use_cuda_kernels)THEN
+    DO t=1,tiles_per_task
+      xmin=grid%xmin + dx*REAL(chunk%tiles(t)%left-1)
 
-  ymin=grid%ymin+dy*float(chunks(chunk)%field%bottom-1)
+      ymin=grid%ymin + dy*REAL(chunk%tiles(t)%bottom-1)
 
-  IF(use_fortran_kernels) THEN
-    CALL initialise_chunk_kernel(chunks(chunk)%field%x_min,    &
-                                 chunks(chunk)%field%x_max,    &
-                                 chunks(chunk)%field%y_min,    &
-                                 chunks(chunk)%field%y_max,    &
-                                 xmin,ymin,dx,dy,              &
-                                 chunks(chunk)%field%vertexx,  &
-                                 chunks(chunk)%field%vertexdx, &
-                                 chunks(chunk)%field%vertexy,  &
-                                 chunks(chunk)%field%vertexdy, &
-                                 chunks(chunk)%field%cellx,    &
-                                 chunks(chunk)%field%celldx,   &
-                                 chunks(chunk)%field%celly,    &
-                                 chunks(chunk)%field%celldy,   &
-                                 chunks(chunk)%field%volume,   &
-                                 chunks(chunk)%field%xarea,    &
-                                 chunks(chunk)%field%yarea     )
-  ELSEIF(use_cuda_kernels)THEN
-    CALL initialise_chunk_kernel_cuda(xmin,ymin,dx,dy)
+      CALL initialise_chunk_kernel_cuda(xmin,ymin,dx,dy)
+    ENDDO
   ENDIF
-
 
 END SUBROUTINE initialise_chunk

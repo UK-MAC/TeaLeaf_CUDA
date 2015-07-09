@@ -2,17 +2,17 @@
 !
 ! This file is part of TeaLeaf.
 !
-! TeaLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! TeaLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! TeaLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! TeaLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! TeaLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Controls the main diffusion cycle.
@@ -25,13 +25,12 @@ SUBROUTINE diffuse
   USE tea_module
   USE timestep_module
   USE tea_leaf_module
-  USE set_field_module
 
   IMPLICIT NONE
 
   INTEGER         :: loc(1)
   REAL(KIND=8)    :: timer,timerstart,wall_clock,step_clock
-  
+
   REAL(KIND=8)    :: grind_time,cells,rstep
   REAL(KIND=8)    :: step_time,step_grind
   REAL(KIND=8)    :: first_step,second_step
@@ -40,9 +39,6 @@ SUBROUTINE diffuse
   timerstart = timer()
 
   second_step=0.0 ! In order to prevent unused error
-
-  ! copy time level 0 to time level 1
-  CALL set_field()
 
   DO
 
@@ -53,14 +49,11 @@ SUBROUTINE diffuse
     CALL timestep()
 
     CALL tea_leaf()
-    
+
     time = time + dt
 
     IF(summary_frequency.NE.0) THEN
       IF(MOD(step, summary_frequency).EQ.0) CALL field_summary()
-    ENDIF
-    IF(visit_frequency.NE.0) THEN
-      IF(MOD(step, visit_frequency).EQ.0) CALL visit()
     ENDIF
 
     ! Sometimes there can be a significant start up cost that appears in the first step.
@@ -90,17 +83,16 @@ SUBROUTINE diffuse
 
       complete=.TRUE.
       CALL field_summary()
-      IF(visit_frequency.NE.0) CALL visit()
 
       wall_clock=timer() - timerstart
       IF ( parallel%boss ) THEN
         WRITE(g_out,*)
         WRITE(g_out,*) 'Calculation complete'
         WRITE(g_out,*) 'Tea is finishing'
-        WRITE(g_out,*) 'Wall clock ', wall_clock
         WRITE(g_out,*) 'First step overhead', first_step-second_step
-        WRITE(    0,*) 'Wall clock ', wall_clock
+        WRITE(g_out,*) 'Wall clock ', wall_clock
         WRITE(    0,*) 'First step overhead', first_step-second_step
+        WRITE(    0,*) 'Wall clock ', wall_clock
       ENDIF
 
       EXIT
@@ -115,7 +107,8 @@ SUBROUTINE diffuse
     ! does not take into account compute overlaps before syncronisations
     ! caused by halo exhanges.
     kernel_total=profiler%timestep+profiler%halo_exchange+profiler%summary+profiler%visit+&
-        profiler%tea_init+profiler%set_field+profiler%tea_solve+profiler%tea_reset
+        profiler%tea_init+profiler%set_field+profiler%tea_solve+profiler%tea_reset+profiler%dot_product+&
+        profiler%halo_update+profiler%internal_halo_update
     CALL tea_allgather(kernel_total,totals)
     ! So then what I do is use the individual kernel times for the
     ! maximum kernel time task for the profile print
@@ -125,8 +118,14 @@ SUBROUTINE diffuse
     profiler%timestep=totals(loc(1))
     CALL tea_allgather(profiler%halo_exchange,totals)
     profiler%halo_exchange=totals(loc(1))
+    CALL tea_allgather(profiler%internal_halo_update,totals)
+    profiler%internal_halo_update=totals(loc(1))
+    CALL tea_allgather(profiler%halo_update,totals)
+    profiler%halo_update=totals(loc(1))
     CALL tea_allgather(profiler%summary,totals)
     profiler%summary=totals(loc(1))
+    CALL tea_allgather(profiler%dot_product,totals)
+    profiler%dot_product=totals(loc(1))
     CALL tea_allgather(profiler%visit,totals)
     profiler%visit=totals(loc(1))
     CALL tea_allgather(profiler%tea_init,totals)
@@ -142,10 +141,14 @@ SUBROUTINE diffuse
       WRITE(g_out,*)
       WRITE(g_out,'(a58,2f16.4)')"Profiler Output                 Time            Percentage"
       WRITE(g_out,'(a23,2f16.4)')"Timestep              :",profiler%timestep,100.0*(profiler%timestep/wall_clock)
-      WRITE(g_out,'(a23,2f16.4)')"Halo Exchange         :",profiler%halo_exchange,100.0*(profiler%halo_exchange/wall_clock)
+      WRITE(g_out,'(a23,2f16.4)')"MPI Halo Exchange     :",profiler%halo_exchange,100.0*(profiler%halo_exchange/wall_clock)
+      WRITE(g_out,'(a23,2f16.4)')"Self Halo Update      :",profiler%halo_update,100.0*(profiler%halo_update/wall_clock)
+      WRITE(g_out,'(a23,2f16.4)')"Internal Halo Update  :",profiler%internal_halo_update,&
+        100.0*(profiler%internal_halo_update/wall_clock)
       WRITE(g_out,'(a23,2f16.4)')"Summary               :",profiler%summary,100.0*(profiler%summary/wall_clock)
       WRITE(g_out,'(a23,2f16.4)')"Visit                 :",profiler%visit,100.0*(profiler%visit/wall_clock)
       WRITE(g_out,'(a23,2f16.4)')"Tea Init              :",profiler%tea_init,100.0*(profiler%tea_init/wall_clock)
+      WRITE(g_out,'(a23,2f16.4)')"Dot Product           :",profiler%dot_product,100.0*(profiler%dot_product/wall_clock)
       WRITE(g_out,'(a23,2f16.4)')"Tea Solve             :",profiler%tea_solve,100.0*(profiler%tea_solve/wall_clock)
       WRITE(g_out,'(a23,2f16.4)')"Tea Reset             :",profiler%tea_reset,100.0*(profiler%tea_reset/wall_clock)
       WRITE(g_out,'(a23,2f16.4)')"Set Field             :",profiler%set_field,100.0*(profiler%set_field/wall_clock)

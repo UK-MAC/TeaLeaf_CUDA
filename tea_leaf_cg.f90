@@ -1,307 +1,89 @@
-!cROWn Copyright 2014 AWE.
-!
-! This file is part of TeaLeaf.
-!
-! TeaLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
-! any later version.
-!
-! TeaLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
-! details.
-!
-! You should have received a copy of the GNU General Public License along with 
-! TeaLeaf. If not, see http://www.gnu.org/licenses/.
 
-!>  @brief Fortran heat conduction kernel
-!>  @author Michael Boulton, Wayne Gaudin
-!>  @details Implicitly calculates the change in temperature using CG method
+MODULE tea_leaf_cg_module
 
-MODULE tea_leaf_kernel_cg_module
+  USE definitions_module
 
-IMPLICIT NONE
+  IMPLICIT NONE
 
 CONTAINS
 
-SUBROUTINE tea_leaf_kernel_init_cg_fortran(x_min,  &
-                           x_max,                  &
-                           y_min,                  &
-                           y_max,                  &
-                           density,                &
-                           energy,                 &
-                           u,                      &
-                           p,                      &
-                           r,                      &
-                           Mi,                     &
-                           w,                      &
-                           z,                      &
-                           Kx,                     &
-                           Ky,                     &
-                           rx,                     &
-                           ry,                     &
-                           rro,                    &
-                           coef,                   &
-                           preconditioner_on)
+SUBROUTINE tea_leaf_cg_init(rro)
 
   IMPLICIT NONE
 
-  LOGICAL :: preconditioner_on
-  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: density
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: energy
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Mi
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Ky
-
-  INTEGER(KIND=4) :: coef
-  INTEGER(KIND=4) :: j,k,n
-
-  REAL(kind=8) :: rro
-  REAL(KIND=8) ::  rx, ry
-
-   INTEGER         ::            CONDUCTIVITY        = 1 &
-                                ,RECIP_CONDUCTIVITY  = 2
+  INTEGER :: t
+  REAL(KIND=8) :: rro, tile_rro
 
   rro = 0.0_8
-  p = 0.0_8
-  r = 0.0_8
 
-!$OMP PARALLEL
-!$OMP DO 
-  DO k=y_min-2, y_max+2
-    DO j=x_min-2, x_max+2
-      u(j,k) = energy(j,k)*density(j,k)
-    ENDDO
-  ENDDO
-!$OMP END DO
+  IF (use_cuda_kernels) THEN
+    DO t=1,tiles_per_task
+      tile_rro = 0.0_8
 
-  IF(coef .EQ. RECIP_CONDUCTIVITY) THEN
-!$OMP DO 
-    ! use w as temp val
-    DO k=y_min-1,y_max+1
-      DO j=x_min-1,x_max+1
-         w(j  ,k  )=1.0_8/density(j  ,k  )
-      ENDDO
+      CALL tea_leaf_cg_init_kernel_cuda(tile_rro)
+
+      rro = rro + tile_rro
     ENDDO
-!$OMP END DO
-  ELSE IF(coef .EQ. CONDUCTIVITY) THEN
-!$OMP DO
-    DO k=y_min-1,y_max+1
-      DO j=x_min-1,x_max+1
-         w(j  ,k  )=density(j  ,k  )
-      ENDDO
-    ENDDO
-!$OMP END DO
   ENDIF
 
-!$OMP DO
-   DO k=y_min,y_max+1
-     DO j=x_min,x_max+1
-          Kx(j,k)=(w(j-1,k  ) + w(j,k))/(2.0_8*w(j-1,k  )*w(j,k))
-          Ky(j,k)=(w(j  ,k-1) + w(j,k))/(2.0_8*w(j  ,k-1)*w(j,k))
-     ENDDO
-   ENDDO
-!$OMP END DO
+END SUBROUTINE tea_leaf_cg_init
 
-!$OMP DO
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            w(j, k) = (1.0_8                                      &
-                + ry*(Ky(j, k+1) + Ky(j, k))                      &
-                + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
-                - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
-                - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
-
-            r(j, k) = u(j, k) - w(j, k)
-        ENDDO
-    ENDDO
-!$OMP END DO
-
-  IF (preconditioner_on) then
-!$OMP DO REDUCTION(+:rro)
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            ! inverse diagonal used as preconditioner
-            Mi(j, k) = (1.0_8                                     &
-                + ry*(Ky(j, k+1) + Ky(j, k))                      &
-                + rx*(Kx(j+1, k) + Kx(j, k)))
-            Mi(j, k) = 1.0_8/Mi(j, k)
-
-            z(j, k) = Mi(j, k)*r(j, k)
-            p(j, k) = z(j, k)
-
-            rro = rro + r(j, k)*p(j, k);
-        ENDDO
-    ENDDO
-!$OMP END DO
-  ELSE
-!$OMP DO REDUCTION(+:rro)
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            p(j, k) = r(j, k)
-
-            rro = rro + r(j, k)*p(j, k);
-        ENDDO
-    ENDDO
-!$OMP END DO
-  ENDIF
-!$OMP END PARALLEL
-
-END SUBROUTINE tea_leaf_kernel_init_cg_fortran
-
-SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w(x_min,             &
-                                                   x_max,             &
-                                                   y_min,             &
-                                                   y_max,             &
-                                                   p,                 &
-                                                   w,                 &
-                                                   Kx,                &
-                                                   Ky,                &
-                                                   rx,                &
-                                                   ry,                &
-                                                   pw                 )
+SUBROUTINE tea_leaf_cg_calc_w(pw)
 
   IMPLICIT NONE
 
-  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Ky
+  INTEGER :: t
+  REAL(KIND=8) :: pw, tile_pw
 
-    REAL(KIND=8) ::  rx, ry
+  pw = 0.0_08
 
-    INTEGER(KIND=4) :: j,k,n
-    REAL(kind=8) :: pw
+  IF (use_cuda_kernels) THEN
+    DO t=1,tiles_per_task
+      tile_pw = 0.0_8
 
-    pw = 0.0_08
+      CALL tea_leaf_cg_calc_w_kernel_cuda(tile_pw)
 
-!$OMP PARALLEL
-!$OMP DO REDUCTION(+:pw)
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            w(j, k) = (1.0_8                                      &
-                + ry*(Ky(j, k+1) + Ky(j, k))                      &
-                + rx*(Kx(j+1, k) + Kx(j, k)))*p(j, k)             &
-                - ry*(Ky(j, k+1)*p(j, k+1) + Ky(j, k)*p(j, k-1))  &
-                - rx*(Kx(j+1, k)*p(j+1, k) + Kx(j, k)*p(j-1, k))
-
-            pw = pw + w(j, k)*p(j, k)
-        ENDDO
+      pw = pw + tile_pw
     ENDDO
-!$OMP END DO
-!$OMP END PARALLEL
+  ENDIF
 
-END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_w
+END SUBROUTINE tea_leaf_cg_calc_w
 
-SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur(x_min,             &
-                                                    x_max,             &
-                                                    y_min,             &
-                                                    y_max,             &
-                                                    u,                 &
-                                                    p,                 &
-                                                    r,                 &
-                                                    Mi,                &
-                                                    w,                 &
-                                                    z,                 &
-                                                    alpha,             &
-                                                    rrn,               &
-                                                    preconditioner_on)
+SUBROUTINE tea_leaf_cg_calc_ur(alpha, rrn)
 
   IMPLICIT NONE
 
-  LOGICAL :: preconditioner_on
-  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Mi
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
+  INTEGER :: t
+  REAL(KIND=8) :: alpha, rrn, tile_rrn
 
-    INTEGER(KIND=4) :: j,k,n
-    REAL(kind=8) :: alpha, rrn
+  rrn = 0.0_8
 
-    rrn = 0.0_08
+  IF (use_cuda_kernels) THEN
+    DO t=1,tiles_per_task
+      tile_rrn = 0.0_8
 
-!$OMP PARALLEL
-  IF (preconditioner_on) THEN
-!$OMP DO REDUCTION(+:rrn)
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            u(j, k) = u(j, k) + alpha*p(j, k)
-            r(j, k) = r(j, k) - alpha*w(j, k)
-            z(j, k) = Mi(j, k)*r(j, k)
-            rrn = rrn + r(j, k)*z(j, k)
-        ENDDO
+      CALL tea_leaf_cg_calc_ur_kernel_cuda(alpha, tile_rrn)
+
+      rrn = rrn + tile_rrn
     ENDDO
-!$OMP END DO
-  ELSE
-!$OMP DO REDUCTION(+:rrn)
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            u(j, k) = u(j, k) + alpha*p(j, k)
-            r(j, k) = r(j, k) - alpha*w(j, k)
-            rrn = rrn + r(j, k)*r(j, k)
-        ENDDO
-    ENDDO
-!$OMP END DO
   ENDIF
-!$OMP END PARALLEL
 
-END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_ur
+END SUBROUTINE tea_leaf_cg_calc_ur
 
-SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p(x_min,             &
-                                                   x_max,             &
-                                                   y_min,             &
-                                                   y_max,             &
-                                                   p,                 &
-                                                   r,                 &
-                                                   z,                 &
-                                                   beta,              &
-                                                   preconditioner_on)
+SUBROUTINE tea_leaf_cg_calc_p(beta)
 
   IMPLICIT NONE
 
-  LOGICAL :: preconditioner_on
-  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: p
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: z
+  INTEGER :: t
+  REAL(KIND=8) :: beta
 
-    REAL(kind=8) :: error
-
-    INTEGER(KIND=4) :: j,k,n
-    REAL(kind=8) :: beta
-
-!$OMP PARALLEL
-  IF (preconditioner_on) THEN
-!$OMP DO
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            p(j, k) = z(j, k) + beta*p(j, k)
-        ENDDO
+  IF (use_cuda_kernels) THEN
+    DO t=1,tiles_per_task
+      CALL tea_leaf_cg_calc_p_kernel_cuda(beta)
     ENDDO
-!$OMP END DO
-  ELSE
-!$OMP DO
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            p(j, k) = r(j, k) + beta*p(j, k)
-        ENDDO
-    ENDDO
-!$OMP END DO
   ENDIF
-!$OMP END PARALLEL
 
-END SUBROUTINE tea_leaf_kernel_solve_cg_fortran_calc_p
+END SUBROUTINE tea_leaf_cg_calc_p
 
-END MODULE
+END MODULE tea_leaf_cg_module
 

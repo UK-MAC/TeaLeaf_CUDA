@@ -1,234 +1,45 @@
-!Crown Copyright 2014 AWE.
-!
-! This file is part of TeaLeaf.
-!
-! TeaLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
-! any later version.
-!
-! TeaLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
-! details.
-!
-! You should have received a copy of the GNU General Public License along with 
-! TeaLeaf. If not, see http://www.gnu.org/licenses/.
 
-!>  @brief Fortran heat conduction kernel
-!>  @author Michael Boulton, Wayne Gaudin
-!>  @details Implicitly calculates the change in temperature using accelerated Chebyshev method
+MODULE tea_leaf_cheby_module
 
-MODULE tea_leaf_kernel_cheby_module
+  USE definitions_module
 
-IMPLICIT NONE
+  IMPLICIT NONE
 
 CONTAINS
 
-SUBROUTINE tea_leaf_calc_2norm_kernel(x_min, &
-                          x_max,             &
-                          y_min,             &
-                          y_max,             &
-                          arr,               &
-                          norm)
+SUBROUTINE tea_leaf_cheby_init(theta, ch_alphas, ch_betas, max_cheby_iters)
 
   IMPLICIT NONE
 
-  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: arr
-  REAL(KIND=8) :: norm
-  integer :: j, k
+  INTEGER :: t
+  REAL(KIND=8) :: theta
 
-  norm = 0.0_8
+  INTEGER :: max_cheby_iters
+  REAL(KIND=8), DIMENSION(:) :: ch_alphas, ch_betas
 
-!$OMP PARALLEL
-!$OMP DO REDUCTION(+:norm)
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            norm = norm + arr(j, k)*arr(j, k)
-        ENDDO
+  IF (use_cuda_kernels) THEN
+    DO t=1,tiles_per_task
+      CALL tea_leaf_cheby_init_kernel_cuda(ch_alphas, ch_betas, &
+        max_cheby_iters, chunk%tiles(t)%field%rx, chunk%tiles(t)%field%ry, theta)
     ENDDO
-!$OMP END DO
-!$OMP END PARALLEL
-
-end SUBROUTINE tea_leaf_calc_2norm_kernel
-
-SUBROUTINE tea_leaf_kernel_cheby_init(x_min,  &
-                           x_max,             &
-                           y_min,             &
-                           y_max,             &
-                           u,                 &
-                           u0,                &
-                           p,                 &
-                           r,                 &
-                           Mi,                &
-                           w,                 &
-                           z,                 &
-                           Kx,                &
-                           Ky,                &
-                           ch_alphas,         &
-                           ch_betas,          &
-                           max_cheby_iters,   &
-                           rx,                &
-                           ry,                &
-                           theta,             &
-                           preconditioner_on)
-  IMPLICIT NONE
-
-  LOGICAL :: preconditioner_on
-  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u, u0, p
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r, Mi, z
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx, Ky
-
-  INTEGER :: j,k, max_cheby_iters
-  REAL(KIND=8) ::  rx, ry, theta
-  REAL(KIND=8), DIMENSION(max_cheby_iters) :: ch_alphas, ch_betas
-
-!$OMP PARALLEL
-  IF (preconditioner_on) THEN
-!$OMP DO
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            w(j, k) = (1.0_8                                      &
-                + ry*(Ky(j, k+1) + Ky(j, k))                      &
-                + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
-                - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
-                - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
-            r(j, k) = u0(j, k) - w(j, k)
-
-            p(j, k) = (Mi(j, k)*r(j, k))/theta
-        ENDDO
-    ENDDO
-!$OMP END DO
-  ELSE
-!$OMP DO
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            w(j, k) = (1.0_8                                      &
-                + ry*(Ky(j, k+1) + Ky(j, k))                      &
-                + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
-                - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
-                - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
-            r(j, k) = u0(j, k) - w(j, k)
-
-            p(j, k) = r(j, k)/theta
-        ENDDO
-    ENDDO
-!$OMP END DO
   ENDIF
-!$OMP DO
-  DO k=y_min,y_max
-      DO j=x_min,x_max
-          u(j, k) = u(j, k) + p(j, k)
-      ENDDO
-  ENDDO
-!$OMP END DO
-!$OMP END PARALLEL
 
-END SUBROUTINE
+END SUBROUTINE tea_leaf_cheby_init
 
-SUBROUTINE tea_leaf_kernel_cheby_iterate(x_min, &
-                           x_max,               &
-                           y_min,               &
-                           y_max,               &
-                           u,                   &
-                           u0,                  &
-                           p,                   &
-                           r,                   &
-                           Mi,                  &
-                           w                ,   &
-                           z,                   &
-                           Kx,                  &
-                           Ky,                  &
-                           ch_alphas,           &
-                           ch_betas,            &
-                           max_cheby_iters,     &
-                           rx,                  &
-                           ry,                  &
-                           step,                &
-                           preconditioner_on)
+SUBROUTINE tea_leaf_cheby_iterate(ch_alphas, ch_betas, max_cheby_iters, cheby_calc_steps)
 
   IMPLICIT NONE
 
-  LOGICAL :: preconditioner_on
-  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u, u0, p
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: w
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: r, Mi, z
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: Kx, Ky
+  INTEGER :: t, cheby_calc_steps, max_cheby_iters
+  REAL(KIND=8), DIMENSION(:) :: ch_alphas, ch_betas
 
-  INTEGER :: j,k
-
-    REAL(KIND=8) ::  rx, ry
-
-    INTEGER :: step, max_cheby_iters
-    REAL(KIND=8), DIMENSION(max_cheby_iters) :: ch_alphas, ch_betas
-
-!$OMP PARALLEL
-  IF (preconditioner_on) THEN
-!$OMP DO
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            w(j, k) = (1.0_8                                      &
-                + ry*(Ky(j, k+1) + Ky(j, k))                      &
-                + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
-                - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
-                - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
-            r(j, k) = u0(j, k) - w(j, k)
-            p(j, k) = ch_alphas(step)*p(j, k) + ch_betas(step)*Mi(j, k)*r(j, k)
-        ENDDO
+  IF (use_cuda_kernels) THEN
+    DO t=1,tiles_per_task
+      CALL tea_leaf_cheby_iterate_kernel_cuda(cheby_calc_steps)
     ENDDO
-!$OMP END DO
-  ELSE
-!$OMP DO
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            w(j, k) = (1.0_8                                      &
-                + ry*(Ky(j, k+1) + Ky(j, k))                      &
-                + rx*(Kx(j+1, k) + Kx(j, k)))*u(j, k)             &
-                - ry*(Ky(j, k+1)*u(j, k+1) + Ky(j, k)*u(j, k-1))  &
-                - rx*(Kx(j+1, k)*u(j+1, k) + Kx(j, k)*u(j-1, k))
-            r(j, k) = u0(j, k) - w(j, k)
-            p(j, k) = ch_alphas(step)*p(j, k) + ch_betas(step)*r(j, k)
-        ENDDO
-    ENDDO
-!$OMP END DO
   ENDIF
-!$OMP DO
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            u(j, k) = u(j, k) + p(j, k)
-        ENDDO
-    ENDDO
-!$OMP END DO
-!$OMP END PARALLEL
 
-END SUBROUTINE tea_leaf_kernel_cheby_iterate
-
-SUBROUTINE tea_leaf_kernel_cheby_copy_u(x_min,&
-                           x_max,             &
-                           y_min,             &
-                           y_max,             &
-                           u0, u)
-  IMPLICIT NONE
-
-  INTEGER(KIND=4):: x_min,x_max,y_min,y_max
-  REAL(KIND=8), DIMENSION(x_min-2:x_max+2,y_min-2:y_max+2) :: u, u0
-  INTEGER(KIND=4) :: j,k
-
-!$OMP PARALLEL
-!$OMP DO
-    DO k=y_min,y_max
-        DO j=x_min,x_max
-            u0(j, k) = u(j, k)
-        ENDDO
-    ENDDO
-!$OMP END DO
-!$OMP END PARALLEL
-
-end SUBROUTINE
+END SUBROUTINE tea_leaf_cheby_iterate
 
 SUBROUTINE tqli(d,e,n, info)
     ! http://physics.sharif.edu/~jafari/fortran-codes/lanczos/tqli.f90
@@ -348,6 +159,7 @@ SUBROUTINE tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
 
   DO n=1,max_cheby_iters
     rho_new = 1.0_8/(2.0_8*sigma - rho_old)
+
     cur_alpha = rho_new*rho_old
     cur_beta = 2.0_8*rho_new/delta
 
@@ -359,5 +171,5 @@ SUBROUTINE tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
 
 END SUBROUTINE tea_calc_ch_coefs
 
-END MODULE
+END MODULE tea_leaf_cheby_module
 

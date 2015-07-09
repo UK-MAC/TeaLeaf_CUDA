@@ -1,0 +1,105 @@
+
+tea_solve.o :  \
+	tea_leaf_cheby.o \
+	tea_leaf_cg.o \
+	data.o \
+	tea_leaf_ppcg.o \
+	tea_leaf_jacobi.o \
+	report.o \
+	update_halo.o \
+	tea_leaf_common.o
+
+start.o :  \
+	set_field.o \
+	update_halo.o \
+	parse.o \
+	tea.o
+
+tea_leaf_common.o :  \
+	definitions.o
+
+tea_leaf_cheby.o :  \
+	definitions.o
+
+generate_chunk.o :  \
+	tea.o
+
+parse.o :  \
+	report.o \
+	data.o \
+	tea.o
+
+timestep.o :  \
+	update_halo.o \
+	calc_dt.o \
+	report.o \
+	definitions.o \
+	tea.o
+
+tea_leaf_cg.o :  \
+	definitions.o
+
+tea_leaf.o :  \
+	tea.o
+
+field_summary.o :  \
+	tea.o
+
+initialise_chunk.o :  \
+	tea.o \
+	definitions.o
+
+calc_dt.o :  \
+	tea.o
+
+definitions.o :  \
+	data.o
+
+build_field.o :  \
+	tea.o
+
+timer.o : 
+
+update_halo.o :  \
+	report.o \
+	tea.o
+
+global_mpi.o :  \
+	definitions.o
+
+tea.o :  \
+	global_mpi.o \
+	report.o \
+	definitions.o
+
+tea_leaf_ppcg.o :  \
+	tea_leaf_cheby.o \
+	definitions.o
+
+tea_leaf_jacobi.o :  \
+	definitions.o
+
+read_input.o :  \
+	report.o \
+	parse.o \
+	tea.o
+
+data.o : 
+
+initialise.o :  \
+	report.o \
+	parse.o \
+	tea.o
+
+diffuse.o :  \
+	timestep.o \
+	tea_solve.o \
+	tea.o
+
+report.o :  \
+	global_mpi.o \
+	data.o
+
+set_field.o :  \
+	tea.o
+
