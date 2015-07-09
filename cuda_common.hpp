@@ -100,7 +100,7 @@
         cudaEventCreate(&_t0);                                  \
         cudaEventRecord(_t0);                                   \
     }                                                           \
-    funcname<<<grid_dim, block_shape>>>(x_min, x_max, y_min, y_max, __VA_ARGS__); \
+    funcname<<<grid_dim, block_shape>>>(kernel_info, __VA_ARGS__); \
     CUDA_ERR_CHECK;                                             \
     if (profiler_on)                                            \
     {                                                           \
@@ -144,6 +144,35 @@ typedef struct cell_info {
     }
 
 } cell_info_t;
+
+struct kernel_info_t {
+    int x_min;
+    int x_max;
+    int y_min;
+    int y_max;
+    int halo_depth;
+    int preconditioner_type;
+    int offset;
+
+    kernel_info_t
+    (int in_x_min,
+     int in_x_max,
+     int in_y_min,
+     int in_y_max,
+     int in_halo_depth,
+     int in_preconditioner_type,
+     int in_offset)
+    :x_min(in_x_min),
+     x_max(in_x_max),
+     y_min(in_y_min),
+     y_max(in_y_max),
+     halo_depth(in_halo_depth),
+     preconditioner_type(in_preconditioner_type),
+     offset(in_offset)
+    {
+        ;
+    }
+};
 
 // types of array data
 const static cell_info_t CELL(    0, 0,  1,  1, 0, 0, CELL_DATA);
@@ -207,6 +236,9 @@ private:
     int num_blocks;
     dim3 grid_dim;
 
+    // struct to pass in common values
+    kernel_info_t kernel_info;
+
     int preconditioner_type;
     int halo_exchange_depth;
 
@@ -232,8 +264,7 @@ private:
     (int line_num, const char* file);
 
     void update_array_boundary
-    (int x_min, int x_max, int y_min, int y_max,
-     cell_info_t const& grid_type,
+    (cell_info_t const& grid_type,
      const int* chunk_neighbours,
      double* cur_array_d,
      int depth);
