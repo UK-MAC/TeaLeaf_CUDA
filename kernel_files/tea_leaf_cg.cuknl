@@ -2,109 +2,37 @@
  *  Kernels used for conjugate gradient method
  */
 
-#define CONDUCTIVITY 1
-#define RECIP_CONDUCTIVITY 2
-
-__global__ void device_tea_leaf_cg_init_u
+__global__ void device_tea_leaf_cg_solve_init_p
 (int x_min, int x_max, int y_min, int y_max,
- const double * __restrict const density1,
- const double * __restrict const energy1,
-       double * __restrict const u,
        double * __restrict const p,
        double * __restrict const r,
-       double * __restrict const d,
- const int coefficient)
-{
-    __kernel_indexes;
-
-    if (row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
-    && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2)
-    {
-        p[THARR2D(0, 0, 0)] = 0.0;
-        r[THARR2D(0, 0, 0)] = 0.0;
-
-        u[THARR2D(0, 0, 0)] = energy1[THARR2D(0, 0, 0)]*density1[THARR2D(0, 0, 0)];
-
-        if (CONDUCTIVITY == coefficient)
-        {
-            d[THARR2D(0, 0, 0)] = density1[THARR2D(0, 0, 0)];
-        }
-        else
-        {
-            d[THARR2D(0, 0, 0)] = 1.0/density1[THARR2D(0, 0, 0)];
-        }
-    }
-}
-
-__global__ void device_tea_leaf_cg_init_directions
-(int x_min, int x_max, int y_min, int y_max,
- const double * __restrict const d,
-       double * __restrict const Kx,
-       double * __restrict const Ky)
-{
-    __kernel_indexes;
-
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 1
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 1)
-    {
-        Kx[THARR2D(0, 0, 0)] = (d[THARR2D(-1, 0, 0)] + d[THARR2D(0, 0, 0)])
-            /(2.0*d[THARR2D(-1, 0, 0)]*d[THARR2D(0, 0, 0)]);
-        Ky[THARR2D(0, 0, 0)] = (d[THARR2D(0, -1, 0)] + d[THARR2D(0, 0, 0)])
-            /(2.0*d[THARR2D(0, -1, 0)]*d[THARR2D(0, 0, 0)]);
-    }
-}
-
-__global__ void device_tea_leaf_cg_init_others
-(int x_min, int x_max, int y_min, int y_max,
-       double * __restrict const rro,
- const double * __restrict const u,
-       double * __restrict const p,
-       double * __restrict const r,
-       double * __restrict const Mi,
-       double * __restrict const w,
        double * __restrict const z,
- const double * __restrict const Kx,
- const double * __restrict const Ky,
- double rx, double ry,
- bool preconditioner_on)
+       double * __restrict const Mi,
+       double * __restrict const rro)
 {
     __kernel_indexes;
 
     __shared__ double rro_shared[BLOCK_SZ];
     rro_shared[lid] = 0.0;
 
-    // used to make ifdefs for reductions less messy
-    double rro_val;
-
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
-        w[THARR2D(0, 0, 0)] = (1.0
-            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
-            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*u[THARR2D(0, 0, 0)]
-            - (Ky[THARR2D(0, 1, 0)]*u[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*u[THARR2D(0, -1, 0)])
-            - (Kx[THARR2D(1, 0, 0)]*u[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*u[THARR2D(-1, 0, 0)]);
-
-        r[THARR2D(0, 0, 0)] = u[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
-
-        if (preconditioner_on)
+        if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
         {
-            Mi[THARR2D(0, 0, 0)] = (1.0
-                + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
-                + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]));
-            Mi[THARR2D(0, 0, 0)] = 1.0/Mi[THARR2D(0, 0, 0)];
-
-            z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+            // z initialised when block_solve kernel is called before this
             p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)];
-            rro_val = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
         }
-        else
+        else if (PRECONDITIONER == TL_PREC_JAC_DIAG)
+        {
+            z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
+            p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)];
+        }
+        else if (PRECONDITIONER == TL_PREC_NONE)
         {
             p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)];
-            rro_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
         }
 
-        rro_shared[lid] = rro_val;
+        rro_shared[lid] = r[THARR2D(0, 0, 0)]*p[THARR2D(0, 0, 0)];
     }
 
     Reduce< double, BLOCK_SZ/2 >::run(rro_shared, rro, SUM);
@@ -126,8 +54,7 @@ __global__ void device_tea_leaf_cg_solve_calc_w
     __shared__ double pw_shared[BLOCK_SZ];
     pw_shared[lid] = 0.0;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         w[THARR2D(0, 0, 0)] = (1.0
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
@@ -163,8 +90,7 @@ __global__ void device_tea_leaf_cg_solve_calc_ur
     // as above
     double rrn_val;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         u[THARR2D(0, 0, 0)] += alpha*p[THARR2D(0, 0, 0)];
         r[THARR2D(0, 0, 0)] -= alpha*w[THARR2D(0, 0, 0)];
@@ -197,8 +123,7 @@ __global__ void device_tea_leaf_cg_solve_calc_p
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         if (preconditioner_on)
         {

@@ -36,7 +36,7 @@ const int* depth)
     cuda_chunk.update_halo_kernel(fields, *depth, chunk_neighbours);
 }
 
-void CloverleafCudaChunk::update_array
+void CloverleafCudaChunk::update_array_boundary
 (int x_min, int x_max, int y_min, int y_max,
 cell_info_t const& grid_type,
 const int* chunk_neighbours,
@@ -90,7 +90,7 @@ const int* chunk_neighbours)
     #define HALO_UPDATE_RESIDENT(arr, grid_type)        \
     {if (1 == fields[FIELD_##arr - 1])                  \
     {                                                   \
-        update_array(x_min, x_max, y_min, y_max,        \
+        update_array_boundary(x_min, x_max, y_min, y_max,        \
             grid_type, chunk_neighbours, arr, depth);   \
     }}
 

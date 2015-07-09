@@ -7,8 +7,7 @@ __global__ void device_tea_leaf_finalise
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         energy1[THARR2D(0, 0, 0)] = u1[THARR2D(0, 0, 0)]/density1[THARR2D(0, 0, 0)];
     }
@@ -24,8 +23,7 @@ __global__ void device_tea_leaf_calc_residual
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         const double smvp = (1.0
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
@@ -48,11 +46,66 @@ __global__ void device_tea_leaf_common_calc_2norm
     __shared__ double rro_shared[BLOCK_SZ];
     rro_shared[lid] = 0.0;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         rro_shared[lid] = arr1[THARR2D(0, 0, 0)]*arr2[THARR2D(0, 0, 0)];
     }
 
     Reduce< double, BLOCK_SZ/2 >::run(rro_shared, rro, SUM);
 }
+
+__global__ void device_tea_leaf_init_common
+(int x_min, int x_max, int y_min, int y_max,
+ const double * __restrict const density,
+ const double * __restrict const energy,
+       double * __restrict const Kx,
+       double * __restrict const Ky,
+       double * __restrict const u0,
+       double * __restrict const u,
+ double rx, double ry,
+ const int coef)
+{
+    __kernel_indexes;
+
+    if (WITHIN_BOUNDS)
+    {
+        double dens_centre, dens_left, dens_down;
+
+        if (COEF_CONDUCTIVITY == coef)
+        {
+            dens_centre = density[THARR2D(0, 0, 0)];
+            dens_left = density[THARR2D(-1, 0, 0)];
+            dens_down = density[THARR2D(0, -1, 0)];
+        }
+        else if (COEF_RECIP_CONDUCTIVITY == coef)
+        {
+            dens_centre = 1.0/density[THARR2D(0, 0, 0)];
+            dens_left = 1.0/density[THARR2D(-1, 0, 0)];
+            dens_down = 1.0/density[THARR2D(0, -1, 0)];
+        }
+
+        Kx[THARR2D(0, 0, 0)] = (dens_left + dens_centre)/(2.0*dens_left*dens_centre);
+        Kx[THARR2D(0, 0, 0)] *= rx;
+        Ky[THARR2D(0, 0, 0)] = (dens_down + dens_centre)/(2.0*dens_down*dens_centre);
+        Ky[THARR2D(0, 0, 0)] *= ry;
+    }
+}
+
+__global__ void device_tea_leaf_init_jac_diag
+(int x_min, int x_max, int y_min, int y_max,
+       double * __restrict const Mi,
+ const double * __restrict const Kx,
+ const double * __restrict const Ky)
+{
+    __kernel_indexes;
+
+    if (WITHIN_BOUNDS)
+    {
+        const double diag = (1.0
+            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
+            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]));
+
+        Mi[THARR2D(0, 0, 0)] = 1.0/diag;
+    }
+}
+

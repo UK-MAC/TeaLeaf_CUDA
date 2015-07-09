@@ -21,6 +21,10 @@
     * ((y_max) + 4 + y_extra)       \
     * sizeof(double) )
 
+#define WITHIN_BOUNDS \
+    (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0 \
+    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+
 /*
 *  access a value in a 2d array given the x and y offset from current thread
 *  index, adding or subtracting a bit more if it is one of the arrays with

@@ -8,8 +8,7 @@ __global__ void device_tea_leaf_ppcg_solve_init_sd
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         sd[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]/theta;
     }
@@ -25,8 +24,7 @@ __global__ void device_tea_leaf_ppcg_solve_update_r
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         const double result = (1.0
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
@@ -50,33 +48,10 @@ __global__ void device_tea_leaf_ppcg_solve_calc_sd
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
+    if (WITHIN_BOUNDS)
     {
         sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
                             + beta[step]*r[THARR2D(0, 0, 0)];
     }
-}
-
-__global__ void device_tea_leaf_ppcg_solve_init_p
-(int x_min, int x_max, int y_min, int y_max,
-       double * __restrict const p,
- const double * __restrict const r,
- const double * __restrict const Mi,
-       double * __restrict const rro)
-{
-    __kernel_indexes;
-
-    __shared__ double rro_shared[BLOCK_SZ];
-    rro_shared[lid] = 0.0;
-
-    if (row >= (y_min + 1) - 0 && row <= (y_max + 1) + 0
-    && column >= (x_min + 1) - 0 && column <= (x_max + 1) + 0)
-    {
-        p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)];
-        rro_shared[lid] = p[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
-    }
-
-    Reduce< double, BLOCK_SZ/2 >::run(rro_shared, rro, SUM);
 }
 

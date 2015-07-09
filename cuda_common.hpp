@@ -145,7 +145,6 @@ private:
     // work arrays
     double* volume;
     double* soundspeed;
-    double* viscosity;
 
     double* density;
     double* energy0;
@@ -163,26 +162,21 @@ private:
     double* vertexdy;
 
     double* u;
-    double* z;
     double* u0;
 
     bool preconditioner_on;
-
-    // used in calc_dt to retrieve values
-    thrust::device_ptr< double > thr_cellx;
-    thrust::device_ptr< double > thr_celly;
-    thrust::device_ptr< double > thr_density;
-    thrust::device_ptr< double > thr_energy0;
-    thrust::device_ptr< double > thr_soundspeed;
 
     // holding temporary stuff like post_vol etc.
     double* vector_p;
     double* vector_r;
     double* vector_w;
+    double* vector_z;
     double* vector_Mi;
     double* vector_Kx;
     double* vector_Ky;
     double* vector_sd;
+
+    double * ch_alphas_device, * ch_betas_device;
 
     // buffers used in mpi transfers
     double * left_buffer;
@@ -219,9 +213,6 @@ private:
     float taken;
     cudaEvent_t _t0, _t1;
 
-    // tolerance specified in tea.in
-    float tolerance;
-
     // calculate rx/ry to pass back to fortran
     void calcrxry
     (double dt, double * rx, double * ry);
@@ -229,7 +220,7 @@ private:
     void errorHandler
     (int line_num, const char* file);
 
-    void update_array
+    void update_array_boundary
     (int x_min, int x_max, int y_min, int y_max,
      cell_info_t const& grid_type,
      const int* chunk_neighbours,
@@ -240,17 +231,12 @@ private:
     void upload_ch_coefs
     (const double * ch_alphas, const double * ch_betas,
      const int n_coefs);
-
-    // this function gets called when something goes wrong
-    #define DIE(...) cloverDie(__LINE__, __FILE__, __VA_ARGS__)
-    void cloverDie
-    (int line, const char* filename, const char* format, ...);
 public:
     // kernels
     void field_summary_kernel(double* vol, double* mass,
         double* ie, double* temp);
 
-    void generate_chunk_kernel(const int number_of_states, 
+    void generate_chunk_kernel(const int number_of_states,
         const double* state_density, const double* state_energy,
         const double* state_xmin, const double* state_xmax,
         const double* state_ymin, const double* state_ymax,
@@ -267,10 +253,10 @@ public:
 
     // Tea leaf
     void tea_leaf_init_jacobi(int, double, double*, double*);
-    void tea_leaf_kernel_jacobi(double, double, double*);
+    void tea_leaf_kernel_jacobi(double*);
 
-    void tea_leaf_init_cg(int, double, double*, double*, double*);
-    void tea_leaf_kernel_cg_calc_w(double rx, double ry, double* pw);
+    void tea_leaf_init_cg(double*);
+    void tea_leaf_kernel_cg_calc_w(double* pw);
     void tea_leaf_kernel_cg_calc_ur(double alpha, double* rrn);
     void tea_leaf_kernel_cg_calc_p(double beta);
 
@@ -284,9 +270,6 @@ public:
     void tea_leaf_kernel_cheby_iterate
     (const double rx, const double ry, const int cheby_calc_steps);
 
-    void tea_leaf_calc_residual
-    (void);
-
     void ppcg_init
     (const double * ch_alphas, const double * ch_betas,
      const int n_inner_steps);
@@ -297,15 +280,18 @@ public:
     void ppcg_inner
     (int ppcg_cur_step);
 
-    double * ch_alphas_device, * ch_betas_device;
+    void tea_leaf_finalise();
+    void tea_leaf_common_init
+    (int coefficient, double dt, double * rx, double * ry,
+     int * chunk_neighbours, int * zero_boundary, int reflective_boundary);
+    void tea_leaf_calc_residual
+    (void);
 
     #define TEA_ENUM_JACOBI     1
     #define TEA_ENUM_CG         2
     #define TEA_ENUM_CHEBYSHEV  3
     #define TEA_ENUM_PPCG       4
     int tea_solver;
-
-    void tea_leaf_finalise();
 
     std::map<std::string, double*> arr_names;
     std::vector<double> dumpArray
@@ -325,6 +311,11 @@ public:
 };
 
 extern CloverleafCudaChunk cuda_chunk;
+
+// this function gets called when something goes wrong
+#define DIE(...) cloverDie(__LINE__, __FILE__, __VA_ARGS__)
+void cloverDie
+(int line, const char* filename, const char* format, ...);
 
 #endif
 

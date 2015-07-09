@@ -1,5 +1,9 @@
 #include "cuda_common.hpp"
 
+// same as in fortran
+#define COEF_CONDUCTIVITY 1
+#define COEF_RECIP_CONDUCTIVITY 2
+
 #include "kernel_files/tea_leaf_common.cuknl"
 #include "kernel_files/tea_leaf_jacobi.cuknl"
 #include "kernel_files/tea_leaf_cg.cuknl"
@@ -7,10 +11,6 @@
 #include "kernel_files/tea_leaf_ppcg.cuknl"
 
 #include <cassert>
-
-// same as in fortran
-#define CONDUCTIVITY 1
-#define RECIP_CONDUCTIVITY 2
 
 // copy back dx/dy and calculate rx/ry
 void CloverleafCudaChunk::calcrxry
@@ -149,23 +149,23 @@ extern "C" void tea_leaf_cg_calc_p_kernel_cuda_
 /********************/
 
 void CloverleafCudaChunk::tea_leaf_init_cg
-(int coefficient, double dt, double * rx, double * ry, double * rro)
+(double * rro)
 {
     assert(tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV || tea_solver == TEA_ENUM_PPCG);
 
     // TODO preconditioners
 
     // init Kx, Ky
-    CUDALAUNCH(device_tea_leaf_cg_init_p, vector_w, vector_Kx, vector_Ky);
+    CUDALAUNCH(device_tea_leaf_cg_solve_init_p, vector_w, vector_Kx, vector_Ky);
 
     *rro = thrust::reduce(reduce_ptr_2, reduce_ptr_2 + num_blocks, 0.0);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_w
-(double rx, double ry, double* pw)
+(double* pw)
 {
     CUDALAUNCH(device_tea_leaf_cg_solve_calc_w, reduce_buf_3,
-        vector_p, vector_Mi, vector_Kx, vector_Ky, rx, ry);
+        vector_p, vector_Mi, vector_Kx, vector_Ky);
 
     *pw = thrust::reduce(reduce_ptr_3, reduce_ptr_3 + num_blocks, 0.0);
 }
@@ -174,7 +174,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
 (double alpha, double* rrn)
 {
     CUDALAUNCH(device_tea_leaf_cg_solve_calc_ur, alpha, reduce_buf_4, u, vector_p,
-        vector_r, vector_Mi, z, vector_w, preconditioner_on);
+        vector_r, vector_Mi, vector_z, vector_w, preconditioner_on);
 
     *rrn = thrust::reduce(reduce_ptr_4, reduce_ptr_4 + num_blocks, 0.0);
 }
@@ -182,7 +182,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_p
 (double beta)
 {
-    CUDALAUNCH(device_tea_leaf_cg_solve_calc_p, beta, vector_p, vector_r, z,
+    CUDALAUNCH(device_tea_leaf_cg_solve_calc_p, beta, vector_p, vector_r, vector_z,
         preconditioner_on);
 }
 
@@ -199,7 +199,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_jacobi
 {
     CUDALAUNCH(device_tea_leaf_jacobi_copy_u, u, vector_Mi);
 
-    CUDALAUNCH(device_tea_leaf_jacobi_solve, rx, ry, vector_Kx, vector_Ky,
+    CUDALAUNCH(device_tea_leaf_jacobi_solve, vector_Kx, vector_Ky,
         vector_w, u, vector_Mi, reduce_buf_1);
 
     *error = *thrust::max_element(reduce_ptr_1, reduce_ptr_1 + num_blocks);
@@ -228,10 +228,11 @@ extern "C" void tea_leaf_calc_residual_cuda_
     cuda_chunk.tea_leaf_calc_residual();
 }
 
-void CloverleafCudaChunk::tea_leaf_init_jacobi
-(int coefficient, double dt, double * rx, double * ry)
+void CloverleafCudaChunk::tea_leaf_common_init
+(int coefficient, double dt, double * rx, double * ry,
+ int * chunk_neighbours, int * zero_boundary, int reflective_boundary)
 {
-    if (coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY)
+    if (coefficient != COEF_CONDUCTIVITY && coefficient != COEF_RECIP_CONDUCTIVITY)
     {
         DIE("Unknown coefficient %d passed to tea leaf\n", coefficient);
     }

@@ -126,7 +126,7 @@ std::vector<double> CloverleafCudaChunk::dumpArray
 }
 
 // called when something goes wrong
-void CloverleafCudaChunk::cloverDie
+void cloverDie
 (int line, const char* filename, const char* format, ...)
 {
     fprintf(stderr, "@@@@@\n");
