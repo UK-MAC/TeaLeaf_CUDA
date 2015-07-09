@@ -1,6 +1,6 @@
 
 __global__ void device_tea_leaf_ppcg_solve_init_sd
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
  const double * __restrict const r,
  const double * __restrict const Mi,
        double * __restrict const sd,
@@ -15,7 +15,7 @@ __global__ void device_tea_leaf_ppcg_solve_init_sd
 }
 
 __global__ void device_tea_leaf_ppcg_solve_update_r
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
        double * __restrict const u,
        double * __restrict const r,
  const double * __restrict const Kx,
@@ -38,7 +38,7 @@ __global__ void device_tea_leaf_ppcg_solve_update_r
 }
 
 __global__ void device_tea_leaf_ppcg_solve_calc_sd
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
  const double * __restrict const r,
  const double * __restrict const Mi,
        double * __restrict const sd,

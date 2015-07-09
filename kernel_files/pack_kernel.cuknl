@@ -42,17 +42,11 @@
     ((column - 1) + depth +             \
     ((row    - 0) - 0)*(x_max + x_extra + 2*depth))-1
 
-typedef void (*pack_func_t)(int x_min,int x_max,int y_min,int y_max,
+typedef void (*pack_func_t)(kernel_info_t kernel_info,
      int x_extra, int y_extra,
           double* array,
           double* left_buffer,
     const int depth);
-
-// special ones for 2d indexing as used in buffer packing
-#undef __kernel_indexes
-#define __kernel_indexes                    \
-    const int column = threadIdx.x + blockIdx.x*blockDim.x;          \
-    const int row = threadIdx.y + blockIdx.y*blockDim.y;
 
 #undef THARR2D
 #define THARR2D(x_offset, y_offset, big_row)        \
@@ -65,7 +59,7 @@ typedef void (*pack_func_t)(int x_min,int x_max,int y_min,int y_max,
     )
 
 __global__ void device_packleftBuffer
-(int x_min,int x_max,int y_min,int y_max,
+(kernel_info_t kernel_info,
  int x_extra, int y_extra,
       double* array,
       double* left_buffer,
@@ -80,7 +74,7 @@ const int depth)
 }
 
 __global__ void device_unpackleftBuffer
-(int x_min,int x_max,int y_min,int y_max,
+(kernel_info_t kernel_info,
  int x_extra, int y_extra,
       double* array,
       double* left_buffer,
@@ -97,7 +91,7 @@ const int depth)
 /************************************************************/
 
 __global__ void device_packrightBuffer
-(int x_min,int x_max,int y_min,int y_max,
+(kernel_info_t kernel_info,
  int x_extra, int y_extra,
       double* array,
       double* right_buffer,
@@ -112,7 +106,7 @@ const int depth)
 }
 
 __global__ void device_unpackrightBuffer
-(int x_min,int x_max,int y_min,int y_max,
+(kernel_info_t kernel_info,
  int x_extra, int y_extra,
       double* array,
       double* right_buffer,
@@ -129,7 +123,7 @@ const int depth)
 /************************************************************/
 
 __global__ void device_packbottomBuffer
-(int x_min,int x_max,int y_min,int y_max,
+(kernel_info_t kernel_info,
  int x_extra, int y_extra,
             double* array,
             double* bottom_buffer,
@@ -144,7 +138,7 @@ const int depth)
 }
 
 __global__ void device_unpackbottomBuffer
-(int x_min,int x_max,int y_min,int y_max,
+(kernel_info_t kernel_info,
  int x_extra, int y_extra,
             double* array,
             double* bottom_buffer,
@@ -161,7 +155,7 @@ const int depth)
 /************************************************************/
 
 __global__ void device_packtopBuffer
-(int x_min,int x_max,int y_min,int y_max,
+(kernel_info_t kernel_info,
  int x_extra, int y_extra,
             double* array,
             double* top_buffer,
@@ -176,7 +170,7 @@ const int depth)
 }
 
 __global__ void device_unpacktopBuffer
-(int x_min,int x_max,int y_min,int y_max,
+(kernel_info_t kernel_info,
  int x_extra, int y_extra,
             double* array,
             double* top_buffer,

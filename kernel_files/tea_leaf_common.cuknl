@@ -1,6 +1,6 @@
 
 __global__ void device_tea_leaf_finalise
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
  const double * __restrict const density1,
  const double * __restrict const u1,
        double * __restrict const energy1)
@@ -14,7 +14,7 @@ __global__ void device_tea_leaf_finalise
 }
 
 __global__ void device_tea_leaf_calc_residual
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
  const double * __restrict const u,
  const double * __restrict const u0,
        double * __restrict const r,
@@ -36,7 +36,7 @@ __global__ void device_tea_leaf_calc_residual
 }
 
 __global__ void device_tea_leaf_common_calc_2norm
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
  const double *            const arr1,
  const double *            const arr2,
        double * __restrict const rro)
@@ -55,7 +55,7 @@ __global__ void device_tea_leaf_common_calc_2norm
 }
 
 __global__ void device_tea_leaf_init_common
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
  const double * __restrict const density,
  const double * __restrict const energy,
        double * __restrict const Kx,
@@ -92,7 +92,7 @@ __global__ void device_tea_leaf_init_common
 }
 
 __global__ void device_tea_leaf_init_jac_diag
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
        double * __restrict const Mi,
  const double * __restrict const Kx,
  const double * __restrict const Ky)

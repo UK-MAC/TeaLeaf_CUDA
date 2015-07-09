@@ -3,7 +3,7 @@
  */
 
 __global__ void device_tea_leaf_cg_solve_init_p
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
        double * __restrict const p,
        double * __restrict const r,
        double * __restrict const z,
@@ -42,7 +42,7 @@ __global__ void device_tea_leaf_cg_solve_init_p
 /* reduce rro */
 
 __global__ void device_tea_leaf_cg_solve_calc_w
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
        double * __restrict const pw,
  const double * __restrict const p,
        double * __restrict const w,
@@ -71,7 +71,7 @@ __global__ void device_tea_leaf_cg_solve_calc_w
 /* reduce pw */
 
 __global__ void device_tea_leaf_cg_solve_calc_ur
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
  double alpha,
        double * __restrict const rrn,
        double * __restrict const u,
@@ -114,7 +114,7 @@ __global__ void device_tea_leaf_cg_solve_calc_ur
 /* reduce rrn */
 
 __global__ void device_tea_leaf_cg_solve_calc_p
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
  double beta,
        double * __restrict const p,
  const double * __restrict const r,

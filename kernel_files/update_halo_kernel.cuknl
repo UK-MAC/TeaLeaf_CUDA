@@ -1,12 +1,13 @@
 
 __global__ void device_update_halo_kernel_bottom_cuda
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
 cell_info_t grid_type,
 double* cur_array,
 int depth)
 {
     int x_extra = grid_type.x_extra;
     int y_invert = grid_type.y_invert;
+
     __kernel_indexes;
 
     // offset by 1 if it is anything but a CELL grid
@@ -29,7 +30,7 @@ int depth)
 }
 
 __global__ void device_update_halo_kernel_top_cuda
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
 cell_info_t grid_type,
 double* cur_array,
 int depth)
@@ -38,6 +39,7 @@ int depth)
     int y_extra = grid_type.y_extra;
     int y_invert = grid_type.y_invert;
     int x_face = grid_type.x_face;
+
     __kernel_indexes;
 
     // if x face data, offset source/dest by - 1
@@ -56,7 +58,7 @@ int depth)
 }
 
 __global__ void device_update_halo_kernel_left_cuda
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
 cell_info_t grid_type,
 double* cur_array,
 int depth)
@@ -67,11 +69,8 @@ int depth)
 
     // offset by 1 if it is anything but a CELL grid
     int l_offset = (grid_type.grid_type != CELL_DATA) ? 1 : 0;
-
-    // special indexes for specific depth
-    const int glob_id = threadIdx.x + blockIdx.x * blockDim.x;
-    const int row = glob_id / depth;
-    const int column = glob_id % depth;
+    
+    __kernel_indexes;
 
     if (row >= 2 - depth && row <= (y_max + 1) + y_extra + depth)
     {
@@ -83,7 +82,7 @@ int depth)
 }
 
 __global__ void device_update_halo_kernel_right_cuda
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
 cell_info_t grid_type,
 double* cur_array,
 int depth)
@@ -95,10 +94,8 @@ int depth)
 
     // offset source by -1 if its a y face
     int y_f_offset = (y_face) ? 1 : 0;
-
-    const int glob_id = threadIdx.x + blockIdx.x * blockDim.x;
-    const int row = glob_id / depth;
-    const int column = glob_id % depth;
+    
+    __kernel_indexes;
 
     if (row >= 2 - depth && row <= (y_max + 1) + y_extra + depth)
     {

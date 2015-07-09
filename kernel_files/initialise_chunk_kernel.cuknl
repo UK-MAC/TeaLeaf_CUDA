@@ -1,6 +1,6 @@
 
 __global__ void device_initialise_chunk_kernel_vertex_cuda
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
 const double d_xmin,
 const double d_ymin,
 const double d_dx,
@@ -10,12 +10,7 @@ double* __restrict const vertexdx,
 double* __restrict const vertexy,
 double* __restrict const vertexdy)
 {
-    const int glob_id = threadIdx.x
-        + blockIdx.x * blockDim.x;
-
-    //bigger indexes 
-    const int row = glob_id / (x_max + 5);
-    const int column = glob_id % (x_max + 5);
+    __kernel_indexes;
 
     //fill out x arrays
     if (row == 0)
@@ -35,7 +30,7 @@ double* __restrict const vertexdy)
 }
 
 __global__ void device_initialise_chunk_kernel_cuda
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
 const double d_xmin,
 const double d_ymin,
 const double d_dx,

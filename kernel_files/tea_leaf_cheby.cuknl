@@ -1,6 +1,6 @@
 
 __global__ void device_tea_leaf_cheby_solve_init_p
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
  const double * __restrict const u,
  const double * __restrict const u0,
        double * __restrict const p,
@@ -37,7 +37,7 @@ __global__ void device_tea_leaf_cheby_solve_init_p
 
 
 __global__ void device_tea_leaf_cheby_solve_calc_u
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
        double * __restrict const u,
  const double * __restrict const p)
 {
@@ -50,7 +50,7 @@ __global__ void device_tea_leaf_cheby_solve_calc_u
 }
 
 __global__ void device_tea_leaf_cheby_solve_calc_p
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
  const double * __restrict const u,
  const double * __restrict const u0,
        double * __restrict const p,

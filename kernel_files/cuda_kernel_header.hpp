@@ -27,9 +27,13 @@ const static dim3 block_shape(LOCAL_X, LOCAL_Y);
 
 // kernel indexes uses in all kernels
 #define __kernel_indexes                    \
-    const int row = blockIdx.y*blockDim.y + threadIdx.y; \
-    const int column = blockIdx.x*blockDim.x + threadIdx.x; \
-    const int glob_id = (blockIdx.y*gridDim.x + blockIdx.x)*blockDim.x*blockDim.y + \
+    __attribute__((__unused__)) const int x_min = kernel_info.x_min; \
+    __attribute__((__unused__)) const int x_max = kernel_info.x_max; \
+    __attribute__((__unused__)) const int y_min = kernel_info.y_min; \
+    __attribute__((__unused__)) const int y_max = kernel_info.y_max; \
+    __attribute__((__unused__)) const int row = blockIdx.y*blockDim.y + threadIdx.y; \
+    __attribute__((__unused__)) const int column = blockIdx.x*blockDim.x + threadIdx.x; \
+    __attribute__((__unused__)) const int glob_id = (blockIdx.y*gridDim.x + blockIdx.x)*blockDim.x*blockDim.y + \
         threadIdx.y*blockDim.x + threadIdx.x; \
     __attribute__((__unused__)) const int lid = threadIdx.x;
 

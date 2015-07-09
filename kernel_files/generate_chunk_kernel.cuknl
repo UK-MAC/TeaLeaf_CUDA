@@ -1,6 +1,6 @@
 
 __global__ void device_generate_chunk_kernel_cuda
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
 const double* __restrict const vertexx,
 const double* __restrict const vertexy,
 const double* __restrict const cellx,
@@ -64,7 +64,7 @@ const int state)
 }
 
 __global__ void device_generate_chunk_init_u
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
  const double * density,
  const double * energy,
        double * u,
@@ -80,7 +80,7 @@ __global__ void device_generate_chunk_init_u
 }
 
 __global__ void device_generate_chunk_kernel_init_cuda
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
       double* density,
       double* energy0,
 const double* state_density,

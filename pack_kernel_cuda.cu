@@ -169,7 +169,7 @@ void CloverleafCudaChunk::packUnpackAllBuffers
 
             #undef CASE_BUF
 
-            pack_kernel<<< pack_global, pack_local >>>(x_min, x_max, y_min, y_max,
+            pack_kernel<<< pack_global, pack_local >>>(kernel_info,
                 x_inc, y_inc, device_array, device_buffer+offsets[ii], depth);
 
             CUDA_ERR_CHECK;

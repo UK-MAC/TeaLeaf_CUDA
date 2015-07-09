@@ -172,6 +172,8 @@ struct kernel_info_t {
     {
         ;
     }
+
+    kernel_info_t(){}
 };
 
 // types of array data

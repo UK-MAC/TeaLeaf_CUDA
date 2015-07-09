@@ -3,7 +3,7 @@
  */
 
 __global__ void device_tea_leaf_jacobi_copy_u
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
  const double * __restrict const u1,
        double * __restrict const un)
 {
@@ -16,7 +16,7 @@ __global__ void device_tea_leaf_jacobi_copy_u
 }
 
 __global__ void device_tea_leaf_jacobi_solve
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
        double * __restrict const Kx,
        double * __restrict const Ky,
  const double * __restrict const u0,

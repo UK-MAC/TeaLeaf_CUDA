@@ -1,6 +1,6 @@
 
 __global__ void device_set_field_kernel_cuda
-(int x_min, int x_max, int y_min, int y_max,
+(kernel_info_t kernel_info,
  const double * __restrict const energy0,
        double * __restrict const energy1)
 {
