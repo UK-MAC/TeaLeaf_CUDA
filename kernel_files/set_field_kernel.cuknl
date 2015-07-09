@@ -6,8 +6,7 @@ __global__ void device_set_field_kernel_cuda
 {
     __kernel_indexes;
 
-    if(row >= (y_min + 1) && row <= (y_max + 1)
-    && column >= (x_min + 1) && column <= (x_max + 1))
+    if (WITHIN_BOUNDS)
     {
         energy1[THARR2D(0, 0, 0)]  = energy0[THARR2D(0, 0, 0)];
     }

@@ -103,7 +103,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
     CUDALAUNCH(device_tea_leaf_cheby_solve_init_p, u, u0,
         vector_p, vector_r, vector_w, vector_Mi,
         vector_Kx, vector_Ky,
-        theta, rx, ry, preconditioner_on);
+        theta, rx, ry, preconditioner_type);
 
     // update p
     CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, vector_p);
@@ -116,7 +116,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
         vector_p, vector_r, vector_w, vector_Mi,
         vector_Kx, vector_Ky,
         ch_alphas_device, ch_betas_device,
-        rx, ry, cheby_calc_step-1, preconditioner_on);
+        rx, ry, cheby_calc_step-1, preconditioner_type);
 
     CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, vector_p);
 }
@@ -156,7 +156,8 @@ void CloverleafCudaChunk::tea_leaf_init_cg
     // TODO preconditioners
 
     // init Kx, Ky
-    CUDALAUNCH(device_tea_leaf_cg_solve_init_p, vector_w, vector_Kx, vector_Ky);
+    CUDALAUNCH(device_tea_leaf_cg_solve_init_p, vector_p, vector_r,
+        vector_z, vector_Mi, reduce_buf_2, preconditioner_type);
 
     *rro = thrust::reduce(reduce_ptr_2, reduce_ptr_2 + num_blocks, 0.0);
 }
@@ -165,7 +166,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_w
 (double* pw)
 {
     CUDALAUNCH(device_tea_leaf_cg_solve_calc_w, reduce_buf_3,
-        vector_p, vector_Mi, vector_Kx, vector_Ky);
+        vector_p, vector_w, vector_Kx, vector_Ky);
 
     *pw = thrust::reduce(reduce_ptr_3, reduce_ptr_3 + num_blocks, 0.0);
 }
@@ -174,7 +175,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
 (double alpha, double* rrn)
 {
     CUDALAUNCH(device_tea_leaf_cg_solve_calc_ur, alpha, reduce_buf_4, u, vector_p,
-        vector_r, vector_Mi, vector_z, vector_w, preconditioner_on);
+        vector_r, vector_Mi, vector_z, vector_w, preconditioner_type);
 
     *rrn = thrust::reduce(reduce_ptr_4, reduce_ptr_4 + num_blocks, 0.0);
 }
@@ -183,7 +184,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_p
 (double beta)
 {
     CUDALAUNCH(device_tea_leaf_cg_solve_calc_p, beta, vector_p, vector_r, vector_z,
-        preconditioner_on);
+        preconditioner_type);
 }
 
 /********************/
@@ -239,8 +240,8 @@ void CloverleafCudaChunk::tea_leaf_common_init
 
     calcrxry(dt, rx, ry);
 
-    CUDALAUNCH(device_tea_leaf_jacobi_init, density, energy1,
-        vector_Kx, vector_Ky, vector_w, u, coefficient);
+    CUDALAUNCH(device_tea_leaf_init_common, density, energy1,
+        vector_Kx, vector_Ky, u0, u, *rx, *ry, coefficient);
 }
 
 // both

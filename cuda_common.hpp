@@ -38,9 +38,19 @@
 #define FIELD_u             4
 #define FIELD_vector_p      5
 #define FIELD_vector_sd     6
-#define NUM_FIELDS          6
+#define FIELD_vector_r      7
+#define NUM_FIELDS          7
 
-#define NUM_BUFFERED_FIELDS 6
+#define NUM_BUFFERED_FIELDS 7
+
+#define TL_PREC_NONE        1
+#define TL_PREC_JAC_DIAG    2
+#define TL_PREC_JAC_BLOCK   3
+
+#define TEA_ENUM_JACOBI     1
+#define TEA_ENUM_CG         2
+#define TEA_ENUM_CHEBYSHEV  3
+#define TEA_ENUM_PPCG       4
 
 // which side to pack - keep the same as in fortran file
 #define CHUNK_LEFT 1
@@ -164,8 +174,6 @@ private:
     double* u;
     double* u0;
 
-    bool preconditioner_on;
-
     // holding temporary stuff like post_vol etc.
     double* vector_p;
     double* vector_r;
@@ -198,6 +206,8 @@ private:
 
     // number of blocks for work space
     unsigned int num_blocks;
+
+    int preconditioner_type;
 
     // values used to control operation
     int x_min;
@@ -287,10 +297,6 @@ public:
     void tea_leaf_calc_residual
     (void);
 
-    #define TEA_ENUM_JACOBI     1
-    #define TEA_ENUM_CG         2
-    #define TEA_ENUM_CHEBYSHEV  3
-    #define TEA_ENUM_PPCG       4
     int tea_solver;
 
     std::map<std::string, double*> arr_names;

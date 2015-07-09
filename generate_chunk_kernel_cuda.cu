@@ -92,6 +92,8 @@ const int g_point)
             state_radius_d, state_geometry_d, g_rect, g_circ, g_point, state);
     }
 
+    CUDALAUNCH(device_generate_chunk_init_u, density, energy0, u, u0);
+
     thrust::device_free(thr_state_density_d);
     thrust::device_free(thr_state_energy_d);
     thrust::device_free(thr_state_xmin_d);

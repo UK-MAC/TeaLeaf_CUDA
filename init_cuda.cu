@@ -77,7 +77,7 @@ num_blocks(std::ceil((((*in_x_max)+5.)*((*in_y_max)+5.))/BLOCK_SZ))
     bool tl_use_cg = clover::paramEnabled(input, "tl_use_cg");
     bool tl_use_chebyshev = clover::paramEnabled(input, "tl_use_chebyshev");
     bool tl_use_ppcg = clover::paramEnabled(input, "tl_use_ppcg");
-    preconditioner_on = clover::paramEnabled(input, "tl_preconditioner_on");
+    preconditioner_type = clover::paramEnabled(input, "tl_preconditioner_type");
 
     if(!rank)fprintf(stdout, "Solver to use: ");
     if (tl_use_ppcg)
@@ -150,7 +150,6 @@ num_blocks(std::ceil((((*in_x_max)+5.)*((*in_y_max)+5.))/BLOCK_SZ))
 
     CUDA_ARRAY_ALLOC(volume, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(soundspeed, BUFSZ2D(0, 0));
-    CUDA_ARRAY_ALLOC(viscosity, BUFSZ2D(0, 0));
 
     CUDA_ARRAY_ALLOC(density, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(energy0, BUFSZ2D(0, 0));
@@ -171,7 +170,7 @@ num_blocks(std::ceil((((*in_x_max)+5.)*((*in_y_max)+5.))/BLOCK_SZ))
 
     CUDA_ARRAY_ALLOC(u, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(u0, BUFSZ2D(0, 0));
-    CUDA_ARRAY_ALLOC(z, BUFSZ2D(0, 0));
+    CUDA_ARRAY_ALLOC(vector_z, BUFSZ2D(0, 0));
 
     CUDA_ARRAY_ALLOC(vector_p, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(vector_r, BUFSZ2D(0, 0));
@@ -196,22 +195,15 @@ num_blocks(std::ceil((((*in_x_max)+5.)*((*in_y_max)+5.))/BLOCK_SZ))
     reduce_ptr_3 = thrust::device_ptr< double >(reduce_buf_3);
     reduce_ptr_4 = thrust::device_ptr< double >(reduce_buf_4);
 
-    thr_cellx = thrust::device_ptr< double >(cellx);
-    thr_celly = thrust::device_ptr< double >(celly);
-    thr_density = thrust::device_ptr< double >(density);
-    thr_energy0 = thrust::device_ptr< double >(energy0);
-    thr_soundspeed = thrust::device_ptr< double >(soundspeed);
-
     #undef CUDA_ARRAY_ALLOC
 
 #define ADD_BUFFER_DBG_MAP(name) arr_names[#name] = name;
     ADD_BUFFER_DBG_MAP(volume);
     ADD_BUFFER_DBG_MAP(soundspeed);
-    ADD_BUFFER_DBG_MAP(viscosity);
 
     ADD_BUFFER_DBG_MAP(u);
-    arr_names["p"] = vector_p;
 
+    ADD_BUFFER_DBG_MAP(vector_p);
     ADD_BUFFER_DBG_MAP(vector_r);
     ADD_BUFFER_DBG_MAP(vector_w);
     ADD_BUFFER_DBG_MAP(vector_Mi);
