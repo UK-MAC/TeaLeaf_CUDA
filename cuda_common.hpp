@@ -152,7 +152,8 @@ struct kernel_info_t {
     int y_max;
     int halo_depth;
     int preconditioner_type;
-    int offset;
+    int x_offset;
+    int y_offset;
 
     kernel_info_t
     (int in_x_min,
@@ -161,14 +162,16 @@ struct kernel_info_t {
      int in_y_max,
      int in_halo_depth,
      int in_preconditioner_type,
-     int in_offset)
+     int in_x_offset,
+     int in_y_offset)
     :x_min(in_x_min),
      x_max(in_x_max),
      y_min(in_y_min),
      y_max(in_y_max),
      halo_depth(in_halo_depth),
      preconditioner_type(in_preconditioner_type),
-     offset(in_offset)
+     x_offset(in_x_offset),
+     y_offset(in_y_offset)
     {
         ;
     }

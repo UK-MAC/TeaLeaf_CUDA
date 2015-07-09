@@ -163,6 +163,9 @@ y_max(*in_y_max)
         std::ceil((y_max + 2.0*halo_exchange_depth)/LOCAL_Y));
     num_blocks = grid_dim.x*grid_dim.y;
 
+    kernel_info = kernel_info_t(x_min, x_max, y_min, y_max, halo_exchange_depth,
+        preconditioner_type, halo_exchange_depth, halo_exchange_depth);
+
     struct cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, device_id);
     std::cout << "CUDA using " << prop.name << std::endl;
@@ -177,18 +180,18 @@ y_max(*in_y_max)
 
     // number of bytes to allocate for x size array
     #define BUFSZX(x_extra)   \
-        ( ((x_max) + 4 + x_extra)       \
+        ( ((x_max) + 2*halo_exchange_depth + x_extra)       \
         * sizeof(double) )
 
     // number of bytes to allocate for y size array
     #define BUFSZY(y_extra)   \
-        ( ((y_max) + 4 + y_extra)       \
+        ( ((y_max) + 2*halo_exchange_depth + y_extra)       \
         * sizeof(double) )
 
     // number of bytes to allocate for 2d array
     #define BUFSZ2D(x_extra, y_extra)   \
-        ( ((x_max) + 4 + x_extra)       \
-        * ((y_max) + 4 + y_extra)       \
+        ( ((x_max) + 2*halo_exchange_depth + x_extra)       \
+        * ((y_max) + 2*halo_exchange_depth + y_extra)       \
         * sizeof(double) )
 
     CUDA_ARRAY_ALLOC(volume, BUFSZ2D(0, 0));
@@ -223,10 +226,10 @@ y_max(*in_y_max)
     CUDA_ARRAY_ALLOC(vector_Ky, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(vector_sd, BUFSZ2D(0, 0));
 
-    CUDA_ARRAY_ALLOC(left_buffer, (y_max+5)*2*NUM_BUFFERED_FIELDS*sizeof(double));
-    CUDA_ARRAY_ALLOC(right_buffer, (y_max+5)*2*NUM_BUFFERED_FIELDS*sizeof(double));
-    CUDA_ARRAY_ALLOC(bottom_buffer, (x_max+5)*2*NUM_BUFFERED_FIELDS*sizeof(double));
-    CUDA_ARRAY_ALLOC(top_buffer, (x_max+5)*2*NUM_BUFFERED_FIELDS*sizeof(double));
+    CUDA_ARRAY_ALLOC(left_buffer, (y_max+2*halo_exchange_depth)*halo_exchange_depth*NUM_BUFFERED_FIELDS*sizeof(double));
+    CUDA_ARRAY_ALLOC(right_buffer, (y_max+2*halo_exchange_depth)*halo_exchange_depth*NUM_BUFFERED_FIELDS*sizeof(double));
+    CUDA_ARRAY_ALLOC(bottom_buffer, (x_max+2*halo_exchange_depth)*halo_exchange_depth*NUM_BUFFERED_FIELDS*sizeof(double));
+    CUDA_ARRAY_ALLOC(top_buffer, (x_max+2*halo_exchange_depth)*halo_exchange_depth*NUM_BUFFERED_FIELDS*sizeof(double));
 
     CUDA_ARRAY_ALLOC(reduce_buf_1, num_blocks*sizeof(double));
     CUDA_ARRAY_ALLOC(reduce_buf_2, num_blocks*sizeof(double));
