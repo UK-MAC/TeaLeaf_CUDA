@@ -10,8 +10,6 @@
 #include "kernel_files/tea_leaf_cheby.cuknl"
 #include "kernel_files/tea_leaf_ppcg.cuknl"
 
-#include "kernel_files/generate_chunk_kernel.cuknl"
-
 #include <cassert>
 
 // copy back dx/dy and calculate rx/ry
@@ -263,7 +261,7 @@ void CloverleafCudaChunk::tea_leaf_common_init
     kernel_info.x_offset = halo_exchange_depth;
     kernel_info.y_offset = halo_exchange_depth;
 
-    CUDALAUNCH(device_generate_chunk_init_u, density, energy0, u, u0);
+    generate_chunk_init_u();
 }
 
 // both

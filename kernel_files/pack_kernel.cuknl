@@ -1,38 +1,4 @@
 
-/********************/
-
-// j is column
-// k is row
-
-// could put this check in, prob doesnt need it
-// if (row > 1 - depth && row < y_max + 2 + depth + y_extra)
-
-// left/right buffer
-// index=j+(k+depth-1)*depth
-
-// left index 
-// left_snd_buffer(index)=field(chunks(chunk)%field%x_min+x_extra-1+j,k)
-// field(chunks(chunk)%field%x_min-j,k)=left_rcv_buffer(index)
-
-// right index
-// right_snd_buffer(index)=field(chunks(chunk)%field%x_max+1-j,k)
-// field(chunks(chunk)%field%x_max+x_extra+j,k)=right_rcv_buffer(index)
-
-/********************/
-
-// top/bottom buffer
-// index=j+depth+(k-1)*(chunks(chunk)%field%x_max+x_extra+(2*depth))
-
-// bottom index
-// bottom_snd_buffer(index)=field(j,chunks(chunk)%field%y_min+y_extra-1+k)
-// field(j,chunks(chunk)%field%y_min-k)=bottom_rcv_buffer(index)
-
-// top index
-// top_snd_buffer(index)=field(j,chunks(chunk)%field%y_max+1-k)
-// field(j,chunks(chunk)%field%y_max+y_extra+k)=top_rcv_buffer(index)
-
-/********************/
-
 // for left/right
 #define VERT_IDX                        \
     ((column - 1) +                     \
@@ -44,143 +10,141 @@
 
 typedef void (*pack_func_t)(kernel_info_t kernel_info,
      int x_extra, int y_extra,
-          double* array,
-          double* left_buffer,
-    const int depth);
+          double * __restrict cur_array,
+          double * __restrict left_buffer,
+    const int depth, int offset);
 
-#undef THARR2D
-#define THARR2D(x_offset, y_offset, big_row)        \
-    (                                               \
-      column                      /* horizontal  */ \
-    + row*(x_max + 4)             /* vertical    */ \
-    + (x_offset)                  /* horz offset */ \
-    + (y_offset)*(x_max + 4)      /* vert offset */ \
-    + (big_row)*(row + (y_offset))/* big row   */   \
-    )
-
-__global__ void device_packleftBuffer
+__global__ void device_pack_left_buffer
 (kernel_info_t kernel_info,
  int x_extra, int y_extra,
-      double* array,
-      double* left_buffer,
-const int depth)
+      double * __restrict cur_array,
+      double * __restrict left_buffer,
+const int depth, int offset)
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - depth && row <= (y_max + 1) + y_extra + depth)
+    if (row >= HALO_DEPTH - depth && row <= (y_max + HALO_DEPTH - 1) + y_extra + depth)
     {
-        left_buffer[VERT_IDX] = array[THARR2D((x_min + 1) + x_extra, 0, x_extra)];
+        const size_t src = 1 + (HALO_DEPTH - column - 1)*2;
+        left_buffer[VERT_IDX] = cur_array[THARR2D(src, 0, x_extra)];
     }
 }
 
-__global__ void device_unpackleftBuffer
+__global__ void device_unpack_left_buffer
 (kernel_info_t kernel_info,
  int x_extra, int y_extra,
-      double* array,
-      double* left_buffer,
-const int depth)
+      double * __restrict cur_array,
+      double * __restrict left_buffer,
+const int depth, int offset)
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - depth && row <= (y_max + 1) + y_extra + depth)
+    if (row >= HALO_DEPTH - depth && row <= (y_max + HALO_DEPTH - 1) + y_extra + depth)
     {
-        array[THARR2D(1 - 2*column, 0, x_extra)] = left_buffer[VERT_IDX];
+        const size_t dst = 0;
+        cur_array[THARR2D(dst, 0, x_extra)] = left_buffer[VERT_IDX];
     }
 }
 
 /************************************************************/
 
-__global__ void device_packrightBuffer
+__global__ void device_pack_right_buffer
 (kernel_info_t kernel_info,
  int x_extra, int y_extra,
-      double* array,
-      double* right_buffer,
-const int depth)
+      double * __restrict cur_array,
+      double * __restrict right_buffer,
+const int depth, int offset)
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - depth && row <= (y_max + 1) + y_extra + depth)
+    if (row >= HALO_DEPTH - depth && row <= (y_max + HALO_DEPTH - 1) + y_extra + depth)
     {
-        right_buffer[VERT_IDX] = array[THARR2D((x_max + 1) - 2*column, 0, x_extra)];
+        const size_t src = x_max + x_extra;
+        right_buffer[VERT_IDX] = cur_array[THARR2D(src, 0, x_extra)];
     }
 }
 
-__global__ void device_unpackrightBuffer
+__global__ void device_unpack_right_buffer
 (kernel_info_t kernel_info,
  int x_extra, int y_extra,
-      double* array,
-      double* right_buffer,
-const int depth)
+      double * __restrict cur_array,
+      double * __restrict right_buffer,
+const int depth, int offset)
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - depth && row <= (y_max + 1) + y_extra + depth)
+    if (row >= HALO_DEPTH - depth && row <= (y_max + HALO_DEPTH - 1) + y_extra + depth)
     {
-        array[THARR2D((x_max + 1) + x_extra + 1, 0, x_extra)] = right_buffer[VERT_IDX];
-    }
-}
-
-/************************************************************/
-
-__global__ void device_packbottomBuffer
-(kernel_info_t kernel_info,
- int x_extra, int y_extra,
-            double* array,
-            double* bottom_buffer,
-const int depth)
-{
-    __kernel_indexes;
-
-    if (column >= (x_min + 1) - depth && column <= (x_max + 1) + x_extra + depth)
-    {
-        bottom_buffer[HORZ_IDX] = array[THARR2D(0, (y_min + 1) + y_extra, x_extra)];
-    }
-}
-
-__global__ void device_unpackbottomBuffer
-(kernel_info_t kernel_info,
- int x_extra, int y_extra,
-            double* array,
-            double* bottom_buffer,
-const int depth)
-{
-    __kernel_indexes;
-
-    if (column >= (x_min + 1) - depth && column <= (x_max + 1) + x_extra + depth)
-    {
-        array[THARR2D(0, 1 - 2*row, x_extra)] = bottom_buffer[HORZ_IDX];
+        const size_t dst = x_max + x_extra + (HALO_DEPTH - column - 1)*2 + 1;
+        cur_array[THARR2D(dst, 0, x_extra)] = right_buffer[VERT_IDX];
     }
 }
 
 /************************************************************/
 
-__global__ void device_packtopBuffer
+__global__ void device_pack_bottom_buffer
 (kernel_info_t kernel_info,
  int x_extra, int y_extra,
-            double* array,
-            double* top_buffer,
-const int depth)
+            double * __restrict cur_array,
+            double * __restrict bottom_buffer,
+const int depth, int offset)
 {
     __kernel_indexes;
 
-    if (column >= (x_min + 1) - depth && column <= (x_max + 1) + x_extra + depth)
+    if (column >= HALO_DEPTH - depth && column <= (x_max + HALO_DEPTH - 1) + x_extra + depth)
     {
-        top_buffer[HORZ_IDX] = array[THARR2D(0, (y_max + 1) - 2*row, x_extra)];
+        const size_t src = 1 + (HALO_DEPTH - row - 1)*2;
+        bottom_buffer[HORZ_IDX] = cur_array[THARR2D(0, src, x_extra)];
     }
 }
 
-__global__ void device_unpacktopBuffer
+__global__ void device_unpack_bottom_buffer
 (kernel_info_t kernel_info,
  int x_extra, int y_extra,
-            double* array,
-            double* top_buffer,
-const int depth)
+            double * __restrict cur_array,
+            double * __restrict bottom_buffer,
+const int depth, int offset)
 {
     __kernel_indexes;
 
-    if (column >= (x_min + 1) - depth && column <= (x_max + 1) + x_extra + depth)
+    if (column >= HALO_DEPTH - depth && column <= (x_max + HALO_DEPTH - 1) + x_extra + depth)
     {
-        array[THARR2D(0, (y_max + 1) + y_extra + 1, x_extra)] = top_buffer[HORZ_IDX];
+        const size_t dst = 0;
+        cur_array[THARR2D(dst, 0, x_extra)] = bottom_buffer[HORZ_IDX];
+    }
+}
+
+/************************************************************/
+
+__global__ void device_pack_top_buffer
+(kernel_info_t kernel_info,
+ int x_extra, int y_extra,
+            double * __restrict cur_array,
+            double * __restrict top_buffer,
+const int depth, int offset)
+{
+    __kernel_indexes;
+
+    if (column >= HALO_DEPTH - depth && column <= (x_max + HALO_DEPTH - 1) + x_extra + depth)
+    {
+        const size_t src = y_max + y_extra;
+        top_buffer[HORZ_IDX] = cur_array[THARR2D(0, src, x_extra)];
+    }
+}
+
+__global__ void device_unpack_top_buffer
+(kernel_info_t kernel_info,
+ int x_extra, int y_extra,
+            double * __restrict cur_array,
+            double * __restrict top_buffer,
+const int depth, int offset)
+{
+    __kernel_indexes;
+
+    if (column >= HALO_DEPTH - depth && column <= (x_max + HALO_DEPTH - 1) + x_extra + depth)
+    {
+        const size_t dst = y_max + y_extra + (HALO_DEPTH - row - 1)*2 + 1;
+        cur_array[THARR2D(0, dst, x_extra)] = top_buffer[HORZ_IDX];
     }
 }
 

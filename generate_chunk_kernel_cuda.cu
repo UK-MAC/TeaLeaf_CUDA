@@ -92,7 +92,7 @@ const int g_point)
             state_radius_d, state_geometry_d, g_rect, g_circ, g_point, state);
     }
 
-    CUDALAUNCH(device_generate_chunk_init_u, density, energy0, u, u0);
+    generate_chunk_init_u();
 
     thrust::device_free(thr_state_density_d);
     thrust::device_free(thr_state_energy_d);
@@ -103,4 +103,12 @@ const int g_point)
     thrust::device_free(thr_state_radius_d);
     thrust::device_free(thr_state_geometry_d);
 }
+
+
+void CloverleafCudaChunk::generate_chunk_init_u
+(void)
+{
+    CUDALAUNCH(device_generate_chunk_init_u, density, energy0, u, u0);
+}
+
 

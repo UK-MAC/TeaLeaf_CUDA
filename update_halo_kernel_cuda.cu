@@ -54,7 +54,7 @@ int depth)
         }                                                               \
         const int launch_sz = (ceil((dir##_max + (2*depth) + grid_type.dir##_extra) \
             /static_cast<float>(UPDATE_HALO_BLOCK_SZ))) * depth;                    \
-        device_update_halo_kernel_##face##_cuda                         \
+        device_update_halo_kernel_##face                         \
         <<<launch_sz, UPDATE_HALO_BLOCK_SZ >>>                                      \
             (kernel_info, grid_type, cur_array_d, depth);\
         CUDA_ERR_CHECK;                                                 \

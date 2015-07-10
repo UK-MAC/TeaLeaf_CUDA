@@ -59,16 +59,16 @@ void CloverleafCudaChunk::packUnpackAllBuffers
         switch (face)
         {
         case CHUNK_LEFT:
-            pack_kernel = &device_packleftBuffer;
+            pack_kernel = &device_pack_left_buffer;
             break;
         case CHUNK_RIGHT:
-            pack_kernel = &device_packrightBuffer;
+            pack_kernel = &device_pack_right_buffer;
             break;
         case CHUNK_BOTTOM:
-            pack_kernel = &device_packbottomBuffer;
+            pack_kernel = &device_pack_bottom_buffer;
             break;
         case CHUNK_TOP:
-            pack_kernel = &device_packtopBuffer;
+            pack_kernel = &device_pack_top_buffer;
             break;
         default:
             DIE("Invalid face identifier %d passed to pack\n", face);
@@ -79,16 +79,16 @@ void CloverleafCudaChunk::packUnpackAllBuffers
         switch (face)
         {
         case CHUNK_LEFT:
-            pack_kernel = &device_unpackleftBuffer;
+            pack_kernel = &device_unpack_left_buffer;
             break;
         case CHUNK_RIGHT:
-            pack_kernel = &device_unpackrightBuffer;
+            pack_kernel = &device_unpack_right_buffer;
             break;
         case CHUNK_BOTTOM:
-            pack_kernel = &device_unpackbottomBuffer;
+            pack_kernel = &device_unpack_bottom_buffer;
             break;
         case CHUNK_TOP:
-            pack_kernel = &device_unpacktopBuffer;
+            pack_kernel = &device_unpack_top_buffer;
             break;
         default:
             DIE("Invalid face identifier %d passed to unpack\n", face);
@@ -170,7 +170,7 @@ void CloverleafCudaChunk::packUnpackAllBuffers
             #undef CASE_BUF
 
             pack_kernel<<< pack_global, pack_local >>>(kernel_info,
-                x_inc, y_inc, device_array, device_buffer+offsets[ii], depth);
+                x_inc, y_inc, device_array, device_buffer, depth, offsets[ii]);
 
             CUDA_ERR_CHECK;
         }
