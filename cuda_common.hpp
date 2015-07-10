@@ -98,13 +98,13 @@
     if (profiler_on)                                            \
     {                                                           \
         cudaEventCreate(&_t0);                                  \
+        cudaEventCreate(&_t1);                                  \
         cudaEventRecord(_t0);                                   \
     }                                                           \
     funcname<<<grid_dim, block_shape>>>(kernel_info, __VA_ARGS__); \
     CUDA_ERR_CHECK;                                             \
     if (profiler_on)                                            \
     {                                                           \
-        cudaEventCreate(&_t1);                                  \
         cudaEventRecord(_t1);                                   \
         cudaEventSynchronize(_t1);                              \
         cudaEventElapsedTime(&taken, _t0, _t1);                 \

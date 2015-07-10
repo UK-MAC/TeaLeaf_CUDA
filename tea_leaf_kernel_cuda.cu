@@ -10,6 +10,8 @@
 #include "kernel_files/tea_leaf_cheby.cuknl"
 #include "kernel_files/tea_leaf_ppcg.cuknl"
 
+#include "kernel_files/generate_chunk_kernel.cuknl"
+
 #include <cassert>
 
 // copy back dx/dy and calculate rx/ry
@@ -67,9 +69,8 @@ void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel
         CUDALAUNCH(device_tea_leaf_common_calc_2norm, vector_r, vector_z, reduce_buf_1);
     }
     else
-    // TODO
     {
-        DIE("Invalid value '%d' for norm_array passed, should be [1, 2]", norm_array);
+        DIE("Invalid value '%d' for norm_array passed, should be [0, 1, 2]", norm_array);
     }
 
     CUDA_ERR_CHECK;
@@ -153,7 +154,20 @@ void CloverleafCudaChunk::tea_leaf_init_cg
 {
     assert(tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV || tea_solver == TEA_ENUM_PPCG);
 
-    // TODO preconditioners
+    if (preconditioner_type == TL_PREC_JAC_BLOCK)
+    {
+        // TODO preconditioners
+    }
+    else if (preconditioner_type == TL_PREC_JAC_DIAG)
+    {
+        kernel_info.x_offset = 0;
+        kernel_info.y_offset = 0;
+
+        CUDALAUNCH(device_tea_leaf_init_jac_diag, vector_Mi, vector_Kx, vector_Ky);
+
+        kernel_info.x_offset = halo_exchange_depth;
+        kernel_info.y_offset = halo_exchange_depth;
+    }
 
     // init Kx, Ky
     CUDALAUNCH(device_tea_leaf_cg_solve_init_p, vector_p, vector_r,
@@ -240,8 +254,16 @@ void CloverleafCudaChunk::tea_leaf_common_init
 
     calcrxry(dt, rx, ry);
 
+    kernel_info.x_offset = 0;
+    kernel_info.y_offset = 0;
+
     CUDALAUNCH(device_tea_leaf_init_common, density, energy1,
         vector_Kx, vector_Ky, u0, u, *rx, *ry, coefficient);
+
+    kernel_info.x_offset = halo_exchange_depth;
+    kernel_info.y_offset = halo_exchange_depth;
+
+    CUDALAUNCH(device_generate_chunk_init_u, density, energy0, u, u0);
 }
 
 // both
