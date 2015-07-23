@@ -107,15 +107,13 @@ void CloverleafCudaChunk::packUnpackAllBuffers
     // pad it to fit in 32 local work group size (always on NVIDIA hardware)
     case CHUNK_LEFT:
     case CHUNK_RIGHT:
-        needed_launch_size = (y_max + 5);
-        pack_global = dim3(depth, needed_launch_size + (32 - (needed_launch_size % 32)));
-        pack_local = dim3(1, 32);
+        pack_global = update_lr_num_blocks[depth];
+        pack_local = update_lr_block_sizes[depth];
         break;
     case CHUNK_BOTTOM:
     case CHUNK_TOP:
-        needed_launch_size = (x_max + 5);
-        pack_global = dim3(needed_launch_size + (32 - (needed_launch_size % 32)), depth);
-        pack_local = dim3(32, 1);
+        pack_global = update_bt_num_blocks[depth];
+        pack_local = update_bt_block_sizes[depth];
         break;
     default:
         DIE("Invalid face identifier %d passed to mpi buffer packing\n", face);

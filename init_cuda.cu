@@ -159,12 +159,53 @@ y_max(*in_y_max)
         if(!rank)fprintf(stdout, "None (no preconditioner specified in tea.in)\n");
     }
 
-    grid_dim = dim3(std::ceil((x_max + 2.0*halo_exchange_depth)/LOCAL_X),
+    grid_dim = dim3(
+        std::ceil((x_max + 2.0*halo_exchange_depth)/LOCAL_X),
         std::ceil((y_max + 2.0*halo_exchange_depth)/LOCAL_Y));
     num_blocks = grid_dim.x*grid_dim.y;
 
-    kernel_info = kernel_info_t(x_min, x_max, y_min, y_max, halo_exchange_depth,
-        preconditioner_type, halo_exchange_depth, halo_exchange_depth);
+    kernel_info.x_min = x_min;
+    kernel_info.x_max = x_max;
+    kernel_info.y_min = y_min;
+    kernel_info.y_max = y_max;
+
+    kernel_info.halo_depth = halo_exchange_depth;
+    kernel_info.preconditioner_type = preconditioner_type;
+
+    kernel_info.x_offset = halo_exchange_depth;
+    kernel_info.y_offset = halo_exchange_depth;
+
+    #define UPDATE_HALO_SIZE 32
+
+    for (int depth = 1; depth <= 2; depth++)
+    {
+        update_bt_block_sizes[depth] = dim3(UPDATE_HALO_SIZE, depth);
+        update_lr_block_sizes[depth] = dim3(depth, UPDATE_HALO_SIZE);
+    }
+
+    update_bt_block_sizes[halo_exchange_depth] = update_bt_block_sizes[1];
+    update_lr_block_sizes[halo_exchange_depth] = update_lr_block_sizes[1];
+
+    std::map<int, dim3>::iterator typedef irangeit;
+    for (irangeit key = update_lr_block_sizes.begin();
+        key != update_lr_block_sizes.end(); key++)
+    {
+        int depth = key->first;
+
+        int min_update_bt_grid_dim = x_max + 2*depth;
+        int min_update_lr_grid_dim = y_max + 2*depth;
+
+        int num_blocks_bt = 1;
+        int num_blocks_lr = 1;
+
+        while (update_bt_block_sizes[depth].x*num_blocks_bt < min_update_bt_grid_dim)
+            num_blocks_bt++;
+        while (update_lr_block_sizes[depth].y*num_blocks_lr < min_update_lr_grid_dim)
+            num_blocks_lr++;
+
+        update_bt_num_blocks[depth] = dim3(num_blocks_bt, depth);
+        update_lr_num_blocks[depth] = dim3(num_blocks_lr, depth);
+    }
 
     struct cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, device_id);

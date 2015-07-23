@@ -61,8 +61,8 @@ const double d_dy,
 {
     __kernel_indexes;
 
-    if (row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2
-    && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2)
+    if (row >= (y_min + 1) - 2 && row <= (y_max + 1) + 2 + HALO_DEPTH
+    && column >= (x_min + 1) - 2 && column <= (x_max + 1) + 2 + HALO_DEPTH)
     {
         volume[THARR2D(0, 0, 0)] = d_dx * d_dy;
         xarea[THARR2D(0, 0, 1)] = d_dy;

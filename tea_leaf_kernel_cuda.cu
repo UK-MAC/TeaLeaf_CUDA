@@ -261,6 +261,39 @@ void CloverleafCudaChunk::tea_leaf_common_init
     kernel_info.x_offset = halo_exchange_depth;
     kernel_info.y_offset = halo_exchange_depth;
 
+    if (!reflective_boundary)
+    {
+        int depth = halo_exchange_depth;
+        std::vector<double> zeros((std::max(x_max, y_max) + 2*depth)*depth, 0);
+
+        #define ZERO_BOUNDARY(face, dir, xy) \
+        if (chunk_neighbours[CHUNK_ ## face - 1] == EXTERNAL_FACE && \
+            zero_boundary[CHUNK_ ## face - 1] == EXTERNAL_FACE) \
+        {   \
+            cudaMemcpy(face##_buffer, &zeros.front(), \
+                sizeof(double)*(xy##_max + 2*depth)*depth, \
+                cudaMemcpyHostToDevice); \
+            device_unpack_##face##_buffer\
+            <<<update_##dir##_num_blocks[depth], update_##dir##_block_sizes[depth]>>>\
+                (kernel_info,  \
+                0, 0, vector_K##xy, face##_buffer, \
+                depth, 0); \
+            kernel_info_t offset_info = kernel_info; \
+            offset_info.x_offset = 1; \
+            offset_info.y_offset = 1; \
+            device_unpack_##face##_buffer \
+            <<<update_##dir##_num_blocks[depth], update_##dir##_block_sizes[depth]>>>\
+                (offset_info,  \
+                0, 0, vector_K##xy, face##_buffer, \
+                depth, 0); \
+        }
+
+        ZERO_BOUNDARY(left, lr, x)
+        ZERO_BOUNDARY(right, lr, x)
+        ZERO_BOUNDARY(bottom, bt, y)
+        ZERO_BOUNDARY(top, bt, y)
+    }
+
     generate_chunk_init_u();
 }
 

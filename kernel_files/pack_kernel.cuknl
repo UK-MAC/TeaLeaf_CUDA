@@ -8,12 +8,6 @@
     ((column - 1) + depth +             \
     ((row    - 0) - 0)*(x_max + x_extra + 2*depth))-1
 
-typedef void (*pack_func_t)(kernel_info_t kernel_info,
-     int x_extra, int y_extra,
-          double * __restrict cur_array,
-          double * __restrict left_buffer,
-    const int depth, int offset);
-
 __global__ void device_pack_left_buffer
 (kernel_info_t kernel_info,
  int x_extra, int y_extra,

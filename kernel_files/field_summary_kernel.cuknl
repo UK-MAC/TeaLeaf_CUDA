@@ -1,7 +1,7 @@
 
 __global__ void device_field_summary_kernel_cuda
 (kernel_info_t kernel_info,
-const double* __restrict const volume,
+      double* __restrict const volume,
 const double* __restrict const density,
 const double* __restrict const energy0,
 const double* __restrict const u,
@@ -30,6 +30,7 @@ const double* __restrict const u,
         mass_shared[lid] = cell_mass;
         ie_shared[lid] = cell_mass * energy0[THARR2D(0, 0, 0)];
         temp_shared[lid] = cell_mass*u[THARR2D(0, 0, 0)];
+        volume[THARR2D(0, 0, 0)] = 2;
     }
 
     __syncthreads();
@@ -45,9 +46,12 @@ const double* __restrict const u,
         __syncthreads();
     }
 
-    vol[blockIdx.x] = vol_shared[0];
-    mass[blockIdx.x] = mass_shared[0];
-    ie[blockIdx.x] = ie_shared[0];
-    temp[blockIdx.x] = temp_shared[0];
+    if (!lid)
+    {
+        vol[block_id] = vol_shared[0];
+        mass[block_id] = mass_shared[0];
+        ie[block_id] = ie_shared[0];
+        temp[block_id] = temp_shared[0];
+    }
 }
 

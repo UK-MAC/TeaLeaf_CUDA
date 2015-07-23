@@ -154,29 +154,6 @@ struct kernel_info_t {
     int preconditioner_type;
     int x_offset;
     int y_offset;
-
-    kernel_info_t
-    (int in_x_min,
-     int in_x_max,
-     int in_y_min,
-     int in_y_max,
-     int in_halo_depth,
-     int in_preconditioner_type,
-     int in_x_offset,
-     int in_y_offset)
-    :x_min(in_x_min),
-     x_max(in_x_max),
-     y_min(in_y_min),
-     y_max(in_y_max),
-     halo_depth(in_halo_depth),
-     preconditioner_type(in_preconditioner_type),
-     x_offset(in_x_offset),
-     y_offset(in_y_offset)
-    {
-        ;
-    }
-
-    kernel_info_t(){}
 };
 
 // types of array data
@@ -240,6 +217,11 @@ private:
     // number of blocks for work space
     int num_blocks;
     dim3 grid_dim;
+
+    std::map<int, dim3> update_lr_block_sizes;
+    std::map<int, dim3> update_bt_block_sizes;
+    std::map<int, dim3> update_lr_num_blocks;
+    std::map<int, dim3> update_bt_num_blocks;
 
     // struct to pass in common values
     kernel_info_t kernel_info;
@@ -361,6 +343,31 @@ extern CloverleafCudaChunk cuda_chunk;
 #define DIE(...) cloverDie(__LINE__, __FILE__, __VA_ARGS__)
 void cloverDie
 (int line, const char* filename, const char* format, ...);
+
+typedef void (*pack_func_t)(kernel_info_t kernel_info,
+     int x_extra, int y_extra,
+          double * __restrict cur_array,
+          double * __restrict left_buffer,
+    const int depth, int offset);
+
+#define CUDA_PACK_KERNEL_FUNC_DEF(_name_) \
+    __global__ void _name_  \
+    (kernel_info_t kernel_info, \
+     int x_extra, int y_extra,  \
+          double * __restrict cur_array,    \
+          double * __restrict left_buffer,  \
+    const int depth, int offset);
+
+CUDA_PACK_KERNEL_FUNC_DEF(device_pack_left_buffer)
+CUDA_PACK_KERNEL_FUNC_DEF(device_unpack_left_buffer)
+CUDA_PACK_KERNEL_FUNC_DEF(device_pack_right_buffer)
+CUDA_PACK_KERNEL_FUNC_DEF(device_unpack_right_buffer)
+CUDA_PACK_KERNEL_FUNC_DEF(device_pack_bottom_buffer)
+CUDA_PACK_KERNEL_FUNC_DEF(device_unpack_bottom_buffer)
+CUDA_PACK_KERNEL_FUNC_DEF(device_pack_top_buffer)
+CUDA_PACK_KERNEL_FUNC_DEF(device_unpack_top_buffer)
+
+#undef CUDA_PACK_KERNEL_FUNC_DEF
 
 #endif
 
