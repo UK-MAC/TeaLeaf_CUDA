@@ -369,6 +369,7 @@ void CloverleafCudaChunk::initBuffers
     ADD_BUFFER_DBG_MAP(soundspeed);
 
     ADD_BUFFER_DBG_MAP(u);
+    ADD_BUFFER_DBG_MAP(u0);
 
     ADD_BUFFER_DBG_MAP(vector_p);
     ADD_BUFFER_DBG_MAP(vector_r);

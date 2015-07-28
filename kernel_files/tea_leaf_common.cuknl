@@ -84,10 +84,17 @@ __global__ void device_tea_leaf_init_common
             dens_down = 1.0/density[THARR2D(0, -1, 0)];
         }
 
-        Kx[THARR2D(0, 0, 0)] = (dens_left + dens_centre)/(2.0*dens_left*dens_centre);
-        Kx[THARR2D(0, 0, 0)] *= rx;
-        Ky[THARR2D(0, 0, 0)] = (dens_down + dens_centre)/(2.0*dens_down*dens_centre);
-        Ky[THARR2D(0, 0, 0)] *= ry;
+        if (row >= HALO_DEPTH && row < (y_max - 1) + HALO_DEPTH)
+        {
+            Kx[THARR2D(0, 0, 0)] = (dens_left + dens_centre)/(2.0*dens_left*dens_centre);
+            Kx[THARR2D(0, 0, 0)] *= rx;
+        }
+
+        if (column >= HALO_DEPTH && column < (x_max - 1) + HALO_DEPTH)
+        {
+            Ky[THARR2D(0, 0, 0)] = (dens_down + dens_centre)/(2.0*dens_down*dens_centre);
+            Ky[THARR2D(0, 0, 0)] *= ry;
+        }
     }
 }
 
@@ -103,22 +110,22 @@ __global__ void device_tea_leaf_zero_boundaries
     {
         if (zero_left && column <= HALO_DEPTH)
         {
-            Kx[THARR2D(0, 0, 0)] = 5;
+            Kx[THARR2D(0, 0, 0)] = 0;
         }
 
         if (zero_right && column > (y_max - 1) + HALO_DEPTH)
         {
-            Kx[THARR2D(0, 0, 0)] = 5;
+            Kx[THARR2D(0, 0, 0)] = 0;
         }
 
         if (zero_bottom && row <= HALO_DEPTH)
         {
-            Ky[THARR2D(0, 0, 0)] = 5;
+            Ky[THARR2D(0, 0, 0)] = 0;
         }
 
         if (zero_top && row > (x_max - 1) + HALO_DEPTH)
         {
-            Ky[THARR2D(0, 0, 0)] = 5;
+            Ky[THARR2D(0, 0, 0)] = 0;
         }
     }
 }
