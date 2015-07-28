@@ -1,5 +1,5 @@
 
-__global__ void device_field_summary_kernel_cuda
+__global__ void device_field_summary_kernel
 (kernel_info_t kernel_info,
       double* __restrict const volume,
 const double* __restrict const density,

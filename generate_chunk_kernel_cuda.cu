@@ -80,12 +80,12 @@ const int g_point)
 
     #undef THRUST_ALLOC_ARRAY
 
-    CUDALAUNCH(device_generate_chunk_kernel_init_cuda, density, energy0,
+    CUDALAUNCH(device_generate_chunk_init, density, energy0,
         state_density_d, state_energy_d);
 
     for (int state = 1; state < number_of_states; state++)
     {
-        CUDALAUNCH(device_generate_chunk_kernel_cuda, 
+        CUDALAUNCH(device_generate_chunk_kernel, 
             vertexx, vertexy, cellx, celly, density, energy0, u,
             state_density_d, state_energy_d,
             state_xmin_d, state_xmax_d, state_ymin_d, state_ymax_d,

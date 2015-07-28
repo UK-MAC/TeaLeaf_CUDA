@@ -93,6 +93,10 @@ y_max(*in_y_max)
         DIE("Setting device id to %d in rank %d failed with error code %d\n", device_id, rank, err);
     }
 
+    struct cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, device_id);
+    std::cout << "CUDA using " << prop.name << std::endl;
+
     int file_halo_depth = readInt(input, "halo_depth");
     halo_exchange_depth = file_halo_depth;
 
@@ -159,21 +163,17 @@ y_max(*in_y_max)
         if(!rank)fprintf(stdout, "None (no preconditioner specified in tea.in)\n");
     }
 
+    initSizes();
+    initBuffers();
+}
+
+void CloverleafCudaChunk::initSizes
+(void)
+{
     grid_dim = dim3(
         std::ceil((x_max + 2.0*halo_exchange_depth)/LOCAL_X),
         std::ceil((y_max + 2.0*halo_exchange_depth)/LOCAL_Y));
     num_blocks = grid_dim.x*grid_dim.y;
-
-    kernel_info.x_min = x_min;
-    kernel_info.x_max = x_max;
-    kernel_info.y_min = y_min;
-    kernel_info.y_max = y_max;
-
-    kernel_info.halo_depth = halo_exchange_depth;
-    kernel_info.preconditioner_type = preconditioner_type;
-
-    kernel_info.x_offset = halo_exchange_depth;
-    kernel_info.y_offset = halo_exchange_depth;
 
     #define UPDATE_HALO_SIZE 32
 
@@ -207,10 +207,86 @@ y_max(*in_y_max)
         update_lr_num_blocks[depth] = dim3(num_blocks_lr, depth);
     }
 
-    struct cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, device_id);
-    std::cout << "CUDA using " << prop.name << std::endl;
+    kernel_info_t kernel_info_generic;
 
+    kernel_info_generic.x_min = x_min;
+    kernel_info_generic.x_max = x_max;
+    kernel_info_generic.y_min = y_min;
+    kernel_info_generic.y_max = y_max;
+
+    kernel_info_generic.halo_depth = halo_exchange_depth;
+    kernel_info_generic.preconditioner_type = preconditioner_type;
+
+    kernel_info_generic.x_offset = halo_exchange_depth;
+    kernel_info_generic.y_offset = halo_exchange_depth;
+
+    kernel_info_map["device_initialise_chunk_kernel"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
+
+    kernel_info_map["device_initialise_chunk_kernel_vertex"] = kernel_info_t(kernel_info_generic, -1, 1, -1, 1);
+    kernel_info_map["device_generate_chunk_init"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_generate_chunk_kernel"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_generate_chunk_init_u"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_generate_chunk"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+
+    kernel_info_map["device_set_field_kernel"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_field_summary_kernel"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+
+    kernel_info_map["device_update_halo_top"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_update_halo_bottom"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_update_halo_left"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_update_halo_right"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+
+    kernel_info_map["device_pack_left_buffer"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_unpack_left_buffer"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_pack_right_buffer"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_unpack_right_buffer"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_pack_bottom_buffer"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_unpack_bottom_buffer"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_pack_top_buffer"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_unpack_top_buffer"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+
+    if (tea_solver == TEA_ENUM_CG ||
+    tea_solver == TEA_ENUM_CHEBYSHEV ||
+    tea_solver == TEA_ENUM_PPCG)
+    {
+        kernel_info_map["device_tea_leaf_cg_solve_calc_w"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+        kernel_info_map["device_tea_leaf_cg_solve_calc_ur"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+        kernel_info_map["device_tea_leaf_cg_solve_calc_p"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+        kernel_info_map["device_tea_leaf_cg_solve_init_p"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+
+        if (tea_solver == TEA_ENUM_CHEBYSHEV)
+        {
+            kernel_info_map["device_tea_leaf_cheby_solve_init_p"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+            kernel_info_map["device_tea_leaf_cheby_solve_calc_u"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+            kernel_info_map["device_tea_leaf_cheby_solve_calc_p"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+        }
+        else if (tea_solver == TEA_ENUM_PPCG)
+        {
+            kernel_info_map["device_tea_leaf_ppcg_solve_init_sd"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+            kernel_info_map["device_tea_leaf_ppcg_solve_calc_sd"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+            kernel_info_map["device_tea_leaf_ppcg_solve_update_r"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+        }
+    }
+    else
+    {
+        kernel_info_map["device_tea_leaf_jacobi_copy_u"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+        kernel_info_map["device_tea_leaf_jacobi_solve"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    }
+
+    kernel_info_map["device_tea_leaf_finalise"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_tea_leaf_calc_residual"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_tea_leaf_calc_2norm"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+
+    kernel_info_map["device_tea_leaf_block_init"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+    kernel_info_map["device_tea_leaf_block_solve"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+
+    kernel_info_map["device_tea_leaf_init_common"] = kernel_info_t(kernel_info_generic, 1-halo_exchange_depth, halo_exchange_depth, 1-halo_exchange_depth, halo_exchange_depth);
+    kernel_info_map["device_tea_leaf_init_jac_diag"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
+}
+
+void CloverleafCudaChunk::initBuffers
+(void)
+{
     #define CUDA_ARRAY_ALLOC(arr, size)     \
             cudaMalloc((void**) &arr, size);\
             errorHandler(__LINE__, __FILE__);\

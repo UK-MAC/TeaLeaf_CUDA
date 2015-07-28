@@ -1,5 +1,5 @@
 
-__global__ void device_generate_chunk_kernel_cuda
+__global__ void device_generate_chunk_kernel
 (kernel_info_t kernel_info,
 const double* __restrict const vertexx,
 const double* __restrict const vertexy,
@@ -79,7 +79,7 @@ __global__ void device_generate_chunk_init_u
     }
 }
 
-__global__ void device_generate_chunk_kernel_init_cuda
+__global__ void device_generate_chunk_init
 (kernel_info_t kernel_info,
       double* density,
       double* energy0,

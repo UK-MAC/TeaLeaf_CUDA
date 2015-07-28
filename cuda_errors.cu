@@ -108,8 +108,8 @@ std::vector<double> CloverleafCudaChunk::dumpArray
 {
     // number of bytes to allocate for 2d array
     #define BUFSZ2D(x_extra, y_extra)   \
-        ( ((x_max) + 4 + x_extra)       \
-        * ((y_max) + 4 + y_extra)       \
+        ( ((x_max) + 2*halo_exchange_depth + x_extra)       \
+        * ((y_max) + 2*halo_exchange_depth + y_extra)       \
         * sizeof(double) )
 
     std::vector<double> host_arr(BUFSZ2D(x_extra, y_extra)/sizeof(double));
@@ -127,6 +127,31 @@ std::vector<double> CloverleafCudaChunk::dumpArray
     }
 
     errorHandler(__LINE__, __FILE__);
+
+    #if 0
+    int x_sz = x_max + 2*halo_exchange_depth + x_extra;
+    int y_sz = y_max + 2*halo_exchange_depth + y_extra;
+
+    for (int k = 0; k < y_sz; k++)
+        fprintf(stdout, "%3d ", k);
+    std::cout << std::endl;
+
+    for (int k = 0; k < y_sz; k++)
+        fprintf(stdout, "%3d ", k-halo_exchange_depth);
+    std::cout << std::endl;
+
+    std::cout << std::endl;
+
+    for (int k = 0; k < y_sz; k++)
+    {
+        for (int j = 0; j < x_sz; j++)
+        {
+            //fprintf(stdout, "% 6.1f ", host_arr.at(j + k*x_sz));
+            fprintf(stdout, "%3d ", (int)host_arr.at(j + k*x_sz));
+        }
+        std::cout << std::endl;
+    }
+    #endif
 
     return host_arr;
 }

@@ -35,7 +35,7 @@ extern "C" void field_summary_kernel_cuda_
 void CloverleafCudaChunk::field_summary_kernel
 (double* vol, double* mass, double* ie, double* temp)
 {
-    CUDALAUNCH(device_field_summary_kernel_cuda, volume, density,
+    CUDALAUNCH(device_field_summary_kernel, volume, density,
         energy0, u, reduce_buf_1, reduce_buf_2, reduce_buf_3,
         reduce_buf_4);
 

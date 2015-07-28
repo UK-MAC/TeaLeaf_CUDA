@@ -18,8 +18,10 @@ void CloverleafCudaChunk::calcrxry
 {
     double dx, dy;
 
-    cudaMemcpy(&dx, celldx, sizeof(double), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&dy, celldy, sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&dx, halo_exchange_depth + celldx, sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&dy, halo_exchange_depth + celldy, sizeof(double), cudaMemcpyDeviceToHost);
+
+    cudaDeviceSynchronize();
 
     CUDA_ERR_CHECK;
 
@@ -55,16 +57,16 @@ void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel
     if (norm_array == 0)
     {
         // norm of u0
-        CUDALAUNCH(device_tea_leaf_common_calc_2norm, u0, u0, reduce_buf_1);
+        CUDALAUNCH(device_tea_leaf_calc_2norm, u0, u0, reduce_buf_1);
     }
     else if (norm_array == 1)
     {
         // norm of r
-        CUDALAUNCH(device_tea_leaf_common_calc_2norm, vector_r, vector_r, reduce_buf_1);
+        CUDALAUNCH(device_tea_leaf_calc_2norm, vector_r, vector_r, reduce_buf_1);
     }
     else if (norm_array == 2)
     {
-        CUDALAUNCH(device_tea_leaf_common_calc_2norm, vector_r, vector_z, reduce_buf_1);
+        CUDALAUNCH(device_tea_leaf_calc_2norm, vector_r, vector_z, reduce_buf_1);
     }
     else
     {
@@ -82,9 +84,13 @@ void CloverleafCudaChunk::upload_ch_coefs
 {
     size_t ch_buf_sz = n_coefs*sizeof(double);
 
+    if (ch_alphas_device == NULL && ch_betas_device == NULL)
+    {
+        cudaMalloc((void**) &ch_alphas_device, ch_buf_sz);
+        cudaMalloc((void**) &ch_betas_device, ch_buf_sz);
+    }
+
     // upload to device
-    cudaMalloc((void**) &ch_alphas_device, ch_buf_sz);
-    cudaMalloc((void**) &ch_betas_device, ch_buf_sz);
     cudaMemcpy(ch_alphas_device, ch_alphas, ch_buf_sz, cudaMemcpyHostToDevice);
     cudaMemcpy(ch_betas_device, ch_betas, ch_buf_sz, cudaMemcpyHostToDevice);
 }
@@ -158,13 +164,7 @@ void CloverleafCudaChunk::tea_leaf_init_cg
     }
     else if (preconditioner_type == TL_PREC_JAC_DIAG)
     {
-        kernel_info.x_offset = 0;
-        kernel_info.y_offset = 0;
-
         CUDALAUNCH(device_tea_leaf_init_jac_diag, vector_Mi, vector_Kx, vector_Ky);
-
-        kernel_info.x_offset = halo_exchange_depth;
-        kernel_info.y_offset = halo_exchange_depth;
     }
 
     // init Kx, Ky
@@ -252,14 +252,8 @@ void CloverleafCudaChunk::tea_leaf_common_init
 
     calcrxry(dt, rx, ry);
 
-    kernel_info.x_offset = 0;
-    kernel_info.y_offset = 0;
-
     CUDALAUNCH(device_tea_leaf_init_common, density, energy1,
         vector_Kx, vector_Ky, u0, u, *rx, *ry, coefficient);
-
-    kernel_info.x_offset = halo_exchange_depth;
-    kernel_info.y_offset = halo_exchange_depth;
 
     if (!reflective_boundary)
     {
@@ -273,9 +267,10 @@ void CloverleafCudaChunk::tea_leaf_common_init
             cudaMemcpy(face##_buffer, &zeros.front(), \
                 sizeof(double)*(xy##_max + 2*depth)*depth, \
                 cudaMemcpyHostToDevice); \
+            kernel_info_t kernel_info = kernel_info_map.at("device_unpack_"#face"_buffer"); \
             device_unpack_##face##_buffer\
             <<<update_##dir##_num_blocks[depth], update_##dir##_block_sizes[depth]>>>\
-                (kernel_info,  \
+                (kernel_info, \
                 0, 0, vector_K##xy, face##_buffer, \
                 depth, 0); \
             kernel_info_t offset_info = kernel_info; \
@@ -307,7 +302,7 @@ void CloverleafCudaChunk::tea_leaf_finalise
 void CloverleafCudaChunk::tea_leaf_calc_residual
 (void)
 {
-    CUDALAUNCH(device_tea_leaf_calc_residual, u, u0, vector_w,
+    CUDALAUNCH(device_tea_leaf_calc_residual, u, u0, vector_r,
         vector_Kx, vector_Ky);
 }
 

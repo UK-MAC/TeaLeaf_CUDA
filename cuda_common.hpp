@@ -101,7 +101,7 @@
         cudaEventCreate(&_t1);                                  \
         cudaEventRecord(_t0);                                   \
     }                                                           \
-    funcname<<<grid_dim, block_shape>>>(kernel_info, __VA_ARGS__); \
+    funcname<<<grid_dim, block_shape>>>(kernel_info_map.at(#funcname), __VA_ARGS__); \
     CUDA_ERR_CHECK;                                             \
     if (profiler_on)                                            \
     {                                                           \
@@ -154,6 +154,37 @@ struct kernel_info_t {
     int preconditioner_type;
     int x_offset;
     int y_offset;
+
+    int kernel_x_min;
+    int kernel_x_max;
+    int kernel_y_min;
+    int kernel_y_max;
+
+    kernel_info_t
+    (void)
+    {}
+
+    kernel_info_t
+    (kernel_info_t kernel_info_in,
+     int kernel_x_min_in,
+     int kernel_x_max_in,
+     int kernel_y_min_in,
+     int kernel_y_max_in)
+    :
+    x_min(kernel_info_in.x_min),
+    x_max(kernel_info_in.x_max),
+    y_min(kernel_info_in.y_min),
+    y_max(kernel_info_in.y_max),
+    halo_depth(kernel_info_in.halo_depth),
+    preconditioner_type(kernel_info_in.preconditioner_type),
+    x_offset(kernel_info_in.x_offset),
+    y_offset(kernel_info_in.y_offset),
+    kernel_x_min(kernel_x_min_in),
+    kernel_x_max(kernel_x_max_in),
+    kernel_y_min(kernel_y_min_in),
+    kernel_y_max(kernel_y_max_in)
+    {
+    }
 };
 
 // types of array data
@@ -224,7 +255,7 @@ private:
     std::map<int, dim3> update_bt_num_blocks;
 
     // struct to pass in common values
-    kernel_info_t kernel_info;
+    std::map< std::string, kernel_info_t > kernel_info_map;
 
     int preconditioner_type;
     int halo_exchange_depth;
@@ -234,6 +265,9 @@ private:
     int x_max;
     int y_min;
     int y_max;
+
+    // map of array name/device pointer
+    std::map<std::string, double*> arr_names;
 
     // if being profiled
     bool profiler_on;
@@ -260,6 +294,9 @@ private:
     void upload_ch_coefs
     (const double * ch_alphas, const double * ch_betas,
      const int n_coefs);
+
+    void initBuffers(void);
+    void initSizes(void);
 public:
     // kernels
     void field_summary_kernel(double* vol, double* mass,
@@ -320,7 +357,6 @@ public:
 
     int tea_solver;
 
-    std::map<std::string, double*> arr_names;
     std::vector<double> dumpArray
     (const std::string& arr_name, int x_extra, int y_extra);
 

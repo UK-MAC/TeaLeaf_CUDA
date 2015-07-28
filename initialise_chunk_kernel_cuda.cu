@@ -34,23 +34,19 @@ extern "C" void initialise_chunk_kernel_cuda_
 void CloverleafCudaChunk::initialise_chunk_kernel
 (double d_xmin, double d_ymin, double d_dx, double d_dy)
 {
-    kernel_info.x_offset = std::max(0, kernel_info.x_offset - 2);
-    kernel_info.y_offset = std::max(0, kernel_info.y_offset - 2);
+    // FIXME too much
     grid_dim.x += halo_exchange_depth;
     grid_dim.y += halo_exchange_depth;
 
-    // TODO some way of specifying a per-kernel launch offset for ones like this
-    CUDALAUNCH(device_initialise_chunk_kernel_cuda,
+    CUDALAUNCH(device_initialise_chunk_kernel,
         d_xmin, d_ymin, d_dx, d_dy, 
         volume, xarea, yarea);
 
-    CUDALAUNCH(device_initialise_chunk_kernel_vertex_cuda,
+    CUDALAUNCH(device_initialise_chunk_kernel_vertex,
         d_xmin, d_ymin, d_dx, d_dy, 
         vertexx, vertexdx, vertexy, vertexdy,
         cellx, celldx, celly, celldy);
 
-    kernel_info.x_offset = halo_exchange_depth;
-    kernel_info.y_offset = halo_exchange_depth;
     grid_dim.x -= halo_exchange_depth;
     grid_dim.y -= halo_exchange_depth;
 }

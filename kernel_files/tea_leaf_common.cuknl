@@ -35,7 +35,7 @@ __global__ void device_tea_leaf_calc_residual
     }
 }
 
-__global__ void device_tea_leaf_common_calc_2norm
+__global__ void device_tea_leaf_calc_2norm
 (kernel_info_t kernel_info,
  const double *            const arr1,
  const double *            const arr2,

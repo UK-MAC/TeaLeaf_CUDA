@@ -126,15 +126,15 @@ CODE_GEN_KEPLER_CONSUMER=-gencode arch=compute_30,code=sm_30
 
 LDLIBS+=-lstdc++ -lcudart
 
-FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS)
-CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c
+FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS) -g
+CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c -g
 CXXFLAGS=$(CFLAGS) -g
 MPI_COMPILER=mpif90
 C_MPI_COMPILER=mpicc
 CXX_MPI_COMPILER=mpicxx
 
 # requires CUDA_HOME to be set - not the same on all machines
-NV_FLAGS=-I$(CUDA_HOME)/include $(CODE_GEN_$(NV_ARCH)) -restrict -Xcompiler "$(CFLAGS_GNU)"
+NV_FLAGS=-I$(CUDA_HOME)/include $(CODE_GEN_$(NV_ARCH)) -restrict -Xcompiler "$(CFLAGS)"
 NV_FLAGS+=-DNO_ERR_CHK
 LDFLAGS+=-L$(CUDA_HOME)/lib
 

@@ -10,6 +10,6 @@ extern "C" void set_field_kernel_cuda_
 void CloverleafCudaChunk::set_field_kernel
 (void)
 {
-    CUDALAUNCH(device_set_field_kernel_cuda, energy0, energy1);
+    CUDALAUNCH(device_set_field_kernel, energy0, energy1);
 }
 

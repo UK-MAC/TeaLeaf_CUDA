@@ -12,21 +12,17 @@
 const static dim3 block_shape(LOCAL_X, LOCAL_Y);
 
 #define WITHIN_BOUNDS \
-    (row <= (y_max + HALO_DEPTH + 1 - 2) \
-    && column <= (x_max + HALO_DEPTH + 1 - 2))
+    (row <= (y_max + HALO_DEPTH - 1) + kernel_info.kernel_y_max \
+    && column <= (x_max + HALO_DEPTH - 1) + kernel_info.kernel_x_max)
 
 /*
 *  access a value in a 2d array given the x and y offset from current thread
 *  index, adding or subtracting a bit more if it is one of the arrays with
 *  bigger rows
 */
-#define THARR2D(x_offset, y_offset, big_row)\
-    ( \
-      column                      /* horizontal  */ \
-    + row*(x_max + 2*HALO_DEPTH)             /* vertical    */ \
-    + (x_offset)                            \
-    + ((y_offset) * (x_max + 2*HALO_DEPTH))            \
-    + ((big_row) * (row + (y_offset))) )
+#define THARR2D(x_offset, y_offset, big_row)                \
+    ( (column + x_offset)                                   \
+    + (row + y_offset)*(x_max + 2*HALO_DEPTH + big_row))
 
 static __device__ int get_global_id
 (int dim)
@@ -97,10 +93,11 @@ public:
     __device__ inline static void run
     (T* array, T* out, T(*func)(T, T))
     {
-    __attribute__((__unused__)) const int loc_column = get_local_id(0); \
-    __attribute__((__unused__)) const int loc_row = get_local_id(1); \
-    __attribute__((__unused__)) const int lid = loc_row*LOCAL_X + loc_column; \
-    __attribute__((__unused__)) const int block_id = blockIdx.x + blockIdx.y*gridDim.x;
+        __attribute__((__unused__)) const int loc_column = get_local_id(0); \
+        __attribute__((__unused__)) const int loc_row = get_local_id(1); \
+        __attribute__((__unused__)) const int lid = loc_row*LOCAL_X + loc_column; \
+        __attribute__((__unused__)) const int block_id = blockIdx.x + blockIdx.y*gridDim.x;
+
         // only need to synch if not working within a warp
         if (offset > 16)
         {
@@ -123,10 +120,11 @@ public:
     __device__ inline static void run
     (T* array, T* out, T(*func)(T, T))
     {
-    __attribute__((__unused__)) const int loc_column = get_local_id(0); \
-    __attribute__((__unused__)) const int loc_row = get_local_id(1); \
-    __attribute__((__unused__)) const int lid = loc_row*LOCAL_X + loc_column; \
-    __attribute__((__unused__)) const int block_id = blockIdx.x + blockIdx.y*gridDim.x;
+        __attribute__((__unused__)) const int loc_column = get_local_id(0); \
+        __attribute__((__unused__)) const int loc_row = get_local_id(1); \
+        __attribute__((__unused__)) const int lid = loc_row*LOCAL_X + loc_column; \
+        __attribute__((__unused__)) const int block_id = blockIdx.x + blockIdx.y*gridDim.x;
+
         out[block_id] = array[0];
     }
 };

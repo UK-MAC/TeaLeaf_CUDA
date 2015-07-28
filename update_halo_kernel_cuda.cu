@@ -56,7 +56,7 @@ int depth)
             /static_cast<float>(UPDATE_HALO_BLOCK_SZ))) * depth;                    \
         device_update_halo_kernel_##face                         \
         <<<launch_sz, UPDATE_HALO_BLOCK_SZ >>>                                      \
-            (kernel_info, grid_type, cur_array_d, depth);\
+            (kernel_info_map.at("device_update_halo_kernel_"#face), grid_type, cur_array_d, depth);\
         CUDA_ERR_CHECK;                                                 \
         if (profiler_on)                                                \
         {                                                               \

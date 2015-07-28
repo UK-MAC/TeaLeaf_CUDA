@@ -53,6 +53,8 @@ void CloverleafCudaChunk::packUnpackAllBuffers
 
     pack_func_t pack_kernel = NULL;
 
+    kernel_info_t kernel_info;
+
     // set which kernel to call
     if (pack)
     {
@@ -60,15 +62,19 @@ void CloverleafCudaChunk::packUnpackAllBuffers
         {
         case CHUNK_LEFT:
             pack_kernel = &device_pack_left_buffer;
+            kernel_info = kernel_info_map.at("device_pack_left_buffer");
             break;
         case CHUNK_RIGHT:
             pack_kernel = &device_pack_right_buffer;
+            kernel_info = kernel_info_map.at("device_pack_right_buffer");
             break;
         case CHUNK_BOTTOM:
             pack_kernel = &device_pack_bottom_buffer;
+            kernel_info = kernel_info_map.at("device_pack_bottom_buffer");
             break;
         case CHUNK_TOP:
             pack_kernel = &device_pack_top_buffer;
+            kernel_info = kernel_info_map.at("device_pack_top_buffer");
             break;
         default:
             DIE("Invalid face identifier %d passed to pack\n", face);
@@ -80,15 +86,19 @@ void CloverleafCudaChunk::packUnpackAllBuffers
         {
         case CHUNK_LEFT:
             pack_kernel = &device_unpack_left_buffer;
+            kernel_info = kernel_info_map.at("device_unpack_left_buffer");
             break;
         case CHUNK_RIGHT:
             pack_kernel = &device_unpack_right_buffer;
+            kernel_info = kernel_info_map.at("device_unpack_right_buffer");
             break;
         case CHUNK_BOTTOM:
             pack_kernel = &device_unpack_bottom_buffer;
+            kernel_info = kernel_info_map.at("device_unpack_bottom_buffer");
             break;
         case CHUNK_TOP:
             pack_kernel = &device_unpack_top_buffer;
+            kernel_info = kernel_info_map.at("device_unpack_top_buffer");
             break;
         default:
             DIE("Invalid face identifier %d passed to unpack\n", face);

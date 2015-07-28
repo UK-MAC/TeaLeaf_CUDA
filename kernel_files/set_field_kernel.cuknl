@@ -1,5 +1,5 @@
 
-__global__ void device_set_field_kernel_cuda
+__global__ void device_set_field_kernel
 (kernel_info_t kernel_info,
  const double * __restrict const energy0,
        double * __restrict const energy1)
@@ -8,6 +8,6 @@ __global__ void device_set_field_kernel_cuda
 
     if (WITHIN_BOUNDS)
     {
-        energy1[THARR2D(0, 0, 0)]  = energy0[THARR2D(0, 0, 0)];
+        energy1[THARR2D(0, 0, 0)] = energy0[THARR2D(0, 0, 0)];
     }
 }
