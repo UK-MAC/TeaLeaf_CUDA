@@ -362,6 +362,10 @@ void CloverleafCudaChunk::initBuffers
     reduce_ptr_3 = thrust::device_ptr< double >(reduce_buf_3);
     reduce_ptr_4 = thrust::device_ptr< double >(reduce_buf_4);
 
+    // To make sure memory is allocated later on
+    ch_alphas_device = NULL;
+    ch_betas_device = NULL;
+
     #undef CUDA_ARRAY_ALLOC
 
 #define ADD_BUFFER_DBG_MAP(name) arr_names[#name] = name;

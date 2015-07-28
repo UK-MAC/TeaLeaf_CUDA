@@ -106,8 +106,8 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
     CUDA_ERR_CHECK;
 
     CUDALAUNCH(device_tea_leaf_cheby_solve_init_p, u, u0,
-        vector_p, vector_r, vector_w, vector_Mi,
-        vector_Kx, vector_Ky,
+        vector_p, vector_r, vector_w, tri_cp, tri_bfp,
+        vector_Mi, vector_Kx, vector_Ky,
         theta);
 
     // update p
@@ -118,8 +118,8 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
 (const int cheby_calc_step)
 {
     CUDALAUNCH(device_tea_leaf_cheby_solve_calc_p, u, u0,
-        vector_p, vector_r, vector_w, vector_Mi,
-        vector_Kx, vector_Ky,
+        vector_p, vector_r, vector_w, tri_cp, tri_bfp,
+        vector_Mi, vector_Kx, vector_Ky,
         ch_alphas_device, ch_betas_device,
         cheby_calc_step-1);
 
