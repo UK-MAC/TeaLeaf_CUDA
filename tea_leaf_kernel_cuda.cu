@@ -253,7 +253,7 @@ void CloverleafCudaChunk::tea_leaf_common_init
     calcrxry(dt, rx, ry);
 
     CUDALAUNCH(device_tea_leaf_init_common, density, energy1,
-        vector_Kx, vector_Ky, u0, u, *rx, *ry, coefficient);
+        vector_Kx, vector_Ky, *rx, *ry, coefficient);
 
     if (!reflective_boundary)
     {
@@ -269,7 +269,7 @@ void CloverleafCudaChunk::tea_leaf_common_init
             zero_top);
     }
 
-    generate_chunk_init_u();
+    generate_chunk_init_u(energy1);
 }
 
 // both

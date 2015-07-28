@@ -60,8 +60,6 @@ __global__ void device_tea_leaf_init_common
  const double * __restrict const energy,
        double * __restrict const Kx,
        double * __restrict const Ky,
-       double * __restrict const u0,
-       double * __restrict const u,
  double rx, double ry,
  const int coef)
 {

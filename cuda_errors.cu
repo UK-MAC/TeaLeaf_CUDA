@@ -147,7 +147,7 @@ std::vector<double> CloverleafCudaChunk::dumpArray
     {
         for (int j = 0; j < x_sz; j++)
         {
-            fprintf(stdout, "% 3.1f ", host_arr.at(j + k*x_sz));
+            fprintf(stdout, "% 4.1f ", host_arr.at(j + k*x_sz));
             //fprintf(stdout, "%3d ", (int)host_arr.at(j + k*x_sz));
         }
         std::cout << std::endl;

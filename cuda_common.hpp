@@ -311,7 +311,7 @@ public:
         const double* state_ymin, const double* state_ymax,
         const double* state_radius, const int* state_geometry,
         const int g_rect, const int g_circ, const int g_point);
-    void generate_chunk_init_u(void);
+    void generate_chunk_init_u(double *);
 
     void initialise_chunk_kernel(double d_xmin, double d_ymin,
         double d_dx, double d_dy);
