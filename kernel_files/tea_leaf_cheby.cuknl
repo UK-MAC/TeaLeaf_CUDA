@@ -9,8 +9,7 @@ __global__ void device_tea_leaf_cheby_solve_init_p
        double * __restrict const w,
  const double * __restrict const Kx,
  const double * __restrict const Ky,
- double theta,
- bool preconditioner_on)
+ double theta)
 {
     __kernel_indexes;
 
@@ -24,7 +23,7 @@ __global__ void device_tea_leaf_cheby_solve_init_p
 
         r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
 
-        if (preconditioner_on)
+        if (PRECONDITIONER)
         {
             p[THARR2D(0, 0, 0)] = (Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)])/theta;
         }
@@ -61,7 +60,7 @@ __global__ void device_tea_leaf_cheby_solve_calc_p
  const double * __restrict const Ky,
  const double * __restrict const alpha,
  const double * __restrict const beta,
- int step, bool preconditioner_on)
+ int step)
 {
     __kernel_indexes;
 
@@ -75,7 +74,7 @@ __global__ void device_tea_leaf_cheby_solve_calc_p
 
         r[THARR2D(0, 0, 0)] = u0[THARR2D(0, 0, 0)] - w[THARR2D(0, 0, 0)];
 
-        if (preconditioner_on)
+        if (PRECONDITIONER)
         {
             p[THARR2D(0, 0, 0)] = alpha[step]*p[THARR2D(0, 0, 0)]
                                 + beta[step]*Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];

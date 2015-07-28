@@ -315,6 +315,9 @@ void CloverleafCudaChunk::initBuffers
     CUDA_ARRAY_ALLOC(volume, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(soundspeed, BUFSZ2D(0, 0));
 
+    CUDA_ARRAY_ALLOC(tri_cp, BUFSZ2D(0, 0));
+    CUDA_ARRAY_ALLOC(tri_bfp, BUFSZ2D(0, 0));
+
     CUDA_ARRAY_ALLOC(density, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(energy0, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(energy1, BUFSZ2D(0, 0));

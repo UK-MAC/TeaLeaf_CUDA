@@ -73,6 +73,7 @@ static __device__ int get_local_id
     __attribute__((__unused__)) const int y_min = kernel_info.y_min; \
     __attribute__((__unused__)) const int y_max = kernel_info.y_max; \
     __attribute__((__unused__)) const int HALO_DEPTH = kernel_info.halo_depth; \
+    __attribute__((__unused__)) const int PRECONDITIONER = kernel_info.preconditioner_type; \
     __attribute__((__unused__)) const int column = get_global_id(0) + kernel_info.x_offset; \
     __attribute__((__unused__)) const int row = get_global_id(1) + kernel_info.y_offset; \
     __attribute__((__unused__)) const int glob_id = row*get_global_size(0) + column; \

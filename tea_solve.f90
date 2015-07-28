@@ -118,6 +118,8 @@ SUBROUTINE tea_leaf()
 !$  ENDIF
   ENDIF
 
+  print *, initial_residual
+
   IF (tl_use_cg .OR. tl_use_chebyshev .OR. tl_use_ppcg) THEN
     ! All 3 of these solvers use the CG kernels
     CALL tea_leaf_cg_init(rro)
@@ -295,8 +297,7 @@ SUBROUTINE tea_leaf()
       CALL tea_allsum(rrn)
       IF (profiler_on) solve_time = solve_time + (timer()-dot_product_time)
 
-      print *, initial_residual, rro, pw, rrn
-      call exit
+      print *, rro, pw, rrn
 
       beta = rrn/rro
       cg_betas(n) = beta

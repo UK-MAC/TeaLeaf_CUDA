@@ -225,6 +225,9 @@ private:
     double* vector_Ky;
     double* vector_sd;
 
+    double* tri_cp;
+    double* tri_bfp;
+
     double * ch_alphas_device, * ch_betas_device;
 
     // buffers used in mpi transfers

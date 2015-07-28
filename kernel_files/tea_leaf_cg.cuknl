@@ -8,8 +8,7 @@ __global__ void device_tea_leaf_cg_solve_init_p
        double * __restrict const r,
        double * __restrict const z,
        double * __restrict const Mi,
-       double * __restrict const rro,
- int PRECONDITIONER)
+       double * __restrict const rro)
 {
     __kernel_indexes;
 
@@ -73,39 +72,66 @@ __global__ void device_tea_leaf_cg_solve_calc_w
 __global__ void device_tea_leaf_cg_solve_calc_ur
 (kernel_info_t kernel_info,
  double alpha,
-       double * __restrict const rrn,
        double * __restrict const u,
  const double * __restrict const p,
        double * __restrict const r,
  const double * __restrict const w,
+
        double * __restrict const z,
+       double * __restrict const cp,
+       double * __restrict const bfp,
  const double * __restrict const Mi,
- bool PRECONDITIONER)
+ const double * __restrict const Kx,
+ const double * __restrict const Ky,
+
+       double * __restrict const rrn)
 {
     __kernel_indexes;
 
     __shared__ double rrn_shared[BLOCK_SZ];
     rrn_shared[lid] = 0.0;
 
-    // as above
-    double rrn_val;
-
     if (WITHIN_BOUNDS)
     {
         u[THARR2D(0, 0, 0)] += alpha*p[THARR2D(0, 0, 0)];
         r[THARR2D(0, 0, 0)] -= alpha*w[THARR2D(0, 0, 0)];
-        
-        if (PRECONDITIONER)
+    }
+
+    if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
+    {
+        __shared__ double z_l[BLOCK_SZ];
+
+        if (WITHIN_BOUNDS)
         {
-            z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
-            rrn_val = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
-        }
-        else
-        {
-            rrn_val = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+            rrn_shared[lid] = r[THARR2D(0, 0, 0)];
         }
 
-        rrn_shared[lid] = rrn_val;
+        __syncthreads();
+        if (loc_row == 0)
+        {
+            // TODO
+            //block_solve_func(rrn_shared, z_l, cp, bfp, Kx, Ky);
+        }
+        __syncthreads();
+
+        if (WITHIN_BOUNDS)
+        {
+            z[THARR2D(0, 0, 0)] = z_l[lid];
+
+            rrn_shared[lid] = rrn_shared[lid]*z_l[lid];
+        }
+    }
+    else if (WITHIN_BOUNDS)
+    {
+        if (PRECONDITIONER == TL_PREC_JAC_DIAG)
+        {
+            z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
+            rrn_shared[lid] = r[THARR2D(0, 0, 0)]*z[THARR2D(0, 0, 0)];
+        }
+        else if (PRECONDITIONER == TL_PREC_NONE)
+        {
+            rrn_shared[lid] = r[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+        }
     }
 
     Reduce< double, BLOCK_SZ/2 >::run(rrn_shared, rrn, SUM);
@@ -118,14 +144,13 @@ __global__ void device_tea_leaf_cg_solve_calc_p
  double beta,
        double * __restrict const p,
  const double * __restrict const r,
- const double * __restrict const z,
- bool PRECONDITIONER)
+ const double * __restrict const z)
 {
     __kernel_indexes;
 
     if (WITHIN_BOUNDS)
     {
-        if (PRECONDITIONER)
+        if (PRECONDITIONER != TL_PREC_NONE)
         {
             p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)] + beta*p[THARR2D(0, 0, 0)];
         }
@@ -135,5 +160,4 @@ __global__ void device_tea_leaf_cg_solve_calc_p
         }
     }
 }
-
 
