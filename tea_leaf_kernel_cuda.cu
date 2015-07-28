@@ -326,12 +326,65 @@ void CloverleafCudaChunk::ppcg_inner
 (int ppcg_cur_step, int bounds_extra,
  int * chunk_neighbours)
 {
+    int step_depth = halo_exchange_depth - bounds_extra;
+
+    int step_offset[2] = {step_depth, step_depth};
+    int step_global_size[2] = {
+        x_max + (halo_exchange_depth-step_depth)*2,
+        y_max + (halo_exchange_depth-step_depth)*2};
+
+    if (chunk_neighbours[CHUNK_LEFT - 1] == EXTERNAL_FACE)
+    {
+        step_offset[0] = halo_exchange_depth;
+        step_global_size[0] -= (halo_exchange_depth-step_depth);
+    }
+    if (chunk_neighbours[CHUNK_RIGHT - 1] == EXTERNAL_FACE)
+    {
+        step_global_size[0] -= (halo_exchange_depth-step_depth);
+    }
+
+    if (chunk_neighbours[CHUNK_BOTTOM - 1] == EXTERNAL_FACE)
+    {
+        step_offset[1] = halo_exchange_depth;
+        step_global_size[1] -= (halo_exchange_depth-step_depth);
+    }
+    if (chunk_neighbours[CHUNK_TOP - 1] == EXTERNAL_FACE)
+    {
+        step_global_size[1] -= (halo_exchange_depth-step_depth);
+    }
+
+    step_global_size[0] -= step_global_size[0] % LOCAL_X;
+    step_global_size[0] += LOCAL_X;
+    step_global_size[1] -= step_global_size[1] % LOCAL_Y;
+    step_global_size[1] += LOCAL_Y;
+
+    kernel_info_t kernel_info = kernel_info_map.at("device_tea_leaf_ppcg_solve_update_r");
+
+    kernel_info.x_offset = step_offset[0];
+    kernel_info.y_offset = step_offset[1];
+
+    dim3 matrix_power_grid_dim;
+
+    matrix_power_grid_dim = dim3(
+        std::ceil(step_global_size[0]/LOCAL_X),
+        std::ceil(step_global_size[1]/LOCAL_Y));
+
     // TODO offsets
+    TIME_KERNEL_BEGIN;
     CUDALAUNCH(device_tea_leaf_ppcg_solve_update_r, u, vector_r,
         vector_Kx, vector_Ky, vector_sd);
+    device_tea_leaf_ppcg_solve_update_r
+    <<<matrix_power_grid_dim, block_shape>>>
+    (kernel_info, u, vector_r, vector_Kx, vector_Ky, vector_sd);
+    CUDA_ERR_CHECK; \
+    TIME_KERNEL_END(device_tea_leaf_ppcg_solve_update_r);
 
-    CUDALAUNCH(device_tea_leaf_ppcg_solve_calc_sd, vector_r,
+    TIME_KERNEL_BEGIN;
+    device_tea_leaf_ppcg_solve_calc_sd
+    <<<matrix_power_grid_dim, block_shape>>>
+    (kernel_info, vector_r,
         vector_Mi, vector_sd, ch_alphas_device, ch_betas_device,
         ppcg_cur_step - 1);
+    TIME_KERNEL_END(device_tea_leaf_ppcg_solve_calc_sd);
 }
 

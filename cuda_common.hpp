@@ -93,16 +93,15 @@
 
 /*******************/
 
-// enormous ugly macro that profiles kernels + checks if there were any errors
-#define CUDALAUNCH(funcname, ...)                               \
+#define TIME_KERNEL_BEGIN   \
     if (profiler_on)                                            \
     {                                                           \
         cudaEventCreate(&_t0);                                  \
         cudaEventCreate(&_t1);                                  \
         cudaEventRecord(_t0);                                   \
     }                                                           \
-    funcname<<<grid_dim, block_shape>>>(kernel_info_map.at(#funcname), __VA_ARGS__); \
-    CUDA_ERR_CHECK;                                             \
+
+#define TIME_KERNEL_END(funcname) \
     if (profiler_on)                                            \
     {                                                           \
         cudaEventRecord(_t1);                                   \
@@ -118,6 +117,13 @@
             kernel_times[func_name] = taken;                    \
         }                                                       \
     }
+
+// enormous ugly macro that profiles kernels + checks if there were any errors
+#define CUDALAUNCH(funcname, ...)                               \
+    TIME_KERNEL_BEGIN; \
+    funcname<<<grid_dim, block_shape>>>(kernel_info_map.at(#funcname), __VA_ARGS__); \
+    CUDA_ERR_CHECK; \
+    TIME_KERNEL_END(#funcname)
 
 /*******************/
 
