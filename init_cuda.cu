@@ -179,8 +179,8 @@ void CloverleafCudaChunk::initSizes
 
     for (int depth = 1; depth <= 2; depth++)
     {
-        update_bt_block_sizes[depth] = dim3(UPDATE_HALO_SIZE, depth);
-        update_lr_block_sizes[depth] = dim3(depth, UPDATE_HALO_SIZE);
+        update_bt_block_sizes[depth] = dim3(UPDATE_HALO_SIZE, 1);
+        update_lr_block_sizes[depth] = dim3(1, UPDATE_HALO_SIZE);
     }
 
     update_bt_block_sizes[halo_exchange_depth] = update_bt_block_sizes[1];
@@ -204,7 +204,7 @@ void CloverleafCudaChunk::initSizes
             num_blocks_lr++;
 
         update_bt_num_blocks[depth] = dim3(num_blocks_bt, depth);
-        update_lr_num_blocks[depth] = dim3(num_blocks_lr, depth);
+        update_lr_num_blocks[depth] = dim3(depth, num_blocks_lr);
     }
 
     kernel_info_t kernel_info_generic;
@@ -281,6 +281,7 @@ void CloverleafCudaChunk::initSizes
     kernel_info_map["device_tea_leaf_block_solve"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
 
     kernel_info_map["device_tea_leaf_init_common"] = kernel_info_t(kernel_info_generic, 1-halo_exchange_depth, halo_exchange_depth, 1-halo_exchange_depth, halo_exchange_depth);
+    kernel_info_map["device_tea_leaf_zero_boundaries"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
     kernel_info_map["device_tea_leaf_init_jac_diag"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
 }
 

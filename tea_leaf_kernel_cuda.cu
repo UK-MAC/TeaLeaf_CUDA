@@ -257,36 +257,16 @@ void CloverleafCudaChunk::tea_leaf_common_init
 
     if (!reflective_boundary)
     {
-        int depth = halo_exchange_depth;
-        std::vector<double> zeros((std::max(x_max, y_max) + 2*depth)*depth, 0);
+        int zero_left = chunk_neighbours[CHUNK_left - 1] && zero_boundary[CHUNK_left - 1];
+        int zero_right = chunk_neighbours[CHUNK_right - 1] && zero_boundary[CHUNK_right - 1];
+        int zero_bottom = chunk_neighbours[CHUNK_bottom - 1] && zero_boundary[CHUNK_bottom - 1];
+        int zero_top = chunk_neighbours[CHUNK_top - 1] && zero_boundary[CHUNK_top - 1];
 
-        #define ZERO_BOUNDARY(face, dir, xy) \
-        if (chunk_neighbours[CHUNK_ ## face - 1] == EXTERNAL_FACE && \
-            zero_boundary[CHUNK_ ## face - 1] == EXTERNAL_FACE) \
-        {   \
-            cudaMemcpy(face##_buffer, &zeros.front(), \
-                sizeof(double)*(xy##_max + 2*depth)*depth, \
-                cudaMemcpyHostToDevice); \
-            kernel_info_t kernel_info = kernel_info_map.at("device_unpack_"#face"_buffer"); \
-            device_unpack_##face##_buffer\
-            <<<update_##dir##_num_blocks[depth], update_##dir##_block_sizes[depth]>>>\
-                (kernel_info, \
-                0, 0, vector_K##xy, face##_buffer, \
-                depth, 0); \
-            kernel_info_t offset_info = kernel_info; \
-            offset_info.x_offset = 1; \
-            offset_info.y_offset = 1; \
-            device_unpack_##face##_buffer \
-            <<<update_##dir##_num_blocks[depth], update_##dir##_block_sizes[depth]>>>\
-                (offset_info,  \
-                0, 0, vector_K##xy, face##_buffer, \
-                depth, 0); \
-        }
-
-        ZERO_BOUNDARY(left, lr, x)
-        ZERO_BOUNDARY(right, lr, x)
-        ZERO_BOUNDARY(bottom, bt, y)
-        ZERO_BOUNDARY(top, bt, y)
+        CUDALAUNCH(device_tea_leaf_zero_boundaries, vector_Kx, vector_Ky,
+            zero_left,
+            zero_right,
+            zero_bottom,
+            zero_top);
     }
 
     generate_chunk_init_u();

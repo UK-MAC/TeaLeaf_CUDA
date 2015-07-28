@@ -295,6 +295,9 @@ SUBROUTINE tea_leaf()
       CALL tea_allsum(rrn)
       IF (profiler_on) solve_time = solve_time + (timer()-dot_product_time)
 
+      print *, initial_residual, rro, pw, rrn
+      call exit
+
       beta = rrn/rro
       cg_betas(n) = beta
 
