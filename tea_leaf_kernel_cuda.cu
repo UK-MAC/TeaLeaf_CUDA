@@ -186,9 +186,9 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_w
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
 (double alpha, double* rrn)
 {
-    CUDALAUNCH(device_tea_leaf_cg_solve_calc_ur, alpha, reduce_buf_4, u, vector_p,
+    CUDALAUNCH(device_tea_leaf_cg_solve_calc_ur, alpha, u, vector_p,
         vector_r, vector_w, vector_z, tri_cp, tri_bfp,
-        vector_Mi, vector_Kx, vector_Ky);
+        vector_Mi, vector_Kx, vector_Ky, reduce_buf_4);
 
     *rrn = thrust::reduce(reduce_ptr_4, reduce_ptr_4 + num_blocks, 0.0);
 }
