@@ -220,7 +220,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_jacobi
     CUDALAUNCH(device_tea_leaf_jacobi_copy_u, u, vector_Mi);
 
     CUDALAUNCH(device_tea_leaf_jacobi_solve, vector_Kx, vector_Ky,
-        vector_w, u, vector_Mi, reduce_buf_1);
+        u0, u, vector_Mi, reduce_buf_1);
 
     *error = *thrust::max_element(reduce_ptr_1, reduce_ptr_1 + num_blocks);
 }
