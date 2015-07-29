@@ -2,15 +2,53 @@
 __global__ void device_tea_leaf_ppcg_solve_init_sd
 (kernel_info_t kernel_info,
  const double * __restrict const r,
- const double * __restrict const Mi,
        double * __restrict const sd,
+ const double * __restrict const z,
+ const double * __restrict const cp,
+ const double * __restrict const bfp,
+ const double * __restrict const Mi,
+ const double * __restrict const Kx,
+ const double * __restrict const Ky,
  double theta)
 {
     __kernel_indexes;
 
-    if (WITHIN_BOUNDS)
+    if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
     {
-        sd[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]/theta;
+        __shared__ double r_l[BLOCK_SZ];
+        __shared__ double z_l[BLOCK_SZ];
+
+        r_l[lid] = 0;
+        z_l[lid] = 0;
+
+        if (WITHIN_BOUNDS)
+        {
+            r_l[lid] = r[THARR2D(0, 0, 0)];
+        }
+
+        __syncthreads();
+        if (loc_row == 0)
+        {
+            //block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
+        }
+        __syncthreads();
+
+        if (WITHIN_BOUNDS)
+        {
+            sd[THARR2D(0, 0, 0)] = z_l[lid]/theta;
+        }
+    }
+    else if (WITHIN_BOUNDS)
+    {
+        if (PRECONDITIONER == TL_PREC_JAC_DIAG)
+        {
+            //z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
+            sd[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)]/theta;
+        }
+        else if (PRECONDITIONER == TL_PREC_NONE)
+        {
+            sd[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]/theta;
+        }
     }
 }
 
@@ -26,6 +64,8 @@ __global__ void device_tea_leaf_ppcg_solve_update_r
 
     if (WITHIN_BOUNDS)
     {
+        u[THARR2D(0, 0, 0)] += sd[THARR2D(0, 0, 0)];
+
         const double result = (1.0
             + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
             + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*sd[THARR2D(0, 0, 0)]
@@ -33,25 +73,67 @@ __global__ void device_tea_leaf_ppcg_solve_update_r
             - (Kx[THARR2D(1, 0, 0)]*sd[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*sd[THARR2D(-1, 0, 0)]);
 
         r[THARR2D(0, 0, 0)] -= result;
-        u[THARR2D(0, 0, 0)] += sd[THARR2D(0, 0, 0)];
     }
 }
 
 __global__ void device_tea_leaf_ppcg_solve_calc_sd
 (kernel_info_t kernel_info,
  const double * __restrict const r,
- const double * __restrict const Mi,
        double * __restrict const sd,
+ const double * __restrict const z,
+ const double * __restrict const cp,
+ const double * __restrict const bfp,
+ const double * __restrict const Mi,
+ const double * __restrict const Kx,
+ const double * __restrict const Ky,
  const double * __restrict const alpha,
  const double * __restrict const beta,
  int step)
 {
     __kernel_indexes;
 
-    if (WITHIN_BOUNDS)
+    if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
     {
-        sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
-                            + beta[step]*r[THARR2D(0, 0, 0)];
+        __shared__ double r_l[BLOCK_SZ];
+        __shared__ double z_l[BLOCK_SZ];
+
+        r_l[lid] = 0;
+        z_l[lid] = 0;
+
+        if (WITHIN_BOUNDS)
+        {
+            r_l[lid] = r[THARR2D(0, 0, 0)];
+        }
+
+        __syncthreads();
+        if (loc_row == 0)
+        {
+            if (WITHIN_BOUNDS)
+            {
+                //block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
+            }
+        }
+        __syncthreads();
+
+        if (WITHIN_BOUNDS)
+        {
+            sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
+                                + beta[step]*z_l[lid];
+        }
+    }
+    else if (WITHIN_BOUNDS)
+    {
+        if (PRECONDITIONER == TL_PREC_JAC_DIAG)
+        {
+            //z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
+            sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
+                                + beta[step]*r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
+        }
+        else if (PRECONDITIONER == TL_PREC_NONE)
+        {
+            sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
+                                + beta[step]*r[THARR2D(0, 0, 0)];
+        }
     }
 }
 

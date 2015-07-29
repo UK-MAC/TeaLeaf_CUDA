@@ -66,7 +66,14 @@ void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel
     }
     else if (norm_array == 2)
     {
-        CUDALAUNCH(device_tea_leaf_calc_2norm, vector_r, vector_z, reduce_buf_1);
+        if (preconditioner_type != TL_PREC_NONE)
+        {
+            CUDALAUNCH(device_tea_leaf_calc_2norm, vector_r, vector_z, reduce_buf_1);
+        }
+        else
+        {
+            CUDALAUNCH(device_tea_leaf_calc_2norm, vector_r, vector_r, reduce_buf_1);
+        }
     }
     else
     {
@@ -318,8 +325,9 @@ void CloverleafCudaChunk::ppcg_init
 void CloverleafCudaChunk::ppcg_init_sd
 (double theta)
 {
-    CUDALAUNCH(device_tea_leaf_ppcg_solve_init_sd, vector_r,
-        vector_Mi, vector_sd, theta);
+    CUDALAUNCH(device_tea_leaf_ppcg_solve_init_sd,
+        vector_r, vector_sd, vector_z, tri_cp, tri_bfp,
+        vector_Mi, vector_Kx, vector_Ky, theta);
 }
 
 void CloverleafCudaChunk::ppcg_inner
@@ -363,16 +371,11 @@ void CloverleafCudaChunk::ppcg_inner
     kernel_info.x_offset = step_offset[0];
     kernel_info.y_offset = step_offset[1];
 
-    dim3 matrix_power_grid_dim;
-
-    matrix_power_grid_dim = dim3(
+    dim3 matrix_power_grid_dim = dim3(
         std::ceil(step_global_size[0]/LOCAL_X),
         std::ceil(step_global_size[1]/LOCAL_Y));
 
-    // TODO offsets
     TIME_KERNEL_BEGIN;
-    CUDALAUNCH(device_tea_leaf_ppcg_solve_update_r, u, vector_r,
-        vector_Kx, vector_Ky, vector_sd);
     device_tea_leaf_ppcg_solve_update_r
     <<<matrix_power_grid_dim, block_shape>>>
     (kernel_info, u, vector_r, vector_Kx, vector_Ky, vector_sd);
@@ -382,9 +385,10 @@ void CloverleafCudaChunk::ppcg_inner
     TIME_KERNEL_BEGIN;
     device_tea_leaf_ppcg_solve_calc_sd
     <<<matrix_power_grid_dim, block_shape>>>
-    (kernel_info, vector_r,
-        vector_Mi, vector_sd, ch_alphas_device, ch_betas_device,
-        ppcg_cur_step - 1);
+    (kernel_info,
+        vector_r, vector_sd, vector_z, tri_cp, tri_bfp,
+        vector_Mi, vector_Kx, vector_Ky,
+        ch_alphas_device, ch_betas_device, ppcg_cur_step - 1);
     TIME_KERNEL_END(device_tea_leaf_ppcg_solve_calc_sd);
 }
 
