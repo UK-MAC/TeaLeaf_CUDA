@@ -6,7 +6,9 @@
     #define BLOCK_SZ 128
 #endif
 
-#define LOCAL_Y (4)
+#define JACOBI_BLOCK_SIZE 4
+
+#define LOCAL_Y (JACOBI_BLOCK_SIZE)
 #define LOCAL_X (BLOCK_SZ/LOCAL_Y)
 
 const static dim3 block_shape(LOCAL_X, LOCAL_Y);

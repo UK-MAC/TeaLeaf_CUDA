@@ -42,7 +42,7 @@ __global__ void device_tea_leaf_cheby_solve_init_p
         __syncthreads();
         if (loc_row == 0)
         {
-            //block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
+            block_solve_func(kernel_info, r_l, z_l, cp, bfp, Kx, Ky);
         }
         __syncthreads();
 
@@ -123,7 +123,7 @@ __global__ void device_tea_leaf_cheby_solve_calc_p
         __syncthreads();
         if (loc_row == 0)
         {
-            //block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
+            block_solve_func(kernel_info, r_l, z_l, cp, bfp, Kx, Ky);
         }
         __syncthreads();
 

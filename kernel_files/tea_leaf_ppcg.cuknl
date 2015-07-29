@@ -29,7 +29,7 @@ __global__ void device_tea_leaf_ppcg_solve_init_sd
         __syncthreads();
         if (loc_row == 0)
         {
-            //block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
+            block_solve_func(kernel_info, r_l, z_l, cp, bfp, Kx, Ky);
         }
         __syncthreads();
 
@@ -110,7 +110,7 @@ __global__ void device_tea_leaf_ppcg_solve_calc_sd
         {
             if (WITHIN_BOUNDS)
             {
-                //block_solve_func(r_l, z_l, cp, bfp, Kx, Ky);
+                block_solve_func(kernel_info, r_l, z_l, cp, bfp, Kx, Ky);
             }
         }
         __syncthreads();

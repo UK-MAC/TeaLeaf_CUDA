@@ -109,8 +109,7 @@ __global__ void device_tea_leaf_cg_solve_calc_ur
         __syncthreads();
         if (loc_row == 0)
         {
-            // TODO
-            //block_solve_func(rrn_shared, z_l, cp, bfp, Kx, Ky);
+            block_solve_func(kernel_info, rrn_shared, z_l, cp, bfp, Kx, Ky);
         }
         __syncthreads();
 

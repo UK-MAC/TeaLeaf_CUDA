@@ -4,6 +4,8 @@
 #define COEF_CONDUCTIVITY 1
 #define COEF_RECIP_CONDUCTIVITY 2
 
+#include "kernel_files/tea_block_jacobi.cuknl"
+
 #include "kernel_files/tea_leaf_common.cuknl"
 #include "kernel_files/tea_leaf_jacobi.cuknl"
 #include "kernel_files/tea_leaf_cg.cuknl"
@@ -167,7 +169,10 @@ void CloverleafCudaChunk::tea_leaf_init_cg
 
     if (preconditioner_type == TL_PREC_JAC_BLOCK)
     {
-        // TODO preconditioners
+        CUDALAUNCH(device_tea_leaf_block_init, vector_r,
+            vector_z, tri_cp, tri_bfp, vector_Kx, vector_Ky);
+        CUDALAUNCH(device_tea_leaf_block_solve, vector_r,
+            vector_z, tri_cp, tri_bfp, vector_Kx, vector_Ky);
     }
     else if (preconditioner_type == TL_PREC_JAC_DIAG)
     {

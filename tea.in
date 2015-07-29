@@ -14,12 +14,12 @@ initial_timestep=0.004
 end_step=20
 tl_max_iters=10000
 test_problem 6
-tl_use_jacobi
+tl_use_cg
 tl_check_result
 tl_eps=1.0e-15
-tl_preconditioner_type=jac_diag
-!profiler_on
-halo_depth=2
+!tl_preconditioner_type=jac_block
+profiler_on
+halo_depth=1
 cuda_device=0
 tl_check_result
 *endtea
