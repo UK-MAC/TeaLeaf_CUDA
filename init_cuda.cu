@@ -94,7 +94,7 @@ y_max(*in_y_max)
 
     struct cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, device_id);
-    std::cout << "CUDA using " << prop.name << std::endl;
+    std::cout << "CUDA in rank " << rank << " using " << prop.name << std::endl;
 
     int file_halo_depth = readInt(input, "halo_depth");
     halo_exchange_depth = file_halo_depth;

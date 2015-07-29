@@ -2,12 +2,12 @@
 // for left/right
 #define VERT_IDX                        \
     (column - kernel_info.x_offset) +   \
-    (row -    kernel_info.y_offset)*depth + offset
+    (row    - kernel_info.y_offset)*depth + offset
 
 // for top/bottom
 #define HORZ_IDX                                        \
     (column - kernel_info.x_offset) +             \
-    (row -    kernel_info.y_offset)*(x_max + x_extra + 2*depth) + offset
+    (row    - kernel_info.y_offset)*(x_max + x_extra + 2*depth) + offset
 
 __global__ void device_pack_left_buffer
 (kernel_info_t kernel_info,
