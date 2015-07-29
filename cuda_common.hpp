@@ -269,6 +269,8 @@ private:
     int preconditioner_type;
     int halo_exchange_depth;
 
+    int rank;
+
     // values used to control operation
     int x_min;
     int x_max;

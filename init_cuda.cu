@@ -57,7 +57,6 @@ y_max(*in_y_max)
     // FIXME (and opencl really)
     // make a better platform agnostic way of selecting devices
 
-    int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     // Read in from file - easier than passing in from fortran
