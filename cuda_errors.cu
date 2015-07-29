@@ -92,6 +92,8 @@ CloverleafCudaChunk::~CloverleafCudaChunk
 (void)
 {
     if (profiler_on)
+    // TODO mpi_reduce
+    if (!rank)
     {
         fprintf(stdout, "@@@@@ PROFILING @@@@@\n");
 
