@@ -145,7 +145,7 @@ std::vector<double> CloverleafCudaChunk::dumpArray
 
     std::cout << std::endl;
 
-    for (int k = 0; k < y_sz; k++)
+    for (int k = y_sz-1; k >= 0; k--)
     {
         for (int j = 0; j < x_sz; j++)
         {

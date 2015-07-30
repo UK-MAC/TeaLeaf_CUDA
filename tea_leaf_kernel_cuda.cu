@@ -234,10 +234,10 @@ void CloverleafCudaChunk::tea_leaf_kernel_jacobi
 
 extern "C" void tea_leaf_common_init_kernel_cuda_
 (const int * coefficient, double * dt, double * rx, double * ry,
- int * chunk_neighbours, int * zero_boundary, int * reflective_boundary)
+ int * zero_boundary, int * reflective_boundary)
 {
     cuda_chunk.tea_leaf_common_init(*coefficient, *dt, rx, ry,
-        chunk_neighbours, zero_boundary, *reflective_boundary);
+        zero_boundary, *reflective_boundary);
 }
 
 // used by both
@@ -255,7 +255,7 @@ extern "C" void tea_leaf_calc_residual_cuda_
 
 void CloverleafCudaChunk::tea_leaf_common_init
 (int coefficient, double dt, double * rx, double * ry,
- int * chunk_neighbours, int * zero_boundary, int reflective_boundary)
+ int * zero_boundary, int reflective_boundary)
 {
     if (coefficient != COEF_CONDUCTIVITY && coefficient != COEF_RECIP_CONDUCTIVITY)
     {
@@ -269,10 +269,10 @@ void CloverleafCudaChunk::tea_leaf_common_init
 
     if (!reflective_boundary)
     {
-        int zero_left = chunk_neighbours[CHUNK_left - 1] && zero_boundary[CHUNK_left - 1];
-        int zero_right = chunk_neighbours[CHUNK_right - 1] && zero_boundary[CHUNK_right - 1];
-        int zero_bottom = chunk_neighbours[CHUNK_bottom - 1] && zero_boundary[CHUNK_bottom - 1];
-        int zero_top = chunk_neighbours[CHUNK_top - 1] && zero_boundary[CHUNK_top - 1];
+        int zero_left = zero_boundary[0];
+        int zero_right = zero_boundary[1];
+        int zero_bottom = zero_boundary[2];
+        int zero_top = zero_boundary[3];
 
         CUDALAUNCH(device_tea_leaf_zero_boundaries, vector_Kx, vector_Ky,
             zero_left,
