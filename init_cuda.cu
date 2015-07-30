@@ -221,7 +221,7 @@ void CloverleafCudaChunk::initSizes
 
     kernel_info_map["device_initialise_chunk_kernel"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
 
-    kernel_info_map["device_initialise_chunk_kernel_vertex"] = kernel_info_t(kernel_info_generic, -1, 1, -1, 1);
+    kernel_info_map["device_initialise_chunk_kernel_vertex"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
     kernel_info_map["device_generate_chunk_init"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
     kernel_info_map["device_generate_chunk_kernel"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
     kernel_info_map["device_generate_chunk_init_u"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
@@ -279,7 +279,7 @@ void CloverleafCudaChunk::initSizes
     kernel_info_map["device_tea_leaf_block_init"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
     kernel_info_map["device_tea_leaf_block_solve"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
 
-    kernel_info_map["device_tea_leaf_init_common"] = kernel_info_t(kernel_info_generic, 1-halo_exchange_depth, halo_exchange_depth, 1-halo_exchange_depth, halo_exchange_depth);
+    kernel_info_map["device_tea_leaf_init_common"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
     kernel_info_map["device_tea_leaf_zero_boundaries"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
     kernel_info_map["device_tea_leaf_init_jac_diag"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
 }
@@ -377,6 +377,7 @@ void CloverleafCudaChunk::initBuffers
     ADD_BUFFER_DBG_MAP(vector_p);
     ADD_BUFFER_DBG_MAP(vector_r);
     ADD_BUFFER_DBG_MAP(vector_w);
+    ADD_BUFFER_DBG_MAP(vector_sd);
     ADD_BUFFER_DBG_MAP(vector_Mi);
     ADD_BUFFER_DBG_MAP(vector_Kx);
     ADD_BUFFER_DBG_MAP(vector_Ky);

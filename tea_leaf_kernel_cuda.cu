@@ -346,6 +346,11 @@ void CloverleafCudaChunk::ppcg_inner
         x_max + (halo_exchange_depth-step_depth)*2,
         y_max + (halo_exchange_depth-step_depth)*2};
 
+    kernel_info_t kernel_info = kernel_info_map.at("device_tea_leaf_ppcg_solve_update_r");
+
+    kernel_info.kernel_x_max = bounds_extra;
+    kernel_info.kernel_y_max = bounds_extra;
+
     if (chunk_neighbours[CHUNK_LEFT - 1] == EXTERNAL_FACE)
     {
         step_offset[0] = halo_exchange_depth;
@@ -354,6 +359,7 @@ void CloverleafCudaChunk::ppcg_inner
     if (chunk_neighbours[CHUNK_RIGHT - 1] == EXTERNAL_FACE)
     {
         step_global_size[0] -= (halo_exchange_depth-step_depth);
+        kernel_info.kernel_x_max = 0;
     }
 
     if (chunk_neighbours[CHUNK_BOTTOM - 1] == EXTERNAL_FACE)
@@ -364,21 +370,20 @@ void CloverleafCudaChunk::ppcg_inner
     if (chunk_neighbours[CHUNK_TOP - 1] == EXTERNAL_FACE)
     {
         step_global_size[1] -= (halo_exchange_depth-step_depth);
+        kernel_info.kernel_y_max = 0;
     }
+
+    kernel_info.x_offset = step_offset[0];
+    kernel_info.y_offset = step_offset[1];
 
     step_global_size[0] -= step_global_size[0] % LOCAL_X;
     step_global_size[0] += LOCAL_X;
     step_global_size[1] -= step_global_size[1] % LOCAL_Y;
     step_global_size[1] += LOCAL_Y;
 
-    kernel_info_t kernel_info = kernel_info_map.at("device_tea_leaf_ppcg_solve_update_r");
-
-    kernel_info.x_offset = step_offset[0];
-    kernel_info.y_offset = step_offset[1];
-
     dim3 matrix_power_grid_dim = dim3(
-        std::ceil(step_global_size[0]/LOCAL_X),
-        std::ceil(step_global_size[1]/LOCAL_Y));
+        step_global_size[0]/LOCAL_X,
+        step_global_size[1]/LOCAL_Y);
 
     TIME_KERNEL_BEGIN;
     device_tea_leaf_ppcg_solve_update_r

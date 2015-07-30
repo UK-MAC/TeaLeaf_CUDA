@@ -14,8 +14,8 @@
 const static dim3 block_shape(LOCAL_X, LOCAL_Y);
 
 #define WITHIN_BOUNDS \
-    (row <= (y_max + HALO_DEPTH - 1) + kernel_info.kernel_y_max \
-    && column <= (x_max + HALO_DEPTH - 1) + kernel_info.kernel_x_max)
+    (row <= (y_max - 1) + HALO_DEPTH + kernel_info.kernel_y_max \
+    && column <= (x_max - 1) + HALO_DEPTH + kernel_info.kernel_x_max)
 
 /*
 *  access a value in a 2d array given the x and y offset from current thread
