@@ -28,8 +28,6 @@
 #include "cuda_common.hpp"
 #include "kernel_files/update_halo_kernel.cuknl"
 
-#define UPDATE_HALO_BLOCK_SZ 32
-
 extern "C" void update_halo_kernel_cuda_
 (const int* chunk_neighbours,
 const int* fields,
@@ -44,41 +42,21 @@ const int* chunk_neighbours,
 double* cur_array_d,
 int depth)
 {
-    #define CHECK_LAUNCH(face, dir)                                     \
+    #define CHECK_LAUNCH(face, side, dir)                               \
     if (EXTERNAL_FACE == chunk_neighbours[CHUNK_ ## face - 1])          \
     {                                                                   \
-        if (profiler_on)                                                \
-        {                                                               \
-            cudaEventCreate(&_t0);                                      \
-            cudaEventRecord(_t0);                                       \
-        }                                                               \
-        const int launch_sz = (ceil((dir##_max + (2*depth) + grid_type.dir##_extra) \
-            /static_cast<float>(UPDATE_HALO_BLOCK_SZ))) * depth;                    \
+        TIME_KERNEL_BEGIN;  \
         device_update_halo_kernel_##face                         \
-        <<<launch_sz, UPDATE_HALO_BLOCK_SZ >>>                                      \
-            (kernel_info_map.at("device_update_halo_kernel_"#face), grid_type, cur_array_d, depth);\
+        <<<update_##side##_num_blocks[depth], update_##side##_block_sizes[depth] >>> \
+        (kernel_info_map.at("device_update_halo_kernel_"#face), \
+            grid_type, cur_array_d, depth); \
         CUDA_ERR_CHECK;                                                 \
-        if (profiler_on)                                                \
-        {                                                               \
-            cudaEventCreate(&_t1);                                      \
-            cudaEventRecord(_t1);                                       \
-            cudaEventSynchronize(_t1);                                  \
-            cudaEventElapsedTime(&taken, _t0, _t1);                     \
-            std::string func_name("device_update_halo_kernel_"#face);   \
-            if (kernel_times.end() != kernel_times.find(func_name))     \
-            {                                                           \
-                kernel_times.at(func_name) += taken;                    \
-            }                                                           \
-            else                                                        \
-            {                                                           \
-                kernel_times[func_name] = taken;                        \
-            }                                                           \
-        }                                                               \
+        TIME_KERNEL_END(device_update_halo_kernel_##face); \
     }
-    CHECK_LAUNCH(bottom, x);
-    CHECK_LAUNCH(top, x);
-    CHECK_LAUNCH(left, y);
-    CHECK_LAUNCH(right, y);
+    CHECK_LAUNCH(bottom, bt, x);
+    CHECK_LAUNCH(top, bt, x);
+    CHECK_LAUNCH(left, lr, y);
+    CHECK_LAUNCH(right, lr, y);
 
     #undef CHECK_LAUNCH
 }
