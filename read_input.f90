@@ -35,18 +35,20 @@ SUBROUTINE read_input()
 
   CHARACTER(LEN=500) :: word
 
+  ! Set all of the default values
   test_problem=0
-
   state_max=0
 
-  grid%xmin=  0.0
-  grid%ymin=  0.0
-  grid%xmax=100.0
-  grid%ymax=100.0
-
+  grid%xmin=  0.0_8
+  grid%ymin=  0.0_8
+  grid%xmax=100.0_8
+  grid%ymax=100.0_8
   grid%x_cells=10
   grid%y_cells=10
 
+  dtinit=0.1
+  max_iters=1000
+  eps=1.0e-10
   end_time=10.0
   end_step=g_ibig
   complete=.FALSE.
@@ -54,13 +56,8 @@ SUBROUTINE read_input()
   visit_frequency=0
   summary_frequency=10
 
-  dtinit=0.1
-
-  max_iters=1000
-  eps=1.0e-10
-
   use_fortran_kernels=.FALSE.
-  use_cuda_kernels=.TRUE.
+  use_ext_kernels=.TRUE.
   coefficient = CONDUCTIVITY
   profiler_on=.FALSE.
   profiler%timestep=0.0
@@ -77,7 +74,6 @@ SUBROUTINE read_input()
   tl_check_result = .FALSE.
   tl_ppcg_inner_steps = 10
   tl_preconditioner_on = .FALSE.
-
   tl_use_chebyshev = .FALSE.
   tl_use_cg = .FALSE.
   tl_use_ppcg = .FALSE.
@@ -112,6 +108,7 @@ SUBROUTINE read_input()
   states(:)%energy=0.0
   states(:)%density=0.0
 
+  ! Parse all of the individual parameters
   DO
     stat=parse_getline(dummy)
 
@@ -172,30 +169,34 @@ SUBROUTINE read_input()
         tl_preconditioner_on = .TRUE.
       CASE('use_fortran_kernels')
         use_fortran_kernels=.TRUE.
-        use_cuda_kernels=.FALSE.
-      CASE('use_cuda_kernels')
+        use_ext_kernels=.FALSE.
+      CASE('use_ext_kernels')
         use_fortran_kernels=.FALSE.
-        use_cuda_kernels=.TRUE.
+        use_ext_kernels=.TRUE.
       CASE('tl_use_jacobi')
         tl_use_chebyshev = .FALSE.
         tl_use_cg = .FALSE.
         tl_use_ppcg=.FALSE.
         tl_use_jacobi = .TRUE.
+        IF(parallel%boss)WRITE(0,*) "USING JACOBI SOLVER"
       CASE('tl_use_cg')
         tl_use_chebyshev = .FALSE.
         tl_use_cg = .TRUE.
         tl_use_ppcg=.FALSE.
         tl_use_jacobi = .FALSE.
+        IF(parallel%boss)WRITE(0,*) "USING CG SOLVER"
       CASE('tl_use_ppcg')
         tl_use_chebyshev = .FALSE.
         tl_use_cg = .FALSE.
         tl_use_ppcg=.TRUE.
         tl_use_jacobi = .FALSE.
+        IF(parallel%boss)WRITE(0,*) "USING PPCG SOLVER"
       CASE('tl_use_chebyshev')
         tl_use_chebyshev = .TRUE.
         tl_use_cg = .FALSE.
         tl_use_ppcg=.FALSE.
         tl_use_jacobi = .FALSE.
+        IF(parallel%boss)WRITE(0,*) "USING CHEBYSHEV SOLVER"
       CASE('profiler_on')
         profiler_on=.TRUE.
         IF(parallel%boss)WRITE(g_out,"(1x,a25)")'Profiler on'
@@ -272,9 +273,9 @@ SUBROUTINE read_input()
     WRITE(g_out,*)
     IF(use_fortran_kernels) THEN
       WRITE(g_out,"(1x,a)")'Using Fortran Kernels'
+    ELSEIF(use_ext_kernels) THEN
+      WRITE(g_out,"(1x,a)")'Using Extension Kernels'
     ENDIF
-    ELSEIF(use_cuda_kernels) THEN
-      WRITE(g_out,"(1x,a)")'Using CUDA Kernels'
     WRITE(g_out,*)
     WRITE(g_out,*) 'Input read finished.'
     WRITE(g_out,*)
@@ -289,10 +290,10 @@ SUBROUTINE read_input()
   dx=(grid%xmax-grid%xmin)/float(grid%x_cells)
   dy=(grid%ymax-grid%ymin)/float(grid%y_cells)
   DO n=2,number_of_states
-    states(n)%xmin=states(n)%xmin+(dx/100.0)
-    states(n)%ymin=states(n)%ymin+(dy/100.0)
-    states(n)%xmax=states(n)%xmax-(dx/100.0)
-    states(n)%ymax=states(n)%ymax-(dy/100.0)
+    states(n)%xmin=states(n)%xmin+(dx/100.0_8)
+    states(n)%ymin=states(n)%ymin+(dy/100.0_8)
+    states(n)%xmax=states(n)%xmax-(dx/100.0_8)
+    states(n)%ymax=states(n)%ymax-(dy/100.0_8)
   ENDDO
 
 END SUBROUTINE read_input

@@ -21,42 +21,41 @@
 
 SUBROUTINE initialise_chunk(chunk)
 
-  USE tea_module
-  USE initialise_chunk_kernel_module
+    USE tea_module
+    USE initialise_chunk_kernel_module
 
-  IMPLICIT NONE
+    IMPLICIT NONE
 
-  INTEGER :: chunk
+    INTEGER :: chunk
 
-  REAL(KIND=8) :: xmin,ymin,dx,dy
+    REAL(KIND=8) :: xmin,ymin,dx,dy
 
-  dx=(grid%xmax-grid%xmin)/float(grid%x_cells)
-  dy=(grid%ymax-grid%ymin)/float(grid%y_cells)
+    dx=(grid%xmax-grid%xmin)/float(grid%x_cells)
+    dy=(grid%ymax-grid%ymin)/float(grid%y_cells)
+    xmin=grid%xmin+dx*float(chunks(chunk)%field%left-1)
+    ymin=grid%ymin+dy*float(chunks(chunk)%field%bottom-1)
 
-  xmin=grid%xmin+dx*float(chunks(chunk)%field%left-1)
-
-  ymin=grid%ymin+dy*float(chunks(chunk)%field%bottom-1)
-
-  IF(use_fortran_kernels) THEN
-    CALL initialise_chunk_kernel(chunks(chunk)%field%x_min,    &
-                                 chunks(chunk)%field%x_max,    &
-                                 chunks(chunk)%field%y_min,    &
-                                 chunks(chunk)%field%y_max,    &
-                                 xmin,ymin,dx,dy,              &
-                                 chunks(chunk)%field%vertexx,  &
-                                 chunks(chunk)%field%vertexdx, &
-                                 chunks(chunk)%field%vertexy,  &
-                                 chunks(chunk)%field%vertexdy, &
-                                 chunks(chunk)%field%cellx,    &
-                                 chunks(chunk)%field%celldx,   &
-                                 chunks(chunk)%field%celly,    &
-                                 chunks(chunk)%field%celldy,   &
-                                 chunks(chunk)%field%volume,   &
-                                 chunks(chunk)%field%xarea,    &
-                                 chunks(chunk)%field%yarea     )
-  ELSEIF(use_cuda_kernels)THEN
-    CALL initialise_chunk_kernel_cuda(xmin,ymin,dx,dy)
-  ENDIF
-
-
+    IF(use_fortran_kernels) THEN
+        CALL initialise_chunk_kernel(     &
+            chunks(chunk)%field%x_min,    &
+            chunks(chunk)%field%x_max,    &
+            chunks(chunk)%field%y_min,    &
+            chunks(chunk)%field%y_max,    &
+            xmin,ymin,dx,dy,      &
+            chunks(chunk)%field%vertexx,  &
+            chunks(chunk)%field%vertexdx, &
+            chunks(chunk)%field%vertexy,  &
+            chunks(chunk)%field%vertexdy, &
+            chunks(chunk)%field%cellx,    &
+            chunks(chunk)%field%celldx,   &
+            chunks(chunk)%field%celly,    &
+            chunks(chunk)%field%celldy,   &
+            chunks(chunk)%field%volume,   &
+            chunks(chunk)%field%xarea,    &
+            chunks(chunk)%field%yarea) 
+    ELSEIF(use_ext_kernels) THEN
+       CALL ext_initialise_chunk(        &
+           chunk,                        &
+           xmin,ymin,dx,dy)
+    ENDIF
 END SUBROUTINE initialise_chunk

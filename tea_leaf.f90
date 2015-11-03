@@ -24,8 +24,6 @@
 !>
 !>  It can be run in distributed mode using MPI.
 !>
-!>  It can use OpenMP, OpenACC on a compute device.
-!>
 !>  NOTE: that the proxy-app uses uniformly spaced mesh. The actual method will
 !>  work on a mesh with varying spacing to keep it relevant to it's parent code.
 !>  For this reason, optimisations should only be carried out on the software
@@ -34,40 +32,58 @@
 !>  converted to a scalar.
 PROGRAM tea_leaf
 
-  USE tea_module
+    USE tea_module
 
-  IMPLICIT NONE
+    IMPLICIT NONE
 
-!$ INTEGER :: OMP_GET_NUM_THREADS,OMP_GET_THREAD_NUM
+    INTEGER :: iargc
+    CHARACTER(len=g_len_max) :: tea_out, tea_in, out_log
 
-  CALL tea_init_comms()
+    !$ INTEGER :: OMP_GET_NUM_THREADS,OMP_GET_THREAD_NUM
 
-!$OMP PARALLEL
-  IF(parallel%boss)THEN
-!$  IF(OMP_GET_THREAD_NUM().EQ.0) THEN
-      WRITE(*,*)
-      WRITE(*,'(a15,f8.3)') 'Tea Version ',g_version
-      WRITE(*,'(a18)') 'MPI Version'
-!$    WRITE(*,'(a18)') 'OpenMP Version'
-      WRITE(*,'(a14,i6)') 'Task Count ',parallel%max_task !MPI
-!$    WRITE(*,'(a15,i5)') 'Thread Count: ',OMP_GET_NUM_THREADS()
-      WRITE(*,*)
-      WRITE(0,*)
-      WRITE(0,'(a15,f8.3)') 'Tea Version ',g_version
-      WRITE(0,'(a18)') 'MPI Version'
-!$    WRITE(0,'(a18)') 'OpenMP Version'
-      WRITE(0,'(a14,i6)') 'Task Count ',parallel%max_task !MPI
-!$    WRITE(0,'(a15,i5)') 'Thread Count: ',OMP_GET_NUM_THREADS()
-      WRITE(0,*)
-!$  ENDIF
-  ENDIF
-!$OMP END PARALLEL
+    CALL tea_init_comms()
 
-  CALL initialise
+    !$OMP PARALLEL
+    IF(parallel%boss)THEN
+        !$  IF(OMP_GET_THREAD_NUM().EQ.0) THEN
+        WRITE(*,*)
+        WRITE(*,'(a29)') 'TeaLeaf MPI + CUDA Version'
+        WRITE(*,'(a14,i7)') 'Task Count ',parallel%max_task !MPI
+        !$    WRITE(*,'(a17,i5)') 'Thread Count: ',OMP_GET_NUM_THREADS()
+        WRITE(*,*)
+        WRITE(0,*)
+        WRITE(0,'(a29)') 'TeaLeaf MPI + CUDA Version'
+        WRITE(0,'(a14,i7)') 'Task Count ',parallel%max_task !MPI
+        !$    WRITE(0,'(a17,i5)') 'Thread Count: ',OMP_GET_NUM_THREADS()
+        WRITE(0,*)
+        !$  ENDIF
+    ENDIF
+    !$OMP END PARALLEL
 
-  CALL diffuse
+    ! Default configuration
+    tea_in = g_tea_in
+    tea_out = g_tea_out
 
-  ! Deallocate everything
-  
+    ! Enable overriding of configuration file to simplify
+    ! running multiple configurations automatically
+    IF(iargc() >= 1) THEN
+        CALL getarg(1,tea_in)
+        IF(parallel%boss) THEN
+            WRITE(0,'(a10,a7,a6,a30)') 'Replacing ', g_tea_in, ' with ', tea_in
+        ENDIF
+    ENDIF 
+    IF(iargc() >= 2) THEN
+        CALL getarg(2,tea_out)
+        IF(parallel%boss) THEN
+            WRITE(0,'(a10,a7,a6,a30)') 'Replacing ', g_tea_out, ' with ', tea_out
+        ENDIF
+    ENDIF
+
+    CALL initialise(tea_in, tea_out)
+
+    CALL diffuse
+
+    CALL ext_finalise
+
 END PROGRAM tea_leaf
 

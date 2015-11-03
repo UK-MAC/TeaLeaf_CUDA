@@ -51,10 +51,11 @@ MODULE definitions_module
      REAL(KIND=8)       :: xmin            &
                           ,ymin            &
                           ,xmax            &
-                          ,ymax
+                          ,ymax            
                      
      INTEGER            :: x_cells              &
-                          ,y_cells
+                          ,y_cells              
+
    END TYPE grid_type
 
    INTEGER      :: step
@@ -63,9 +64,8 @@ MODULE definitions_module
 
    INTEGER      :: test_problem
    LOGICAL      :: complete
-
    LOGICAL      :: use_fortran_kernels
-   LOGICAL      :: use_cuda_kernels
+   LOGICAL      :: use_ext_kernels
    LOGICAL      :: tl_use_chebyshev
    LOGICAL      :: tl_use_cg
    LOGICAL      :: tl_use_ppcg
@@ -103,6 +103,7 @@ MODULE definitions_module
                           ,halo_exchange
                      
    END TYPE profiler_type
+
    TYPE(profiler_type)  :: profiler
 
    REAL(KIND=8) :: end_time
@@ -121,7 +122,7 @@ MODULE definitions_module
    TYPE field_type
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: density
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: energy0,energy1
-     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: u, u0
+     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: u,u0,d
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_p
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_r
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_Mi
@@ -129,6 +130,7 @@ MODULE definitions_module
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_z
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_Kx
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_Ky
+     REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_Kz
      REAL(KIND=8),    DIMENSION(:,:), ALLOCATABLE :: vector_sd
 
      INTEGER         :: left            &
@@ -138,12 +140,12 @@ MODULE definitions_module
                        ,left_boundary   &
                        ,right_boundary  &
                        ,bottom_boundary &
-                       ,top_boundary
+                       ,top_boundary    
 
      INTEGER         :: x_min  &
                        ,y_min  &
                        ,x_max  &
-                       ,y_max
+                       ,y_max  
 
      REAL(KIND=8), DIMENSION(:),   ALLOCATABLE :: cellx    &
                                                  ,celly    &
@@ -152,11 +154,11 @@ MODULE definitions_module
                                                  ,celldx   &
                                                  ,celldy   &
                                                  ,vertexdx &
-                                                 ,vertexdy
+                                                 ,vertexdy 
 
      REAL(KIND=8), DIMENSION(:,:), ALLOCATABLE :: volume  &
                                                  ,xarea   &
-                                                 ,yarea
+                                                 ,yarea   
 
    END TYPE field_type
    
@@ -170,8 +172,10 @@ MODULE definitions_module
      !  one send and one receive per face, rather than per field.
      ! If chunks are overloaded, i.e. more chunks than tasks, might need to pack for a task to task comm 
      !  rather than a chunk to chunk comm. See how performance is at high core counts before deciding
-     REAL(KIND=8),ALLOCATABLE:: left_rcv_buffer(:),right_rcv_buffer(:),bottom_rcv_buffer(:),top_rcv_buffer(:)
-     REAL(KIND=8),ALLOCATABLE:: left_snd_buffer(:),right_snd_buffer(:),bottom_snd_buffer(:),top_snd_buffer(:)
+     REAL(KIND=8),ALLOCATABLE:: left_rcv_buffer(:),right_rcv_buffer(:)
+     REAL(KIND=8),ALLOCATABLE:: bottom_rcv_buffer(:),top_rcv_buffer(:)
+     REAL(KIND=8),ALLOCATABLE:: left_snd_buffer(:),right_snd_buffer(:)
+     REAL(KIND=8),ALLOCATABLE:: bottom_snd_buffer(:),top_snd_buffer(:)
 
      TYPE(field_type):: field
 

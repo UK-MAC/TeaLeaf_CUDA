@@ -36,22 +36,20 @@ SUBROUTINE set_field()
 
   IF(profiler_on) kernel_time=timer()
   DO c=1,chunks_per_task
-
     IF(chunks(c)%task.EQ.parallel%task) THEN
-
       IF(use_fortran_kernels)THEN
-        CALL set_field_kernel(chunks(c)%field%x_min,     &
+        CALL set_field_kernel(chunks(c)%field%x_min,   &
                               chunks(c)%field%x_max,     &
                               chunks(c)%field%y_min,     &
                               chunks(c)%field%y_max,     &
                               chunks(c)%field%energy0,   &
                               chunks(c)%field%energy1)
-      ELSEIF(use_cuda_kernels)THEN
-        CALL set_field_kernel_cuda()
+      ELSEIF(use_ext_kernels) THEN
+         CALL ext_set_field_kernel(c)
       ENDIF
     ENDIF
-
   ENDDO
+
   IF(profiler_on) profiler%set_field=profiler%set_field+(timer()-kernel_time)
 
 END SUBROUTINE set_field

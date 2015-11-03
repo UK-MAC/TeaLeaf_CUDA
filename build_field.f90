@@ -34,22 +34,6 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
    chunks(chunk)%field%x_max=x_cells
    chunks(chunk)%field%y_max=y_cells
 
-   IF (use_cuda_kernels .eqv. .true.) THEN
-
-     IF(profiler_on) THEN
-       profiler_int=1
-     ELSE
-       profiler_int=0
-     ENDIF
-
-     call initialise_cuda(chunks(chunk)%field%x_min, &
-                         chunks(chunk)%field%x_max, &
-                         chunks(chunk)%field%y_min, &
-                         chunks(chunk)%field%y_max, &
-                         profiler_int)
-
-   ELSE
-
    ALLOCATE(chunks(chunk)%field%density   (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
                    chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
    ALLOCATE(chunks(chunk)%field%energy0   (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
@@ -110,7 +94,6 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
        chunks(chunk)%field%vector_z(j,k)=0.0
        chunks(chunk)%field%vector_Kx(j,k)=0.0
        chunks(chunk)%field%vector_Ky(j,k)=0.0
-
        chunks(chunk)%field%density(j,k)=0.0
        chunks(chunk)%field%energy0(j,k)=0.0
        chunks(chunk)%field%energy1(j,k)=0.0
@@ -160,7 +143,5 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
     ENDDO
 !$OMP END DO
 !$OMP END PARALLEL
-
-  ENDIF
   
 END SUBROUTINE build_field

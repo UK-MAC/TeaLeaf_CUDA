@@ -24,51 +24,45 @@ MODULE update_halo_module
 
 CONTAINS
 
-SUBROUTINE update_halo(fields,depth)
+    SUBROUTINE update_halo(fields,depth)
 
-  USE tea_module
-  USE update_halo_kernel_module
+        USE tea_module
+        USE update_halo_kernel_module
 
-  IMPLICIT NONE
+        IMPLICIT NONE
 
-  INTEGER :: c,fields(NUM_FIELDS),depth
+        INTEGER :: c,fields(NUM_FIELDS),depth
+        INTEGER :: i,j,k
 
-  CALL tea_exchange(fields,depth)
+        CALL tea_exchange(fields,depth)
 
-  DO c=1,chunks_per_task
+       DO c=1,chunks_per_task
+            IF(chunks(c)%task.EQ.parallel%task) THEN
+                IF(use_fortran_kernels)THEN
+                    CALL update_halo_kernel(            &
+                        chunks(c)%field%x_min,          &
+                        chunks(c)%field%x_max,          &
+                        chunks(c)%field%y_min,          &
+                        chunks(c)%field%y_max,          &
+                        chunks(c)%chunk_neighbours,     &
+                        chunks(c)%field%density,        &
+                        chunks(c)%field%energy0,        &
+                        chunks(c)%field%energy1,        &
+                        chunks(c)%field%u,              &
+                        chunks(c)%field%vector_p,       &
+                        chunks(c)%field%vector_sd,      &
+                        fields,                         &
+                        depth)
+                ELSEIF(use_ext_kernels) THEN
+                    CALL ext_update_halo_kernel(        &
+                        c,                              &
+                        chunks(c)%chunk_neighbours,     &
+                        fields,                         &
+                        depth)
+                ENDIF
+            ENDIF
+        ENDDO
 
-    IF(chunks(c)%task.EQ.parallel%task) THEN
-      IF(use_fortran_kernels)THEN
-        CALL update_halo_kernel(chunks(c)%field%x_min,          &
-                                chunks(c)%field%x_max,          &
-                                chunks(c)%field%y_min,          &
-                                chunks(c)%field%y_max,          &
-                                chunks(c)%field%left,           &
-                                chunks(c)%field%bottom,         &
-                                chunks(c)%field%right,          &
-                                chunks(c)%field%top,            &
-                                chunks(c)%field%left_boundary,  &
-                                chunks(c)%field%bottom_boundary,&
-                                chunks(c)%field%right_boundary, &
-                                chunks(c)%field%top_boundary,   &
-                                chunks(c)%chunk_neighbours,     &
-                                chunks(c)%field%density,        &
-                                chunks(c)%field%energy0,        &
-                                chunks(c)%field%energy1,        &
-                                chunks(c)%field%u,              &
-                                chunks(c)%field%vector_p,       &
-                                chunks(c)%field%vector_sd,      &
-                                fields,                         &
-                                depth                           )
-      ELSEIF(use_cuda_kernels)THEN
-        CALL update_halo_kernel_cuda(chunks(c)%chunk_neighbours,     &
-                                    fields,                         &
-                                    depth                           )
-      ENDIF
-    ENDIF
-
-  ENDDO
-
-END SUBROUTINE update_halo
+    END SUBROUTINE update_halo
 
 END MODULE update_halo_module

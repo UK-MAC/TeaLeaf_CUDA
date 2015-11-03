@@ -1,6 +1,5 @@
 build_field.o: build_field.f90 tea_module.mod
 calc_dt.o calc_dt_module.mod: calc_dt.f90 tea_module.mod
-calc_dt_kernel.o calc_dt_kernel_module.mod: calc_dt_kernel.f90
 data.o data_module.mod: data.f90
 definitions.o definitions_module.mod: definitions.f90 data_module.mod
 diffuse.o: diffuse.f90 tea_module.mod timestep_module.mod \
@@ -31,7 +30,7 @@ set_field.o set_field_module.mod: set_field.f90 tea_module.mod \
 set_field_kernel.o set_field_kernel_module.mod: set_field_kernel.f90
 start.o: start.f90 tea_module.mod parse_module.mod update_halo_module.mod
 tea.o tea_module.mod: tea.f90 \
- definitions_module.mod pack_kernel_module.mod pack_kernel_module.mod
+ pack_kernel_module.mod
 tea_leaf_cg.o tea_leaf_kernel_cg_module.mod: tea_leaf_cg.f90
 tea_leaf_cheby.o tea_leaf_kernel_cheby_module.mod: tea_leaf_cheby.f90
 tea_leaf.o: tea_leaf.f90 tea_module.mod
@@ -51,32 +50,17 @@ update_halo.o update_halo_module.mod: update_halo.f90 tea_module.mod \
 update_halo_kernel.o update_halo_kernel_module.mod: \
  update_halo_kernel.f90
 visit.o: visit.f90 tea_module.mod update_halo_module.mod
-cuda_errors.o: cuda_errors.cu cuda_common.hpp \
- kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h
-cuda_strings.o: cuda_strings.cu cuda_strings.hpp
-field_summary_kernel_cuda.o: field_summary_kernel_cuda.cu cuda_common.hpp \
- kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
- kernel_files/field_summary_kernel.cuknl
-generate_chunk_kernel_cuda.o: generate_chunk_kernel_cuda.cu \
- cuda_common.hpp kernel_files/cuda_kernel_header.hpp \
- kernel_files/../ftocmacros.h kernel_files/generate_chunk_kernel.cuknl
-init_cuda.o: init_cuda.cu cuda_common.hpp \
- kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
- cuda_strings.hpp
-initialise_chunk_kernel_cuda.o: initialise_chunk_kernel_cuda.cu \
- cuda_common.hpp kernel_files/cuda_kernel_header.hpp \
- kernel_files/../ftocmacros.h kernel_files/initialise_chunk_kernel.cuknl
-pack_kernel_cuda.o: pack_kernel_cuda.cu cuda_common.hpp \
- kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
- kernel_files/pack_kernel.cuknl
-set_field_kernel_cuda.o: set_field_kernel_cuda.cu cuda_common.hpp \
- kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
- kernel_files/set_field_kernel.cuknl
-tea_leaf_kernel_cuda.o: tea_leaf_kernel_cuda.cu cuda_common.hpp \
- kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
- kernel_files/tea_leaf_common.cuknl kernel_files/tea_leaf_jacobi.cuknl \
- kernel_files/tea_leaf_cg.cuknl kernel_files/tea_leaf_cheby.cuknl \
- kernel_files/tea_leaf_ppcg.cuknl
-update_halo_kernel_cuda.o: update_halo_kernel_cuda.cu cuda_common.hpp \
- kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
- kernel_files/update_halo_kernel.cuknl
+ext_cuda_chunk.o:				 ext_cuda_chunk.cu ext_cuda_chunk.hpp
+ext_shared_cuda.o:				 ext_shared_cuda.cu ext_cuda_chunk.cu ext_cuda_chunk.hpp
+ext_solver_methods.o:			 ext_solver_methods.cu kernels/solver_methods.cuknl ext_cuda_chunk.cu ext_cuda_chunk.hpp
+ext_initialise_chunk_cuda.o:   	 ext_initialise_chunk_cuda.cu kernels/initialise_chunk.cuknl ext_cuda_chunk.cu ext_cuda_chunk.hpp
+ext_generate_chunk_cuda.o:       ext_generate_chunk_cuda.cu kernels/generate_chunk.cuknl ext_cuda_chunk.cu ext_cuda_chunk.hpp
+ext_pack_kernel.o: 		     	 ext_pack_kernel.cu kernels/pack_kernel.cuknl ext_cuda_chunk.cu ext_cuda_chunk.hpp
+ext_field_summary_cuda.o:        ext_field_summary_cuda.cu kernels/field_summary.cuknl ext_cuda_chunk.cu ext_cuda_chunk.hpp
+ext_set_field_cuda.o: 	     	 ext_set_field_cuda.cu kernels/set_field.cuknl ext_cuda_chunk.cu ext_cuda_chunk.hpp
+ext_update_halo_cuda.o: 	     ext_update_halo_cuda.cu kernels/update_halo.cuknl ext_cuda_chunk.cu ext_cuda_chunk.hpp
+ext_jacobi_kernel.o:			 ext_jacobi_kernel.cu kernels/jacobi_solve.cuknl ext_cuda_chunk.cu ext_cuda_chunk.hpp
+ext_cheby_kernel.o:			     ext_cheby_kernel.cu kernels/cheby_solve.cuknl ext_cuda_chunk.cu ext_cuda_chunk.hpp
+ext_cg_kernel.o:			     ext_cg_kernel.cu kernels/cg_solve.cuknl ext_cuda_chunk.cu ext_cuda_chunk.hpp
+ext_ppcg_kernel.o:			     ext_ppcg_kernel.cu kernels/ppcg_solve.cuknl ext_cuda_chunk.cu ext_cuda_chunk.hpp
+

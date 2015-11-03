@@ -27,8 +27,8 @@ SUBROUTINE visit
 
   IMPLICIT NONE
 
-  INTEGER :: j,k,c,err,get_unit,u,dummy
-  INTEGER :: nxc,nyc,nxv,nyv,nblocks
+  INTEGER :: j,k,l,c,err,get_unit,u,dummy
+  INTEGER :: nxc,nyc,nzc,nxv,nyv,nzv,nblocks
   REAL(KIND=8)    :: temp_var
 
   CHARACTER(len=80)           :: name
@@ -45,14 +45,12 @@ SUBROUTINE visit
 
   IF(first_call) THEN
 
-    IF ( parallel%boss ) THEN
-      nblocks=number_of_chunks
-      filename = "tea.visit"
-      u=get_unit(dummy)
-      OPEN(UNIT=u,FILE=filename,STATUS='UNKNOWN',IOSTAT=err)
-      WRITE(u,'(a,i5)')'!NBLOCKS ',nblocks
-      CLOSE(u)
-    ENDIF
+    nblocks=number_of_chunks
+    filename = "tea.visit"
+    u=get_unit(dummy)
+    OPEN(UNIT=u,FILE=filename,STATUS='UNKNOWN',IOSTAT=err)
+    WRITE(u,'(a,i5)')'!NBLOCKS ',nblocks
+    CLOSE(u)
 
     first_call=.FALSE.
 
@@ -64,7 +62,7 @@ SUBROUTINE visit
     u=get_unit(dummy)
     OPEN(UNIT=u,FILE=filename,STATUS='UNKNOWN',POSITION='APPEND',IOSTAT=err)
 
-    DO c = 1, number_of_chunks
+    DO c = 1, chunks_per_task
       WRITE(chunk_name, '(i6)') c+100000
       chunk_name(1:1) = "."
       WRITE(step_name, '(i6)') step+100000
@@ -94,7 +92,7 @@ SUBROUTINE visit
       WRITE(u,'(a)')'vtk output'
       WRITE(u,'(a)')'ASCII'
       WRITE(u,'(a)')'DATASET RECTILINEAR_GRID'
-      WRITE(u,'(a,2i12,a)')'DIMENSIONS',nxv,nyv,' 1'
+      WRITE(u,'(a,3i12)')'DIMENSIONS',nxv,nyv,nzv
       WRITE(u,'(a,i5,a)')'X_COORDINATES ',nxv,' double'
       DO j=chunks(c)%field%x_min,chunks(c)%field%x_max+1
         WRITE(u,'(e12.4)')chunks(c)%field%vertexx(j)
@@ -103,22 +101,9 @@ SUBROUTINE visit
       DO k=chunks(c)%field%y_min,chunks(c)%field%y_max+1
         WRITE(u,'(e12.4)')chunks(c)%field%vertexy(k)
       ENDDO
-      WRITE(u,'(a)')'Z_COORDINATES 1 double'
-      WRITE(u,'(a)')'0'
-      WRITE(u,'(a,i20)')'CELL_DATA ',nxc*nyc
       WRITE(u,'(a)')'FIELD FieldData 3'
-      WRITE(u,'(a,i20,a)')'density 1 ',nxc*nyc,' double'
-      DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
-        WRITE(u,'(e12.4)')(chunks(c)%field%density(j,k),j=chunks(c)%field%x_min,chunks(c)%field%x_max)
-      ENDDO
-      WRITE(u,'(a,i20,a)')'energy 1 ',nxc*nyc,' double'
-      DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
-        WRITE(u,'(e12.4)')(chunks(c)%field%energy0(j,k),j=chunks(c)%field%x_min,chunks(c)%field%x_max)
-      ENDDO
-      WRITE(u,'(a,i20,a)')'temperature 1 ',nxc*nyc,' double'
-      DO k=chunks(c)%field%y_min,chunks(c)%field%y_max
-        WRITE(u,'(e12.4)')(chunks(c)%field%u(j,k),j=chunks(c)%field%x_min,chunks(c)%field%x_max)
-      ENDDO
+      WRITE(u,'(a,i20,a)')'x_vel 1 ',nxv*nyv,' double'
+      WRITE(u,'(a,i20,a)')'y_vel 1 ',nxv*nyv,' double'
       CLOSE(u)
     ENDIF
   ENDDO

@@ -22,7 +22,7 @@
 !>  comments before writing a final input file.
 !>  It then calls the start routine.
 
-SUBROUTINE initialise
+SUBROUTINE initialise(tea_in,tea_out)
 
   USE tea_module
   USE parse_module
@@ -32,33 +32,28 @@ SUBROUTINE initialise
 
   INTEGER :: ios
   INTEGER :: get_unit,stat,uin,out_unit
-!$ INTEGER :: OMP_GET_THREAD_NUM,OMP_GET_NUM_THREADS
-  CHARACTER(LEN=g_len_max) :: ltmp
+  CHARACTER(LEN=g_len_max) :: ltmp, tea_in, tea_out
 
+  ! Create the log output file
   IF(parallel%boss)THEN
     g_out=get_unit(dummy)
 
-    OPEN(FILE='tea.out',ACTION='WRITE',UNIT=g_out,IOSTAT=ios)
+    OPEN(FILE=tea_out,ACTION='WRITE',UNIT=g_out,IOSTAT=ios)
     IF(ios.NE.0) CALL report_error('initialise','Error opening tea.out file.')
 
   ELSE
     g_out=6
   ENDIF
 
-!$OMP PARALLEL
+  ! Log welcome message
   IF(parallel%boss)THEN
-!$  IF(OMP_GET_THREAD_NUM().EQ.0) THEN
       WRITE(g_out,*)
       WRITE(g_out,'(a15,f8.3)') 'Tea Version ',g_version
-      WRITE(g_out,'(a18)') 'MPI Version'
-!$    WRITE(g_out,'(a18)') 'OpenMP Version'
-      WRITE(g_out,'(a14,i6)') 'Task Count ',parallel%max_task !MPI
-!$    WRITE(g_out,'(a15,i5)') 'Thread Count: ',OMP_GET_NUM_THREADS()
+      WRITE(g_out,'(a18)') 'Open MP and MPI Version'
+      WRITE(g_out,'(a14,i6)') 'Task Count ',parallel%max_task
       WRITE(g_out,*)
-      WRITE(*,*)'Output file tea.out opened. All output will go there.'
-!$  ENDIF
+      WRITE(0,'(a12,a20,a33)') 'Output file ', tea_out, 'opened. All output will go there.'
   ENDIF
-!$OMP END PARALLEL
 
   CALL tea_barrier
 
@@ -67,35 +62,36 @@ SUBROUTINE initialise
     WRITE(g_out,*)
   ENDIF
 
+  ! Log input parameters or defaults
   IF(parallel%boss)THEN
     uin=get_unit(dummy)
 
-    OPEN(FILE='tea.in',ACTION='READ',STATUS='OLD',UNIT=uin,IOSTAT=ios)
+    OPEN(FILE=tea_in,ACTION='READ',STATUS='OLD',UNIT=uin,IOSTAT=ios)
     IF(ios.NE.0) THEN
       out_unit=get_unit(dummy)
-      OPEN(FILE='tea.in',UNIT=out_unit,STATUS='REPLACE',ACTION='WRITE',IOSTAT=ios)
+      OPEN(FILE=tea_in,UNIT=out_unit,STATUS='REPLACE',ACTION='WRITE',IOSTAT=ios)
       WRITE(out_unit,'(A)')'*tea'
-      WRITE(out_unit,'(A)')'state 1 density=100.0 energy=0.0001'
-      WRITE(out_unit,'(A)')'state 2 density=0.1 energy=25.0 geometry=rectangle xmin=0.0 xmax=1.0 ymin=1.0 ymax=2.0'
-      WRITE(out_unit,'(A)')'state 3 density=0.1 energy=0.1 geometry=rectangle xmin=1.0 xmax=6.0 ymin=1.0 ymax=2.0'
-      WRITE(out_unit,'(A)')'state 4 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=6.0 ymin=1.0 ymax=8.0'
-      WRITE(out_unit,'(A)')'state 5 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=10.0 ymin=7.0 ymax=8.0'
-      WRITE(out_unit,'(A)')'x_cells=10'
-      WRITE(out_unit,'(A)')'y_cells=10'
-      WRITE(out_unit,'(A)')'xmin=0.0'
-      WRITE(out_unit,'(A)')'ymin=0.0'
-      WRITE(out_unit,'(A)')'xmax=10.0'
-      WRITE(out_unit,'(A)')'ymax=10.0'
-      WRITE(out_unit,'(A)')'initial_timestep=0.004'
-      WRITE(out_unit,'(A)')'end_step=10'
-      WRITE(out_unit,'(A)')'tl_max_iters=1000'
+      WRITE(out_unit,'(A)')' state 1 density=100.0 energy=0.0001'
+      WRITE(out_unit,'(A)')' state 2 density=0.1 energy=25.0 geometry=rectangle xmin=0.0 xmax=1.0 ymin=1.0 ymax=2.0'
+      WRITE(out_unit,'(A)')' state 3 density=0.1 energy=0.1 geometry=rectangle xmin=1.0 xmax=6.0 ymin=1.0 ymax=2.0'
+      WRITE(out_unit,'(A)')' state 4 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=6.0 ymin=1.0 ymax=8.0'
+      WRITE(out_unit,'(A)')' state 5 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=10.0 ymin=7.0 ymax=8.0'
+      WRITE(out_unit,'(A)')' x_cells=10'
+      WRITE(out_unit,'(A)')' y_cells=10'
+      WRITE(out_unit,'(A)')' xmin=0.0'
+      WRITE(out_unit,'(A)')' ymin=0.0'
+      WRITE(out_unit,'(A)')' xmax=10.0'
+      WRITE(out_unit,'(A)')' ymax=10.0'
+      WRITE(out_unit,'(A)')' initial_timestep=0.004'
+      WRITE(out_unit,'(A)')' end_step=10'
+      WRITE(out_unit,'(A)')' tl_max_iters=1000'
       WRITE(out_unit,'(A)')' test_problem 1'
-      WRITE(out_unit,'(A)')'tl_use_jacobi'
-      WRITE(out_unit,'(A)')'tl_eps=1.0e-15'
+      WRITE(out_unit,'(A)')' tl_use_jacobi'
+      WRITE(out_unit,'(A)')' tl_eps=1.0e-15'
       WRITE(out_unit,'(A)')'*endtea'
       CLOSE(out_unit)
       uin=get_unit(dummy)
-      OPEN(FILE='tea.in',ACTION='READ',STATUS='OLD',UNIT=uin,IOSTAT=ios)
+      OPEN(FILE=tea_in,ACTION='READ',STATUS='OLD',UNIT=uin,IOSTAT=ios)
     ENDIF
     IF(ios.NE.0) CALL report_error('initialise','Error opening tea.in')
 

@@ -30,12 +30,9 @@ SUBROUTINE start
   IMPLICIT NONE
 
   INTEGER :: c
-
   INTEGER :: x_cells,y_cells
   INTEGER, ALLOCATABLE :: right(:),left(:),top(:),bottom(:)
-
   INTEGER :: fields(NUM_FIELDS)
-
   LOGICAL :: profiler_off
 
   IF(parallel%boss)THEN
@@ -64,14 +61,18 @@ SUBROUTINE start
     ! Needs changing so there can be more than 1 chunk per task
     chunks(c)%task = parallel%task
 
-    !chunk_task_responsible_for = parallel%task+1
-
     x_cells = right(c) -left(c)  +1
     y_cells = top(c)   -bottom(c)+1
-      
-    IF(chunks(c)%task.EQ.parallel%task)THEN
+
+   IF(chunks(c)%task.EQ.parallel%task)THEN
       CALL build_field(c,x_cells,y_cells)
     ENDIF
+
+     ! Currently only works with first chunk.
+    IF(use_ext_kernels.AND.c.EQ.1) THEN
+        CALL ext_init_cuda(x_cells, y_cells, parallel%task)
+    ENDIF
+
     chunks(c)%field%left    = left(c)
     chunks(c)%field%bottom  = bottom(c)
     chunks(c)%field%right   = right(c)
@@ -84,9 +85,10 @@ SUBROUTINE start
     chunks(c)%field%y_min = 1
     chunks(c)%field%x_max = right(c)-left(c)+1
     chunks(c)%field%y_max = top(c)-bottom(c)+1
-
+   
   ENDDO
 
+   
   DEALLOCATE(left,right,bottom,top)
 
   CALL tea_barrier
@@ -115,8 +117,7 @@ SUBROUTINE start
 
   CALL tea_barrier
 
-  ! Do no profile the start up costs otherwise the total times will not add up
-  ! at the end
+  ! Do not profile the start up costs so totals add up 
   profiler_off=profiler_on
   profiler_on=.FALSE.
 

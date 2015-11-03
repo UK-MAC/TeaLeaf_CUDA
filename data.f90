@@ -2,17 +2,17 @@
 !
 ! This file is part of TeaLeaf.
 !
-! TeaLeaf is free software: you can redistribute it and/or modify it under 
-! the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or (at your option) 
+! TeaLeaf is free software: you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or (at your option)
 ! any later version.
 !
-! TeaLeaf is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+! TeaLeaf is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 ! details.
 !
-! You should have received a copy of the GNU General Public License along with 
+! You should have received a copy of the GNU General Public License along with
 ! TeaLeaf. If not, see http://www.gnu.org/licenses/.
 
 !>  @brief Holds parameters definitions
@@ -32,7 +32,8 @@ MODULE data_module
 
    INTEGER,      PARAMETER :: g_name_len_max=255 &
                              ,g_xdir=1           &
-                             ,g_ydir=2
+                             ,g_ydir=2           &
+                             ,g_zdir=3
 
    ! These two need to be kept consistent with update_halo
    INTEGER,      PARAMETER :: CHUNK_LEFT   =1    &
@@ -52,7 +53,7 @@ MODULE data_module
    INTEGER,         PARAMETER :: CELL_DATA     = 1,        &
                                  VERTEX_DATA   = 2,        &
                                  X_FACE_DATA   = 3,        &
-                                 y_FACE_DATA   = 4
+                                 Y_FACE_DATA   = 4        
 
 
    ! Time step control constants
@@ -82,6 +83,8 @@ MODULE data_module
    INTEGER,        PARAMETER ::g_len_max=500
    INTEGER,        PARAMETER ::chunks_per_task=1
 
-   INTEGER                   ::lr_pack_buffer_size,bt_pack_buffer_size
+   INTEGER                   ::lr_pack_buffer_size,bt_pack_buffer_size,fb_pack_buffer_size
 
+   CHARACTER(LEN=g_len_max), PARAMETER :: g_tea_in = "tea.in"
+   CHARACTER(LEN=g_len_max), PARAMETER :: g_tea_out = "tea.out"
 END MODULE data_module
