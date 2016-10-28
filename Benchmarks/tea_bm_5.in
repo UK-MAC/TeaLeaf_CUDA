@@ -16,5 +16,6 @@ tl_max_iters=10000
 tl_use_cg
 tl_eps 1.0e-15
 test_problem 5
+halo_depth=1
 profiler_on
 *endtea
