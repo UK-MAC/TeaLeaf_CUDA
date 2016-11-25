@@ -11,6 +11,7 @@
 #include "kernel_files/tea_leaf_cg.cuknl"
 #include "kernel_files/tea_leaf_cheby.cuknl"
 #include "kernel_files/tea_leaf_ppcg.cuknl"
+#include "host_reductions_kernel_cuda.hpp"
 
 #include <cassert>
 
@@ -83,8 +84,7 @@ void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel
     }
 
     CUDA_ERR_CHECK;
-
-    *norm = thrust::reduce(reduce_ptr_1, reduce_ptr_1 + num_blocks, 0.0);
+    ReduceToHost<double>::sum(reduce_buf_1, norm, num_blocks);
 }
 
 void CloverleafCudaChunk::upload_ch_coefs
@@ -183,7 +183,7 @@ void CloverleafCudaChunk::tea_leaf_init_cg
     CUDALAUNCH(device_tea_leaf_cg_solve_init_p, vector_p, vector_r,
         vector_z, vector_Mi, reduce_buf_2);
 
-    *rro = thrust::reduce(reduce_ptr_2, reduce_ptr_2 + num_blocks, 0.0);
+    ReduceToHost<double>::sum(reduce_buf_2, rro, num_blocks);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_w
@@ -192,7 +192,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_w
     CUDALAUNCH(device_tea_leaf_cg_solve_calc_w, reduce_buf_3,
         vector_p, vector_w, vector_Kx, vector_Ky);
 
-    *pw = thrust::reduce(reduce_ptr_3, reduce_ptr_3 + num_blocks, 0.0);
+    ReduceToHost<double>::sum(reduce_buf_3, pw, num_blocks);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
@@ -202,7 +202,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
         vector_r, vector_w, vector_z, tri_cp, tri_bfp,
         vector_Mi, vector_Kx, vector_Ky, reduce_buf_4);
 
-    *rrn = thrust::reduce(reduce_ptr_4, reduce_ptr_4 + num_blocks, 0.0);
+    ReduceToHost<double>::sum(reduce_buf_4, rrn, num_blocks);
 }
 
 void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_p
@@ -226,8 +226,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_jacobi
 
     CUDALAUNCH(device_tea_leaf_jacobi_solve, vector_Kx, vector_Ky,
         u0, u, vector_Mi, reduce_buf_1);
-
-    *error = *thrust::max_element(reduce_ptr_1, reduce_ptr_1 + num_blocks);
+    ReduceToHost<double>::sum(reduce_buf_1, error, num_blocks);
 }
 
 /********************/

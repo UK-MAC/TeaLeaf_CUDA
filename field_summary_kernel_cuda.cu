@@ -25,6 +25,7 @@
 
 #include "cuda_common.hpp"
 #include "kernel_files/field_summary_kernel.cuknl"
+#include "host_reductions_kernel_cuda.hpp"
 
 extern "C" void field_summary_kernel_cuda_
 (double* vol, double* mass, double* ie, double* temp)
@@ -38,21 +39,9 @@ void CloverleafCudaChunk::field_summary_kernel
     CUDALAUNCH(device_field_summary_kernel, volume, density,
         energy1, u, reduce_buf_1, reduce_buf_2, reduce_buf_3,
         reduce_buf_4);
-
-    *vol = thrust::reduce(reduce_ptr_1,
-                          reduce_ptr_1 + num_blocks,
-                          0.0);
-
-    *mass = thrust::reduce(reduce_ptr_2,
-                           reduce_ptr_2 + num_blocks,
-                           0.0);
-
-    *ie = thrust::reduce(reduce_ptr_3,
-                         reduce_ptr_3 + num_blocks,
-                         0.0);
-
-    *temp = thrust::reduce(reduce_ptr_4,
-                           reduce_ptr_4 + num_blocks,
-                           0.0);
+    ReduceToHost<double>::sum(reduce_buf_1, vol,  num_blocks);
+    ReduceToHost<double>::sum(reduce_buf_2, mass, num_blocks);
+    ReduceToHost<double>::sum(reduce_buf_3, ie,   num_blocks);
+    ReduceToHost<double>::sum(reduce_buf_4, temp, num_blocks);
 }
 

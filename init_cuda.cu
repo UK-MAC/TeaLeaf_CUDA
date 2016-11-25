@@ -356,11 +356,6 @@ void CloverleafCudaChunk::initBuffers
     CUDA_ARRAY_ALLOC(reduce_buf_3, num_blocks*sizeof(double));
     CUDA_ARRAY_ALLOC(reduce_buf_4, num_blocks*sizeof(double));
 
-    reduce_ptr_1 = thrust::device_ptr< double >(reduce_buf_1);
-    reduce_ptr_2 = thrust::device_ptr< double >(reduce_buf_2);
-    reduce_ptr_3 = thrust::device_ptr< double >(reduce_buf_3);
-    reduce_ptr_4 = thrust::device_ptr< double >(reduce_buf_4);
-
     // To make sure memory is allocated later on
     ch_alphas_device = NULL;
     ch_betas_device = NULL;

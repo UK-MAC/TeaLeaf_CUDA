@@ -1,3 +1,5 @@
+#ifndef __CUDA_KERNEL_HEADER
+#define __CUDA_KERNEL_HEADER
 #include "../ftocmacros.h"
 #include <cstdio>
 
@@ -87,7 +89,12 @@ static __device__ int get_local_id
     //__attribute__((__unused__)) const int glob_id = (blockIdx.y*gridDim.x + blockIdx.x)*blockDim.x*blockDim.y + \
         threadIdx.y*blockDim.x + threadIdx.x; \
 
-__device__ inline double SUM(double a, double b){return a+b;}
+template < typename T >
+__device__ inline T SUM(T a, T b){return a+b;}
+template < typename T >
+__device__ inline T MAXIMUM(T a, T b){return a < b ? b : a;}
+template < typename T >
+__device__ inline T MINIMUM(T a, T b){return a < b ? a : b;}
 
 template < typename T, int offset >
 class Reduce
@@ -131,4 +138,4 @@ public:
         out[block_id] = array[0];
     }
 };
-
+#endif //__CUDA_KERNEL_HEADER
