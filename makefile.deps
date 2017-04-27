@@ -108,7 +108,8 @@ cuda_errors.o: cuda_errors.cu cuda_common.hpp \
 cuda_strings.o: cuda_strings.cu cuda_strings.hpp
 field_summary_kernel_cuda.o: field_summary_kernel_cuda.cu cuda_common.hpp \
  kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
- kernel_files/field_summary_kernel.cuknl
+ kernel_files/field_summary_kernel.cuknl host_reductions_kernel_cuda.hpp \
+ kernel_files/reductions_kernel.cuknl
 generate_chunk_kernel_cuda.o: generate_chunk_kernel_cuda.cu \
  kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
  kernel_files/generate_chunk_kernel.cuknl
@@ -128,7 +129,8 @@ tea_leaf_kernel_cuda.o: tea_leaf_kernel_cuda.cu cuda_common.hpp \
  kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
  kernel_files/tea_leaf_common.cuknl kernel_files/tea_leaf_jacobi.cuknl \
  kernel_files/tea_leaf_cg.cuknl kernel_files/tea_leaf_cheby.cuknl \
- kernel_files/tea_leaf_ppcg.cuknl
+ kernel_files/tea_leaf_ppcg.cuknl host_reductions_kernel_cuda.hpp \
+ kernel_files/reductions_kernel.cuknl
 update_halo_kernel_cuda.o: update_halo_kernel_cuda.cu cuda_common.hpp \
  kernel_files/cuda_kernel_header.hpp kernel_files/../ftocmacros.h \
  kernel_files/update_halo_kernel.cuknl

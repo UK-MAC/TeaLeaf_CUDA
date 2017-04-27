@@ -110,7 +110,7 @@ SUBROUTINE tea_leaf()
 
   old_error = initial_residual
 
-  initial_residual=SQRT(initial_residual)
+  initial_residual=SQRT(abs(initial_residual))
 
   IF (parallel%boss.AND.verbose_on) THEN
 !$  IF (OMP_GET_THREAD_NUM().EQ.0) THEN
@@ -324,7 +324,7 @@ SUBROUTINE tea_leaf()
       ENDIF
     ENDIF
 
-    error=SQRT(error)
+    error=SQRT(abs(error))
 
     IF (parallel%boss.AND.verbose_on) THEN
 !$    IF (OMP_GET_THREAD_NUM().EQ.0) THEN

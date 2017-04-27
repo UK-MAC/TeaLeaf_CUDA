@@ -248,12 +248,6 @@ private:
     double* reduce_buf_3;
     double* reduce_buf_4;
 
-    // used for reductions in calc dt, pdv, field summary
-    thrust::device_ptr< double > reduce_ptr_1;
-    thrust::device_ptr< double > reduce_ptr_2;
-    thrust::device_ptr< double > reduce_ptr_3;
-    thrust::device_ptr< double > reduce_ptr_4;
-
     // number of blocks for work space
     int num_blocks;
     dim3 grid_dim;

@@ -91,13 +91,13 @@ SUBROUTINE field_summary()
     IF(parallel%boss) THEN
 !$    IF(OMP_GET_THREAD_NUM().EQ.0) THEN
         IF(test_problem.GE.1) THEN
-  ! Note that the "correct" solution is with IEEE switched on, 1 task, 1 thread, Intel compiler on Ivy Bridge
-          IF(test_problem.EQ.1) qa_diff=ABS((100.0_8*(temp/157.550841832793_8))-100.0_8)
-          IF(test_problem.EQ.2) qa_diff=ABS((100.0_8*(temp/116.067951160930_8))-100.0_8)
-          IF(test_problem.EQ.3) qa_diff=ABS((100.0_8*(temp/95.4865103390698_8))-100.0_8)
-          IF(test_problem.EQ.4) qa_diff=ABS((100.0_8*(temp/166.838315378708_8))-100.0_8)
-          IF(test_problem.EQ.5) qa_diff=ABS((100.0_8*(temp/116.482111627676_8))-100.0_8)
-          IF(test_problem.EQ.6) qa_diff=ABS((100.0_8*(temp/103.88639125996923_8))-100.0_8) ! 500x500 20 steps
+  ! Note that the "correct" solution is with IEEE switched on, 1 task, 1 thread, Intel compiler on a Haswell, except
+  ! test_problem 5 which uses 24 tasks, 1 thread.
+          IF(test_problem.EQ.1) qa_diff=ABS((100.0_8*(temp/157.55084183279294_8))-100.0_8)  !
+          IF(test_problem.EQ.2) qa_diff=ABS((100.0_8*(temp/106.27221178646569_8))-100.0_8)
+          IF(test_problem.EQ.3) qa_diff=ABS((100.0_8*(temp/99.955877498324000_8))-100.0_8)
+          IF(test_problem.EQ.4) qa_diff=ABS((100.0_8*(temp/97.277332050749976_8))-100.0_8)
+          IF(test_problem.EQ.5) qa_diff=ABS((100.0_8*(temp/95.462351583362249_8))-100.0_8)
 
           WRITE(*,'(a,i4,a,e16.7,a)')"Test problem", Test_problem," is within",qa_diff,"% of the expected solution"
           WRITE(g_out,'(a,i4,a,e16.7,a)')"Test problem", Test_problem," is within",qa_diff,"% of the expected solution"
