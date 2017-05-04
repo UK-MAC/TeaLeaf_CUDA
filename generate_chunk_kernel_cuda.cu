@@ -60,25 +60,28 @@ const int g_circ,
 const int g_point)
 {
     // only copied and used one time, don't care about speed.
-    #define THRUST_ALLOC_ARRAY(arr, type) \
-        thrust::device_ptr<type> thr_state_ ## arr ## _d  \
-            = thrust::device_malloc<type>(number_of_states*sizeof(type));\
-        thrust::copy(state_ ## arr , \
-                     state_ ## arr  + number_of_states, \
-                     thr_state_ ## arr ## _d);\
-        const type* state_ ## arr ## _d  \
-            = thrust::raw_pointer_cast(thr_state_ ## arr ## _d);
+    #define CUDA_ALLOC_ARRAY(arr, type)             \
+        type* state_ ## arr ## _d;                  \
+        cudaMalloc((void**) &state_ ## arr ## _d,   \
+                    number_of_states*sizeof(type)   \
+                   ) == cudaSuccess;                \
+        errorHandler(__LINE__, __FILE__);           \
+        cudaMemcpy(state_ ## arr ## _d,             \
+                     state_ ## arr,                 \
+                     number_of_states*sizeof(type), \
+                     cudaMemcpyHostToDevice);       \
+        CUDA_ERR_CHECK;
 
-    THRUST_ALLOC_ARRAY(density, double);
-    THRUST_ALLOC_ARRAY(energy, double);
-    THRUST_ALLOC_ARRAY(xmin, double);
-    THRUST_ALLOC_ARRAY(xmax, double);
-    THRUST_ALLOC_ARRAY(ymin, double);
-    THRUST_ALLOC_ARRAY(ymax, double);
-    THRUST_ALLOC_ARRAY(radius, double);
-    THRUST_ALLOC_ARRAY(geometry, int);
+    CUDA_ALLOC_ARRAY(density, double);
+    CUDA_ALLOC_ARRAY(energy, double);
+    CUDA_ALLOC_ARRAY(xmin, double);
+    CUDA_ALLOC_ARRAY(xmax, double);
+    CUDA_ALLOC_ARRAY(ymin, double);
+    CUDA_ALLOC_ARRAY(ymax, double);
+    CUDA_ALLOC_ARRAY(radius, double);
+    CUDA_ALLOC_ARRAY(geometry, int);
 
-    #undef THRUST_ALLOC_ARRAY
+    #undef CUDA_ALLOC_ARRAY
 
     CUDALAUNCH(device_generate_chunk_init, density, energy0,
         state_density_d, state_energy_d);
@@ -94,14 +97,14 @@ const int g_point)
 
     generate_chunk_init_u(energy0);
 
-    thrust::device_free(thr_state_density_d);
-    thrust::device_free(thr_state_energy_d);
-    thrust::device_free(thr_state_xmin_d);
-    thrust::device_free(thr_state_xmax_d);
-    thrust::device_free(thr_state_ymin_d);
-    thrust::device_free(thr_state_ymax_d);
-    thrust::device_free(thr_state_radius_d);
-    thrust::device_free(thr_state_geometry_d);
+    cudaFree(state_density_d);
+    cudaFree(state_energy_d);
+    cudaFree(state_xmin_d);
+    cudaFree(state_xmax_d);
+    cudaFree(state_ymin_d);
+    cudaFree(state_ymax_d);
+    cudaFree(state_radius_d);
+    cudaFree(state_geometry_d);
 }
 
 

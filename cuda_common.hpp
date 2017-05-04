@@ -25,11 +25,12 @@
 #ifndef __CUDA_COMMON_INC
 #define __CUDA_COMMON_INC
 
-#include "thrust/device_allocator.h"
-#include "thrust/extrema.h"
-#include "kernel_files/cuda_kernel_header.hpp"
+#include <iostream>
+#include <string>
+#include <stdexcept>
 #include <map>
 #include <vector>
+#include "kernel_files/cuda_kernel_header.hpp"
 
 // used in update_halo and for copying back to host for mpi transfers
 #define FIELD_density       1
