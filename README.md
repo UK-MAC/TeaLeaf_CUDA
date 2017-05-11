@@ -12,19 +12,19 @@ Turn on cuda kernel use by putting `use_cuda_kernels` in tea.in.
 
 * `tl_max_iters` specifies the number of iterations to do before stopping
 * `tl_eps` specifies the acceptable error level to stop at
-* `hydro_on`/`hydro_off` will turn the hydrodynamics on or off
-* `tea_leaf_on`/`tea_leaf_off` will turn the linear solver on or off
 
 Enabling these flags will turn on the relevant solver:
 
 * `tl_use_jacobi` - use a simple jacobi iteration
-* `tl_use_cg` - use the conjugate gradient method with a diagonal jacobi
-  preconditioner
+* `tl_use_cg` - use the conjugate gradient method 
+* `tl_use_ppcg` - use the polynomially preconditioned conjugate gradient method 
 * `tl_use_chebyshev` - use chebyshev solver after running a few iterations of
   the conjugate gradient solver (not preconditioned) to approximate eigenvalues.
   The number of iterations of CG to run before switching to the chebyshev solver
   can be specified with the `tl_chebyshev_steps` flag (eg,
   `tl_chebyshev_steps=20`)
+* `tl_use_preconditioner_type` - specify a preconditioner. Current options 'none', 'jac-diag' (Diagonal Jacobi) or
+   'jac-block' (Block Jacobi)
 
 ## TODO
 
