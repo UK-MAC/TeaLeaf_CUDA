@@ -120,12 +120,13 @@ endif
 
 # flags for nvcc
 # set NV_ARCH to select the correct one
-NV_ARCH=KEPLER
+NV_ARCH=PASCAL
 CODE_GEN_FERMI=-gencode arch=compute_20,code=sm_21
 CODE_GEN_KEPLER=-gencode arch=compute_35,code=sm_35
 CODE_GEN_KEPLER_CONSUMER=-gencode arch=compute_30,code=sm_30
 CODE_GEN_MAXWELL=-gencode arch=compute_50,code=sm_50
 CODE_GEN_PASCAL=-gencode arch=compute_60,code=sm_60
+CODE_GEN_VOLTA=-gencode arch=compute_70,code=sm_70
 LDLIBS+=-lstdc++ -lcudart
 
 FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS) -g
