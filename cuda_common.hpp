@@ -117,6 +117,8 @@
         {                                                       \
             kernel_times[func_name] = taken;                    \
         }                                                       \
+        cudaEventDestroy(_t0);                                  \
+        cudaEventDestroy(_t1);                                  \
     }
 
 // enormous ugly macro that profiles kernels + checks if there were any errors
