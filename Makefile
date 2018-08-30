@@ -141,6 +141,7 @@ NV_FLAGS=-I$(CUDA_HOME)/include $(CODE_GEN_$(NV_ARCH)) -restrict -Xcompiler "$(C
 NV_FLAGS+=-DNO_ERR_CHK
 libdir.x86_64 = lib64
 libdir.i686   = lib
+libdir.ppc64le = lib64
 MACHINE := $(shell uname -m)
 libdir = $(libdir.$(MACHINE))
 LDFLAGS+=-L$(CUDA_HOME)/$(libdir)
