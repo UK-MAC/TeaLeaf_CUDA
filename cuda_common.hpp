@@ -1,19 +1,19 @@
 /*Crown Copyright 2012 AWE.
  *
- * This file is part of CloverLeaf.
+ * This file is part of TeaLeaf.
  *
- * CloverLeaf is free software: you can redistribute it and/or modify it under
+ * TeaLeaf is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your option)
  * any later version.
  *
- * CloverLeaf is distributed in the hope that it will be useful, but
+ * TeaLeaf is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
  *
  * You should have received a copy of the GNU General Public License along with
- * CloverLeaf. If not, see http://www.gnu.org/licenses/.
+ * TeaLeaf. If not, see http://www.gnu.org/licenses/.
  */
 
 /*
@@ -199,7 +199,7 @@ struct kernel_info_t {
 // types of array data
 const static cell_info_t CELL(    0, 0,  1,  1, 0, 0, CELL_DATA);
 
-class CloverleafCudaChunk
+class TealeafCudaChunk
 {
 private:
     // work arrays
@@ -372,20 +372,20 @@ public:
     (int fields[NUM_FIELDS], int offsets[NUM_FIELDS], int depth,
      int face, int pack, double * buffer);
 
-    CloverleafCudaChunk
+    TealeafCudaChunk
     (INITIALISE_ARGS);
 
-    CloverleafCudaChunk
+    TealeafCudaChunk
     (void);
-    ~CloverleafCudaChunk
+    ~TealeafCudaChunk
     (void);
 };
 
-extern CloverleafCudaChunk cuda_chunk;
+extern TealeafCudaChunk cuda_chunk;
 
 // this function gets called when something goes wrong
-#define DIE(...) cloverDie(__LINE__, __FILE__, __VA_ARGS__)
-void cloverDie
+#define DIE(...) teaDie(__LINE__, __FILE__, __VA_ARGS__)
+void teaDie
 (int line, const char* filename, const char* format, ...);
 
 typedef void (*pack_func_t)(kernel_info_t kernel_info,

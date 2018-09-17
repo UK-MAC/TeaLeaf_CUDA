@@ -1,19 +1,19 @@
 /*Crown Copyright 2012 AWE.
  * 
- * This file is part of CloverLeaf.
+ * This file is part of TeaLeaf.
  *
- * CloverLeaf is free software: you can redistribute it and/or modify it under
+ * TeaLeaf is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your option)
  * any later version.
  *
- * CloverLeaf is distributed in the hope that it will be useful, but
+ * TeaLeaf is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
  *
  * You should have received a copy of the GNU General Public License along with
- * CloverLeaf. If not, see http://www.gnu.org/licenses/.
+ * TeaLeaf. If not, see http://www.gnu.org/licenses/.
  */
 
 /*
@@ -33,7 +33,7 @@ extern "C" void field_summary_kernel_cuda_
     cuda_chunk.field_summary_kernel(vol, mass, ie, temp);
 }
 
-void CloverleafCudaChunk::field_summary_kernel
+void TealeafCudaChunk::field_summary_kernel
 (double* vol, double* mass, double* ie, double* temp)
 {
     CUDALAUNCH(device_field_summary_kernel, volume, density,
