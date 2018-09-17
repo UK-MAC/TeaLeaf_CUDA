@@ -121,22 +121,8 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
 
   IF (info .NE. 0) RETURN
 
-  ! bubble sort eigenvalues
-  DO
-    DO n=1,tl_ch_cg_presteps-1
-      IF (diag(n) .GE. diag(n+1)) THEN
-        tmp = diag(n)
-        diag(n) = diag(n+1)
-        diag(n+1) = tmp
-        swapped = .TRUE.
-      ENDIF
-    ENDDO
-    IF (.NOT. swapped) EXIT
-    swapped = .FALSE.
-  ENDDO
-
-  eigmin = diag(1)
-  eigmax = diag(tl_ch_cg_presteps)
+  eigmin = minval(diag)
+  eigmax = maxval(diag)
 
   IF (eigmin .LT. 0.0_8 .OR. eigmax .LT. 0.0_8) info = 1
 
