@@ -16,7 +16,7 @@
 #include <cassert>
 
 // copy back dx/dy and calculate rx/ry
-void CloverleafCudaChunk::calcrxry
+void TealeafCudaChunk::calcrxry
 (double dt, double * rx, double * ry)
 {
     double dx, dy;
@@ -54,7 +54,7 @@ extern "C" void tea_leaf_cheby_iterate_kernel_cuda_
     cuda_chunk.tea_leaf_kernel_cheby_iterate(*cheby_calc_step);
 }
 
-void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel
+void TealeafCudaChunk::tea_leaf_calc_2norm_kernel
 (int norm_array, double* norm)
 {
     if (norm_array == 0)
@@ -87,7 +87,7 @@ void CloverleafCudaChunk::tea_leaf_calc_2norm_kernel
     ReduceToHost<double>::sum(reduce_buf_1, norm, num_blocks);
 }
 
-void CloverleafCudaChunk::upload_ch_coefs
+void TealeafCudaChunk::upload_ch_coefs
 (const double * ch_alphas, const double * ch_betas,
  const int n_coefs)
 {
@@ -104,7 +104,7 @@ void CloverleafCudaChunk::upload_ch_coefs
     cudaMemcpy(ch_betas_device, ch_betas, ch_buf_sz, cudaMemcpyHostToDevice);
 }
 
-void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
+void TealeafCudaChunk::tea_leaf_kernel_cheby_init
 (const double * ch_alphas, const double * ch_betas, int n_coefs,
  const double theta)
 {
@@ -123,7 +123,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cheby_init
     CUDALAUNCH(device_tea_leaf_cheby_solve_calc_u, u, vector_p);
 }
 
-void CloverleafCudaChunk::tea_leaf_kernel_cheby_iterate
+void TealeafCudaChunk::tea_leaf_kernel_cheby_iterate
 (const int cheby_calc_step)
 {
     CUDALAUNCH(device_tea_leaf_cheby_solve_calc_p, u, u0,
@@ -162,7 +162,7 @@ extern "C" void tea_leaf_cg_calc_p_kernel_cuda_
 
 /********************/
 
-void CloverleafCudaChunk::tea_leaf_init_cg
+void TealeafCudaChunk::tea_leaf_init_cg
 (double * rro)
 {
     assert(tea_solver == TEA_ENUM_CG || tea_solver == TEA_ENUM_CHEBYSHEV || tea_solver == TEA_ENUM_PPCG);
@@ -186,7 +186,7 @@ void CloverleafCudaChunk::tea_leaf_init_cg
     ReduceToHost<double>::sum(reduce_buf_2, rro, num_blocks);
 }
 
-void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_w
+void TealeafCudaChunk::tea_leaf_kernel_cg_calc_w
 (double* pw)
 {
     CUDALAUNCH(device_tea_leaf_cg_solve_calc_w, reduce_buf_3,
@@ -195,7 +195,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_w
     ReduceToHost<double>::sum(reduce_buf_3, pw, num_blocks);
 }
 
-void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
+void TealeafCudaChunk::tea_leaf_kernel_cg_calc_ur
 (double alpha, double* rrn)
 {
     CUDALAUNCH(device_tea_leaf_cg_solve_calc_ur, alpha, u, vector_p,
@@ -205,7 +205,7 @@ void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_ur
     ReduceToHost<double>::sum(reduce_buf_4, rrn, num_blocks);
 }
 
-void CloverleafCudaChunk::tea_leaf_kernel_cg_calc_p
+void TealeafCudaChunk::tea_leaf_kernel_cg_calc_p
 (double beta)
 {
     CUDALAUNCH(device_tea_leaf_cg_solve_calc_p, beta, vector_p, vector_r, vector_z);
@@ -219,7 +219,7 @@ extern "C" void tea_leaf_jacobi_solve_kernel_cuda_
     cuda_chunk.tea_leaf_kernel_jacobi(error);
 }
 
-void CloverleafCudaChunk::tea_leaf_kernel_jacobi
+void TealeafCudaChunk::tea_leaf_kernel_jacobi
 (double* error)
 {
     CUDALAUNCH(device_tea_leaf_jacobi_copy_u, u, vector_Mi);
@@ -252,7 +252,7 @@ extern "C" void tea_leaf_calc_residual_cuda_
     cuda_chunk.tea_leaf_calc_residual();
 }
 
-void CloverleafCudaChunk::tea_leaf_common_init
+void TealeafCudaChunk::tea_leaf_common_init
 (int coefficient, double dt, double * rx, double * ry,
  int * zero_boundary, int reflective_boundary)
 {
@@ -284,13 +284,13 @@ void CloverleafCudaChunk::tea_leaf_common_init
 }
 
 // both
-void CloverleafCudaChunk::tea_leaf_finalise
+void TealeafCudaChunk::tea_leaf_finalise
 (void)
 {
     CUDALAUNCH(device_tea_leaf_finalise, density, u, energy1);
 }
 
-void CloverleafCudaChunk::tea_leaf_calc_residual
+void TealeafCudaChunk::tea_leaf_calc_residual
 (void)
 {
     CUDALAUNCH(device_tea_leaf_calc_residual, u, u0, vector_r,
@@ -319,14 +319,14 @@ extern "C" void tea_leaf_ppcg_inner_kernel_cuda_
     cuda_chunk.ppcg_inner(*ppcg_cur_step, *bounds_extra, chunk_neighbours);
 }
 
-void CloverleafCudaChunk::ppcg_init
+void TealeafCudaChunk::ppcg_init
 (const double * ch_alphas, const double * ch_betas,
  const int n_inner_steps)
 {
     upload_ch_coefs(ch_alphas, ch_betas, n_inner_steps);
 }
 
-void CloverleafCudaChunk::ppcg_init_sd
+void TealeafCudaChunk::ppcg_init_sd
 (double theta)
 {
     CUDALAUNCH(device_tea_leaf_ppcg_solve_init_sd,
@@ -334,7 +334,7 @@ void CloverleafCudaChunk::ppcg_init_sd
         vector_Mi, vector_Kx, vector_Ky, theta);
 }
 
-void CloverleafCudaChunk::ppcg_inner
+void TealeafCudaChunk::ppcg_inner
 (int ppcg_cur_step, int bounds_extra,
  int * chunk_neighbours)
 {

@@ -1,19 +1,19 @@
 /*Crown Copyright 2012 AWE.
  *
- * This file is part of CloverLeaf.
+ * This file is part of TeaLeaf.
  *
- * CloverLeaf is free software: you can redistribute it and/or modify it under
+ * TeaLeaf is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your option)
  * any later version.
  *
- * CloverLeaf is distributed in the hope that it will be useful, but
+ * TeaLeaf is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
  *
  * You should have received a copy of the GNU General Public License along with
- * CloverLeaf. If not, see http://www.gnu.org/licenses/.
+ * TeaLeaf. If not, see http://www.gnu.org/licenses/.
  */
 
 /*
@@ -30,24 +30,24 @@
 #include <cstdio>
 #include <cassert>
 
-CloverleafCudaChunk cuda_chunk;
+TealeafCudaChunk cuda_chunk;
 
 extern "C" void initialise_cuda_
 (INITIALISE_ARGS)
 {
-    cuda_chunk = CloverleafCudaChunk(in_x_min,
+    cuda_chunk = TealeafCudaChunk(in_x_min,
                                 in_x_max,
                                 in_y_min,
                                 in_y_max);
 }
 
-CloverleafCudaChunk::CloverleafCudaChunk
+TealeafCudaChunk::TealeafCudaChunk
 (void)
 {
     ;
 }
 
-CloverleafCudaChunk::CloverleafCudaChunk
+TealeafCudaChunk::TealeafCudaChunk
 (INITIALISE_ARGS)
 :x_min(*in_x_min),
 x_max(*in_x_max),
@@ -166,7 +166,7 @@ y_max(*in_y_max)
     initBuffers();
 }
 
-void CloverleafCudaChunk::initSizes
+void TealeafCudaChunk::initSizes
 (void)
 {
     grid_dim = dim3(
@@ -284,7 +284,7 @@ void CloverleafCudaChunk::initSizes
     kernel_info_map["device_tea_leaf_init_jac_diag"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
 }
 
-void CloverleafCudaChunk::initBuffers
+void TealeafCudaChunk::initBuffers
 (void)
 {
     #define CUDA_ARRAY_ALLOC(arr, size)     \
@@ -324,13 +324,13 @@ void CloverleafCudaChunk::initBuffers
     CUDA_ARRAY_ALLOC(xarea, BUFSZ2D(1, 0));
     CUDA_ARRAY_ALLOC(yarea, BUFSZ2D(0, 1));
 
-    CUDA_ARRAY_ALLOC(cellx, BUFSZX(0));
-    CUDA_ARRAY_ALLOC(celldx, BUFSZX(0));
+    CUDA_ARRAY_ALLOC(cellx, BUFSZX(1));
+    CUDA_ARRAY_ALLOC(celldx, BUFSZX(1));
     CUDA_ARRAY_ALLOC(vertexx, BUFSZX(1));
     CUDA_ARRAY_ALLOC(vertexdx, BUFSZX(1));
 
-    CUDA_ARRAY_ALLOC(celly, BUFSZY(0));
-    CUDA_ARRAY_ALLOC(celldy, BUFSZY(0));
+    CUDA_ARRAY_ALLOC(celly, BUFSZY(1));
+    CUDA_ARRAY_ALLOC(celldy, BUFSZY(1));
     CUDA_ARRAY_ALLOC(vertexy, BUFSZY(1));
     CUDA_ARRAY_ALLOC(vertexdy, BUFSZY(1));
 

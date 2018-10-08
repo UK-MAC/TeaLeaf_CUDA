@@ -76,19 +76,19 @@ static const char* errorCodes
     }
 }
 
-void CloverleafCudaChunk::errorHandler
+void TealeafCudaChunk::errorHandler
 (int line_num, const char* file)
 {
     cudaDeviceSynchronize();
     int l_e = cudaGetLastError();
     if (cudaSuccess != l_e)
     {
-        cloverDie(line_num, file, "Error in %s - return code %d (%s)\n", file, l_e, errorCodes(l_e));
+        teaDie(line_num, file, "Error in %s - return code %d (%s)\n", file, l_e, errorCodes(l_e));
     }
 }
 
 // print out timing info when done
-CloverleafCudaChunk::~CloverleafCudaChunk
+TealeafCudaChunk::~TealeafCudaChunk
 (void)
 {
     if (profiler_on)
@@ -105,7 +105,7 @@ CloverleafCudaChunk::~CloverleafCudaChunk
     }
 }
 
-std::vector<double> CloverleafCudaChunk::dumpArray
+std::vector<double> TealeafCudaChunk::dumpArray
 (const std::string& arr_name, int x_extra, int y_extra)
 {
     // number of bytes to allocate for 2d array
@@ -160,7 +160,7 @@ std::vector<double> CloverleafCudaChunk::dumpArray
 }
 
 // called when something goes wrong
-void cloverDie
+void teaDie
 (int line, const char* filename, const char* format, ...)
 {
     fprintf(stderr, "@@@@@\n");

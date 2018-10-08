@@ -18,7 +18,7 @@ extern "C" void cuda_unpack_buffers_
     cuda_chunk.packUnpackAllBuffers(fields, offsets, *depth, *face, 0, host_buffer);
 }
 
-void CloverleafCudaChunk::packUnpackAllBuffers
+void TealeafCudaChunk::packUnpackAllBuffers
 (int fields[NUM_FIELDS], int offsets[NUM_FIELDS],
  const int depth, const int face, const int pack,
  double * host_buffer)

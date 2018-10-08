@@ -7,7 +7,7 @@ extern "C" void set_field_kernel_cuda_
     cuda_chunk.set_field_kernel();
 }
 
-void CloverleafCudaChunk::set_field_kernel
+void TealeafCudaChunk::set_field_kernel
 (void)
 {
     CUDALAUNCH(device_set_field_kernel, energy0, energy1);
