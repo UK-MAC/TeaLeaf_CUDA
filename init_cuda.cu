@@ -279,7 +279,7 @@ void TealeafCudaChunk::initSizes
     kernel_info_map["device_tea_leaf_block_init"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
     kernel_info_map["device_tea_leaf_block_solve"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
 
-    kernel_info_map["device_tea_leaf_init_common"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
+    kernel_info_map["device_tea_leaf_init_common"] = kernel_info_t(kernel_info_generic, 0, halo_exchange_depth, 0, halo_exchange_depth);
     kernel_info_map["device_tea_leaf_zero_boundaries"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
     kernel_info_map["device_tea_leaf_init_jac_diag"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
 }
@@ -324,13 +324,13 @@ void TealeafCudaChunk::initBuffers
     CUDA_ARRAY_ALLOC(xarea, BUFSZ2D(1, 0));
     CUDA_ARRAY_ALLOC(yarea, BUFSZ2D(0, 1));
 
-    CUDA_ARRAY_ALLOC(cellx, BUFSZX(1));
-    CUDA_ARRAY_ALLOC(celldx, BUFSZX(1));
+    CUDA_ARRAY_ALLOC(cellx, BUFSZX(0));
+    CUDA_ARRAY_ALLOC(celldx, BUFSZX(0));
     CUDA_ARRAY_ALLOC(vertexx, BUFSZX(1));
     CUDA_ARRAY_ALLOC(vertexdx, BUFSZX(1));
 
-    CUDA_ARRAY_ALLOC(celly, BUFSZY(1));
-    CUDA_ARRAY_ALLOC(celldy, BUFSZY(1));
+    CUDA_ARRAY_ALLOC(celly, BUFSZY(0));
+    CUDA_ARRAY_ALLOC(celldy, BUFSZY(0));
     CUDA_ARRAY_ALLOC(vertexy, BUFSZY(1));
     CUDA_ARRAY_ALLOC(vertexdy, BUFSZY(1));
 
@@ -393,4 +393,3 @@ void TealeafCudaChunk::initBuffers
     ADD_BUFFER_DBG_MAP(vertexdy);
 #undef ADD_BUFFER_DBG_MAP
 }
-
