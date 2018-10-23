@@ -70,6 +70,9 @@ MODULE definitions_module
    LOGICAL      :: tl_use_ppcg
    LOGICAL      :: tl_use_jacobi
    LOGICAL      :: verbose_on
+   
+   LOGICAL      :: tl_ppcg_active
+   
    INTEGER      :: max_iters
    REAL(KIND=8) :: eps
    INTEGER      :: coefficient

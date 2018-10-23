@@ -2,6 +2,8 @@
 MODULE tea_leaf_cheby_module
 
   USE definitions_module
+  USE tea_leaf_common_module
+  USE update_halo_module
 
   IMPLICIT NONE
 
@@ -121,8 +123,22 @@ SUBROUTINE tea_calc_eigenvalues(cg_alphas, cg_betas, eigmin, eigmax, &
 
   IF (info .NE. 0) RETURN
 
-  eigmin = minval(diag)
-  eigmax = maxval(diag)
+  ! bubble sort eigenvalues
+  DO
+    DO n=1,tl_ch_cg_presteps-1
+      IF (diag(n) .GE. diag(n+1)) THEN
+        tmp = diag(n)
+        diag(n) = diag(n+1)
+        diag(n+1) = tmp
+        swapped = .TRUE.
+      ENDIF
+    ENDDO
+    IF (.NOT. swapped) EXIT
+    swapped = .FALSE.
+  ENDDO
+
+  eigmin = diag(1)
+  eigmax = diag(tl_ch_cg_presteps)
 
   IF (eigmin .LT. 0.0_8 .OR. eigmax .LT. 0.0_8) info = 1
 
@@ -156,6 +172,52 @@ SUBROUTINE tea_calc_ch_coefs(ch_alphas, ch_betas, eigmin, eigmax, &
   ENDDO
 
 END SUBROUTINE tea_calc_ch_coefs
+
+SUBROUTINE tea_leaf_cheby_first_step(ch_alphas, ch_betas, fields, &
+    error, theta, cn, max_cheby_iters, est_itc, solve_time)
+
+  IMPLICIT NONE
+
+  INTEGER :: est_itc, max_cheby_iters
+  INTEGER, DIMENSION(:) :: fields
+  REAL(KIND=8) :: it_alpha, cn, gamm, bb, error, theta
+  REAL(KIND=8), DIMENSION(:) :: ch_alphas, ch_betas
+  REAL(KIND=8) :: halo_time, timer, dot_product_time, solve_time
+
+  ! calculate 2 norm of u0
+  CALL tea_leaf_calc_2norm(0, bb)
+
+  IF (profiler_on) dot_product_time=timer()
+  CALL tea_allsum(bb)
+  IF (profiler_on) solve_time = solve_time + (timer()-dot_product_time)
+
+  ! initialise 'p' array
+  CALL tea_leaf_cheby_init(theta, ch_alphas, ch_betas, max_cheby_iters)
+
+  IF (profiler_on) halo_time = timer()
+  CALL update_halo(fields,1)
+  IF (profiler_on) solve_time = solve_time + (timer()-halo_time)
+
+  CALL tea_leaf_cheby_iterate(ch_alphas, ch_betas, max_cheby_iters, 1)
+
+  CALL tea_leaf_calc_2norm(1, error)
+
+  IF (profiler_on) dot_product_time=timer()
+  CALL tea_allsum(error)
+  IF (profiler_on) solve_time = solve_time + (timer()-dot_product_time)
+
+  it_alpha = eps*bb/(4.0_8*error)
+  gamm = (SQRT(cn) - 1.0_8)/(SQRT(cn) + 1.0_8)
+  est_itc = NINT(LOG(it_alpha)/(2.0_8*LOG(gamm)))
+
+  IF (parallel%boss) THEN
+      WRITE(g_out,'(a11)')"est itc"
+      WRITE(g_out,'(11i11)')est_itc
+      WRITE(0,'(a11)')"est itc"
+      WRITE(0,'(11i11)')est_itc
+  ENDIF
+
+END SUBROUTINE tea_leaf_cheby_first_step
 
 END MODULE tea_leaf_cheby_module
 

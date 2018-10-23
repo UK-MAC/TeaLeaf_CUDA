@@ -1,3 +1,6 @@
+/*
+ *  Kernels used for halo packing
+ */
 
 // for left/right
 #define VERT_IDX                        \

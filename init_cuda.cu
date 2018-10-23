@@ -264,6 +264,14 @@ void TealeafCudaChunk::initSizes
             kernel_info_map["device_tea_leaf_ppcg_solve_init_sd"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
             kernel_info_map["device_tea_leaf_ppcg_solve_calc_sd"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
             kernel_info_map["device_tea_leaf_ppcg_solve_update_r"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+            kernel_info_map["device_tea_leaf_ppcg_solve_calc_sd_new"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+            kernel_info_map["device_tea_leaf_ppcg_solve_update_r_new"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);            
+            kernel_info_map["device_tea_leaf_ppcg_store_r"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+            kernel_info_map["device_tea_leaf_ppcg_update_z"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);            
+            kernel_info_map["device_tea_leaf_calc_rrn"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+            kernel_info_map["device_tea_leaf_ppcg_solve_init_sd_new"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0); 
+            kernel_info_map["device_tea_leaf_ppcg_solve_init"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
+        kernel_info_map["device_tea_leaf_ppcg_solve_calc_p"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);                                                  
         }
     }
     else
@@ -279,7 +287,7 @@ void TealeafCudaChunk::initSizes
     kernel_info_map["device_tea_leaf_block_init"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
     kernel_info_map["device_tea_leaf_block_solve"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
 
-    kernel_info_map["device_tea_leaf_init_common"] = kernel_info_t(kernel_info_generic, 0, halo_exchange_depth, 0, halo_exchange_depth);
+    kernel_info_map["device_tea_leaf_init_common"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
     kernel_info_map["device_tea_leaf_zero_boundaries"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
     kernel_info_map["device_tea_leaf_init_jac_diag"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
 }
@@ -324,7 +332,7 @@ void TealeafCudaChunk::initBuffers
     CUDA_ARRAY_ALLOC(xarea, BUFSZ2D(1, 0));
     CUDA_ARRAY_ALLOC(yarea, BUFSZ2D(0, 1));
 
-    CUDA_ARRAY_ALLOC(cellx, BUFSZX(0));
+    CUDA_ARRAY_ALLOC(cellx, BUFSZX(0)); 
     CUDA_ARRAY_ALLOC(celldx, BUFSZX(0));
     CUDA_ARRAY_ALLOC(vertexx, BUFSZX(1));
     CUDA_ARRAY_ALLOC(vertexdx, BUFSZX(1));
@@ -345,6 +353,12 @@ void TealeafCudaChunk::initBuffers
     CUDA_ARRAY_ALLOC(vector_Kx, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(vector_Ky, BUFSZ2D(0, 0));
     CUDA_ARRAY_ALLOC(vector_sd, BUFSZ2D(0, 0));
+
+// For PPCG
+
+    CUDA_ARRAY_ALLOC(vector_rtemp, BUFSZ2D(0, 0));
+    CUDA_ARRAY_ALLOC(vector_utemp, BUFSZ2D(0, 0));
+    CUDA_ARRAY_ALLOC(vector_r_store, BUFSZ2D(0, 0));
 
     CUDA_ARRAY_ALLOC(left_buffer, (y_max+2*halo_exchange_depth)*halo_exchange_depth*NUM_BUFFERED_FIELDS*sizeof(double));
     CUDA_ARRAY_ALLOC(right_buffer, (y_max+2*halo_exchange_depth)*halo_exchange_depth*NUM_BUFFERED_FIELDS*sizeof(double));
@@ -376,6 +390,10 @@ void TealeafCudaChunk::initBuffers
     ADD_BUFFER_DBG_MAP(vector_Mi);
     ADD_BUFFER_DBG_MAP(vector_Kx);
     ADD_BUFFER_DBG_MAP(vector_Ky);
+    // PPCG
+    ADD_BUFFER_DBG_MAP(vector_rtemp);
+    ADD_BUFFER_DBG_MAP(vector_utemp);
+    ADD_BUFFER_DBG_MAP(vector_r_store);    
 
     ADD_BUFFER_DBG_MAP(density);
     ADD_BUFFER_DBG_MAP(energy0);
@@ -393,3 +411,4 @@ void TealeafCudaChunk::initBuffers
     ADD_BUFFER_DBG_MAP(vertexdy);
 #undef ADD_BUFFER_DBG_MAP
 }
+

@@ -1,3 +1,6 @@
+/*
+ *  Kernels used for reductions
+ */
 
 #include <float.h>
 
