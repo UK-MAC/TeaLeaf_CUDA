@@ -233,6 +233,10 @@ private:
     double* vector_Kx;
     double* vector_Ky;
     double* vector_sd;
+    // PPCG
+    double* vector_rtemp;
+    double* vector_utemp;
+    double* vector_r_store;
 
     double* tri_cp;
     double* tri_bfp;
@@ -345,23 +349,25 @@ public:
     void tea_leaf_kernel_cheby_iterate
     (const int cheby_calc_steps);
 
-    void ppcg_init
+    void ppcg_init_constants
     (const double * ch_alphas, const double * ch_betas,
      const int n_inner_steps);
-    void ppcg_init_p
-    (double * rro);
-    void ppcg_init_sd
-    (double theta);
-    void ppcg_inner
-    (int ppcg_cur_step, int bounds_extra,
-     int * chunk_neighbours);
+    void ppcg_init_p(double * rro);
+    void ppcg_init_sd(double theta);
+    void ppcg_init_sd_new(double theta);    
+    void ppcg_store_r(void);
+    void ppcg_update_z(void);
+    void tea_leaf_ppcg_calc_rrn_kernel(double* norm);
+    void ppcg_inner(int ppcg_cur_step, int bounds_extra,int * chunk_neighbours);
+    void ppcg_init(int step,double* rro);
+    void tea_leaf_ppcg_calc_2norm_kernel(double* norm);
+    void tea_leaf_kernel_ppcg_calc_p(double beta);    
+    
 
     void tea_leaf_finalise();
-    void tea_leaf_common_init
-    (int coefficient, double dt, double * rx, double * ry,
+    void tea_leaf_common_init(int coefficient, double dt, double * rx, double * ry,
      int * zero_boundary, int reflective_boundary);
-    void tea_leaf_calc_residual
-    (void);
+    void tea_leaf_calc_residual(void);
 
     int tea_solver;
 
@@ -384,8 +390,8 @@ public:
 extern TealeafCudaChunk cuda_chunk;
 
 // this function gets called when something goes wrong
-#define DIE(...) teaDie(__LINE__, __FILE__, __VA_ARGS__)
-void teaDie
+#define DIE(...) TeaDie(__LINE__, __FILE__, __VA_ARGS__)
+void TeaDie
 (int line, const char* filename, const char* format, ...);
 
 typedef void (*pack_func_t)(kernel_info_t kernel_info,

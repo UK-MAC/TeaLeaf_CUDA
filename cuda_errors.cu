@@ -83,7 +83,7 @@ void TealeafCudaChunk::errorHandler
     int l_e = cudaGetLastError();
     if (cudaSuccess != l_e)
     {
-        teaDie(line_num, file, "Error in %s - return code %d (%s)\n", file, l_e, errorCodes(l_e));
+        TeaDie(line_num, file, "Error in %s - return code %d (%s)\n", file, l_e, errorCodes(l_e));
     }
 }
 
@@ -160,7 +160,7 @@ std::vector<double> TealeafCudaChunk::dumpArray
 }
 
 // called when something goes wrong
-void teaDie
+void TeaDie
 (int line, const char* filename, const char* format, ...)
 {
     fprintf(stderr, "@@@@@\n");

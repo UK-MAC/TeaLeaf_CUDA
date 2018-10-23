@@ -1,3 +1,6 @@
+/*
+ *  Kernels used for polynomially preconditioned conjugate gradient method
+ */
 
 __global__ void device_tea_leaf_ppcg_solve_init_sd
 (kernel_info_t kernel_info,
@@ -42,7 +45,6 @@ __global__ void device_tea_leaf_ppcg_solve_init_sd
     {
         if (PRECONDITIONER == TL_PREC_JAC_DIAG)
         {
-            //z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
             sd[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)]/theta;
         }
         else if (PRECONDITIONER == TL_PREC_NONE)
@@ -52,27 +54,37 @@ __global__ void device_tea_leaf_ppcg_solve_init_sd
     }
 }
 
-__global__ void device_tea_leaf_ppcg_solve_update_r
+/* New update to init_sd*/
+__global__ void device_tea_leaf_ppcg_solve_init_sd_new
 (kernel_info_t kernel_info,
-       double * __restrict const u,
-       double * __restrict const r,
- const double * __restrict const Kx,
- const double * __restrict const Ky,
-       double * __restrict const sd)
+ const double * __restrict const r,
+       double * __restrict const sd,
+       double * __restrict const z,
+       double * __restrict const rtemp,
+       double * __restrict const utemp,
+ double theta)
 {
     __kernel_indexes;
-
-    if (WITHIN_BOUNDS)
+    __shared__ double theta_r;
+    theta_r = 1.0/theta;    
+        
+    if ((PRECONDITIONER == TL_PREC_JAC_DIAG) ||(PRECONDITIONER == TL_PREC_JAC_BLOCK))
     {
-        u[THARR2D(0, 0, 0)] += sd[THARR2D(0, 0, 0)];
-
-        const double result = (1.0
-            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
-            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*sd[THARR2D(0, 0, 0)]
-            - (Ky[THARR2D(0, 1, 0)]*sd[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*sd[THARR2D(0, -1, 0)])
-            - (Kx[THARR2D(1, 0, 0)]*sd[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*sd[THARR2D(-1, 0, 0)]);
-
-        r[THARR2D(0, 0, 0)] -= result;
+        if (WITHIN_BOUNDS)
+        {
+            sd[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)]*theta_r;
+            rtemp[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)];
+            utemp[THARR2D(0, 0, 0)] = sd[THARR2D(0, 0, 0)];
+        }
+    }
+    else if (PRECONDITIONER == TL_PREC_NONE)
+    {
+        if (WITHIN_BOUNDS)
+        {
+            sd[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*theta_r;
+            rtemp[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)];
+            utemp[THARR2D(0, 0, 0)] = sd[THARR2D(0, 0, 0)];
+        }
     }
 }
 
@@ -125,7 +137,6 @@ __global__ void device_tea_leaf_ppcg_solve_calc_sd
     {
         if (PRECONDITIONER == TL_PREC_JAC_DIAG)
         {
-            //z[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
             sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
                                 + beta[step]*r[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
         }
@@ -136,4 +147,281 @@ __global__ void device_tea_leaf_ppcg_solve_calc_sd
         }
     }
 }
+
+
+/* New update to rtemp for use in calc_sd */
+
+__global__ void device_tea_leaf_ppcg_solve_update_r
+(kernel_info_t kernel_info,
+       double * __restrict const rtemp,       
+ const double * __restrict const Kx,
+ const double * __restrict const Ky,
+ const double * __restrict const sd)
+{
+    __kernel_indexes;
+
+    if (WITHIN_BOUNDS)
+    {
+        const double result = (1.0
+            + (Ky[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)])
+            + (Kx[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]))*sd[THARR2D(0, 0, 0)]
+            - (Ky[THARR2D(0, 1, 0)]*sd[THARR2D(0, 1, 0)] + Ky[THARR2D(0, 0, 0)]*sd[THARR2D(0, -1, 0)])
+            - (Kx[THARR2D(1, 0, 0)]*sd[THARR2D(1, 0, 0)] + Kx[THARR2D(0, 0, 0)]*sd[THARR2D(-1, 0, 0)]);
+
+        rtemp[THARR2D(0, 0, 0)] -= result;
+    }
+}
+
+
+/* New calc sd, with temporary utemp variable */
+
+__global__ void device_tea_leaf_ppcg_solve_calc_sd_new
+(kernel_info_t kernel_info,
+ const double * __restrict const r,
+       double * __restrict const sd,
+ const double * __restrict const z,
+ const double * __restrict const rtemp,
+       double * __restrict const utemp, 
+ const double * __restrict const cp,
+ const double * __restrict const bfp,
+ const double * __restrict const Mi,
+ const double * __restrict const Kx,
+ const double * __restrict const Ky,
+ const double * __restrict const alpha,
+ const double * __restrict const beta,
+ int step)
+{
+    __kernel_indexes;
+
+    if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
+    {
+        __shared__ double r_l[BLOCK_SZ];
+        __shared__ double z_l[BLOCK_SZ];
+
+        r_l[lid] = 0;
+        z_l[lid] = 0;
+
+        if (WITHIN_BOUNDS)
+        {
+            r_l[lid] = rtemp[THARR2D(0, 0, 0)];
+        }
+
+        __syncthreads();
+        if (loc_row == 0)
+        {
+            if (WITHIN_BOUNDS)
+            {
+                block_solve_func(kernel_info, r_l, z_l, cp, bfp, Kx, Ky);
+            }
+        }
+        __syncthreads();
+
+        if (WITHIN_BOUNDS)
+        {
+            sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
+                                + beta[step]*z_l[lid];
+            utemp[THARR2D(0, 0, 0)] += sd[THARR2D(0, 0, 0)];
+        }
+    }
+    else if (PRECONDITIONER == TL_PREC_JAC_DIAG)
+    {
+        if (WITHIN_BOUNDS)
+        {
+            sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
+                                + beta[step]*rtemp[THARR2D(0, 0, 0)]*Mi[THARR2D(0, 0, 0)];
+            utemp[THARR2D(0, 0, 0)] += sd[THARR2D(0, 0, 0)];
+        }
+    }    
+    else if (PRECONDITIONER == TL_PREC_NONE)
+    {
+        if (WITHIN_BOUNDS)
+        {    
+            sd[THARR2D(0, 0, 0)] = alpha[step]*sd[THARR2D(0, 0, 0)]
+                                + beta[step]*rtemp[THARR2D(0, 0, 0)];
+            utemp[THARR2D(0, 0, 0)] += sd[THARR2D(0, 0, 0)];
+        }
+    }
+}
+
+
+/* New ppcg_store_r */
+
+__global__ void device_tea_leaf_ppcg_store_r
+(kernel_info_t kernel_info,
+ const double * __restrict const r,
+       double * __restrict const r_store)
+{
+    __kernel_indexes;
+    
+    if (WITHIN_BOUNDS)
+    {   
+       r_store[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)];    
+    } 
+}
+
+/* New ppcg_update_z*/
+__global__ void device_tea_leaf_ppcg_update_z
+(kernel_info_t kernel_info,
+       double * __restrict const z,
+ const double * __restrict const utemp)
+{
+    __kernel_indexes;
+    
+    if (WITHIN_BOUNDS)
+    {   
+       z[THARR2D(0, 0, 0)] = utemp[THARR2D(0, 0, 0)];    
+    } 
+}
+
+
+/* New ppcg_calc_rrn */
+
+__global__ void device_tea_leaf_calc_rrn
+(kernel_info_t kernel_info,
+ const double *            const arr1,
+ const double *            const arr2,
+ const double *            const arr3, 
+       double * __restrict const rro)
+{
+    __kernel_indexes;
+
+    __shared__ double rro_shared[BLOCK_SZ];
+    rro_shared[lid] = 0.0;
+
+    if (WITHIN_BOUNDS)
+    {
+        rro_shared[lid] = (arr2[THARR2D(0, 0, 0)] - arr1[THARR2D(0, 0, 0)])*arr3[THARR2D(0, 0, 0)];
+    }
+
+    Reduce< double, BLOCK_SZ/2 >::run(rro_shared, rro, SUM);
+}
+
+
+
+__global__ void device_tea_leaf_ppcg_solve_calc_p
+(kernel_info_t kernel_info,
+ double beta,
+       double * __restrict const p,
+ const double * __restrict const z)
+{
+    __kernel_indexes;
+
+    if (WITHIN_BOUNDS)
+    {
+        p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)] + beta*p[THARR2D(0, 0, 0)];
+    }
+}
+
+
+
+/* New initialisation */ 
+
+__global__ void device_tea_leaf_ppcg_solve_init
+(kernel_info_t kernel_info,
+       double * __restrict const p,
+ const double * __restrict const r,
+ const double * __restrict const sd,
+       double * __restrict const z,
+ const double * __restrict const cp,
+ const double * __restrict const bfp,
+ const double * __restrict const Mi,
+ const double * __restrict const Kx,
+ const double * __restrict const Ky,
+ const int      step,
+       double * __restrict const rro)
+{
+    __kernel_indexes;
+    __shared__ double rro_shared[BLOCK_SZ];
+    __shared__ double r_l[BLOCK_SZ];
+    __shared__ double z_l[BLOCK_SZ];
+    rro_shared[lid] = 0.0;
+
+    if (step == 1 || step == 3)
+    {
+    rro_shared[lid] = 0.0;
+    }
+    
+    if (step ==1)
+    {
+        if (WITHIN_BOUNDS)
+        {   
+           p[THARR2D(0, 0, 0)] = 0.0;
+           z[THARR2D(0, 0, 0)] = 0.0;      
+        }         
+    }
+    else if (step ==3)
+    {
+       if (WITHIN_BOUNDS)
+       {   
+          p[THARR2D(0, 0, 0)] = 0.0;
+       }         
+    }
+   if (PRECONDITIONER != TL_PREC_NONE || (step == 3) )
+   {
+      if (step ==1 || step ==2)
+      {
+         if (PRECONDITIONER == TL_PREC_JAC_BLOCK)
+         {
+            r_l[lid] = 0;
+            z_l[lid] = 0;
+
+            if (WITHIN_BOUNDS)
+            {
+                r_l[lid] = r[THARR2D(0, 0, 0)];
+            }
+
+            __syncthreads();
+            if (loc_row == 0)
+            {
+               block_solve_func(kernel_info, r_l, z_l, cp, bfp, Kx, Ky);
+            }
+            __syncthreads();
+
+            if (WITHIN_BOUNDS)
+            {
+               z[THARR2D(0, 0, 0)] = z_l[lid];
+            }
+         }
+         else if (PRECONDITIONER == TL_PREC_JAC_DIAG)
+         {
+            if (WITHIN_BOUNDS)
+            {
+               z[THARR2D(0, 0, 0)] = Mi[THARR2D(0, 0, 0)]*r[THARR2D(0, 0, 0)];
+            }
+         }
+      }
+      if (step==1 || step ==3)
+      {
+         if (WITHIN_BOUNDS)
+         {   
+            p[THARR2D(0, 0, 0)] = z[THARR2D(0, 0, 0)];
+         }         
+      }
+   }
+   else
+   {
+     if (step==1)
+     {
+        if (WITHIN_BOUNDS)
+        {   
+           p[THARR2D(0, 0, 0)] = r[THARR2D(0, 0, 0)];
+        }        
+     }   
+   }
+   
+   if (step ==1 || step==3)
+   {
+    if (WITHIN_BOUNDS)
+    {
+        rro_shared[lid] = r[THARR2D(0, 0, 0)]*p[THARR2D(0, 0, 0)];
+    }
+   }
+   Reduce< double, BLOCK_SZ/2 >::run(rro_shared, rro, SUM); 
+}
+
+
+
+
+
+
 

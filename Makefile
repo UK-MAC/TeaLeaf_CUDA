@@ -59,11 +59,15 @@
 #        make IEEE=1              # Will select debug options as long as a compiler is selected as well
 # e.g. make COMPILER=INTEL MPI_COMPILER=mpiifort C_MPI_COMPILER=mpiicc DEBUG=1 IEEE=1 # will compile with the intel compiler with intel debug and ieee flags included
 
+# Add home directory
+
+CUDA_HOME=/usr/local/cuda-9.2/
+
 ifndef COMPILER
   MESSAGE=select a compiler to compile in OpenMP, e.g. make COMPILER=INTEL
 endif
 
-OMP_INTEL     = -openmp -ip -align
+OMP_INTEL     = -qopenmp -ip -align
 OMP_SUN       = -xopenmp=parallel -vpara
 OMP_GNU       = -fopenmp
 OMP_CRAY      = -e Z
@@ -141,7 +145,6 @@ NV_FLAGS=-I$(CUDA_HOME)/include $(CODE_GEN_$(NV_ARCH)) -restrict -Xcompiler "$(C
 NV_FLAGS+=-DNO_ERR_CHK
 libdir.x86_64 = lib64
 libdir.i686   = lib
-libdir.ppc64le = lib64
 MACHINE := $(shell uname -m)
 libdir = $(libdir.$(MACHINE))
 LDFLAGS+=-L$(CUDA_HOME)/$(libdir)

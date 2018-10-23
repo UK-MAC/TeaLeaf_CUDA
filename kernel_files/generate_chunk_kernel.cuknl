@@ -1,3 +1,6 @@
+/*
+ *  Kernels used to generate chunks
+ */
 
 __global__ void device_generate_chunk_kernel
 (kernel_info_t kernel_info,

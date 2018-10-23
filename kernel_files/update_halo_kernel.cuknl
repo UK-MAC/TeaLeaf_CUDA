@@ -1,3 +1,6 @@
+/*
+ *  Kernels used for halo updates
+ */
 
 __global__ void device_update_halo_kernel_bottom
 (kernel_info_t kernel_info,

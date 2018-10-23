@@ -13,9 +13,9 @@ ymax=10.0
 initial_timestep=0.004
 end_step=10
 tl_max_iters=10000
-tl_use_cg
-tl_eps 1.0e-15
+tl_use_ppcg
+tl_preconditioner_type=none
 test_problem 5
 halo_depth=1
-profiler_on
+!profiler_on
 *endtea

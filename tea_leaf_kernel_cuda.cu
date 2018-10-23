@@ -5,7 +5,6 @@
 #define COEF_RECIP_CONDUCTIVITY 2
 
 #include "kernel_files/tea_block_jacobi.cuknl"
-
 #include "kernel_files/tea_leaf_common.cuknl"
 #include "kernel_files/tea_leaf_jacobi.cuknl"
 #include "kernel_files/tea_leaf_cg.cuknl"
@@ -297,13 +296,20 @@ void TealeafCudaChunk::tea_leaf_calc_residual
         vector_Kx, vector_Ky);
 }
 
-/********************/
+/********PPCG stuff********/
 
-extern "C" void tea_leaf_ppcg_init_cuda_
+extern "C" void tea_leaf_ppcg_init_constants_cuda_
 (const double * ch_alphas, const double * ch_betas,
  int* n_inner_steps)
 {
-    cuda_chunk.ppcg_init(ch_alphas, ch_betas, *n_inner_steps);
+    cuda_chunk.ppcg_init_constants(ch_alphas, ch_betas, *n_inner_steps);
+}
+
+/* A new initialisation routine */
+extern "C" void tea_leaf_ppcg_init_kernel_cuda_
+(const int * step, double * rro)
+{
+    cuda_chunk.ppcg_init(*step, rro);
 }
 
 extern "C" void tea_leaf_ppcg_init_sd_kernel_cuda_
@@ -312,6 +318,34 @@ extern "C" void tea_leaf_ppcg_init_sd_kernel_cuda_
     cuda_chunk.ppcg_init_sd(*theta);
 }
 
+/* Update to init_sd */
+extern "C" void tea_leaf_ppcg_init_sd_new_kernel_cuda_
+(const double * theta)
+{
+    cuda_chunk.ppcg_init_sd_new(*theta);
+}
+
+
+/* New store the residual for later use */ 
+extern "C" void tea_leaf_ppcg_store_r_kernel_cuda_()
+{
+    cuda_chunk.ppcg_store_r();
+}
+
+/* New update_z */ 
+extern "C" void tea_leaf_ppcg_update_z_kernel_cuda_()
+{
+    cuda_chunk.ppcg_update_z();
+}
+
+/* New calculate norm of (r-rstore)*z */
+extern "C" void tea_leaf_ppcg_calc_rrn_kernel_cuda_(double* norm)
+{
+    cuda_chunk.tea_leaf_ppcg_calc_rrn_kernel(norm);
+}
+
+
+/* Main inner loop */
 extern "C" void tea_leaf_ppcg_inner_kernel_cuda_
 (int * ppcg_cur_step, int * bounds_extra,
  int * chunk_neighbours)
@@ -319,11 +353,25 @@ extern "C" void tea_leaf_ppcg_inner_kernel_cuda_
     cuda_chunk.ppcg_inner(*ppcg_cur_step, *bounds_extra, chunk_neighbours);
 }
 
-void TealeafCudaChunk::ppcg_init
+
+void TealeafCudaChunk::ppcg_init_constants
 (const double * ch_alphas, const double * ch_betas,
  const int n_inner_steps)
 {
     upload_ch_coefs(ch_alphas, ch_betas, n_inner_steps);
+}
+
+
+/* New initialisation */
+void TealeafCudaChunk::ppcg_init
+(const int step, double * rro)
+{
+    CUDALAUNCH(device_tea_leaf_ppcg_solve_init,
+        vector_p, vector_r, vector_sd, vector_z, tri_cp, tri_bfp,
+        vector_Mi, vector_Kx, vector_Ky, step, reduce_buf_1);
+
+    CUDA_ERR_CHECK;
+    ReduceToHost<double>::sum(reduce_buf_1, rro, num_blocks);        
 }
 
 void TealeafCudaChunk::ppcg_init_sd
@@ -332,6 +380,39 @@ void TealeafCudaChunk::ppcg_init_sd
     CUDALAUNCH(device_tea_leaf_ppcg_solve_init_sd,
         vector_r, vector_sd, vector_z, tri_cp, tri_bfp,
         vector_Mi, vector_Kx, vector_Ky, theta);
+}
+
+/* New update to init_sd */
+void TealeafCudaChunk::ppcg_init_sd_new
+(double theta)
+{
+    CUDALAUNCH(device_tea_leaf_ppcg_solve_init_sd_new,
+        vector_r, vector_sd, vector_z, vector_rtemp, vector_utemp, theta);
+}
+
+
+/* New ppcg_store_r */ 
+void TealeafCudaChunk::ppcg_store_r()
+{
+        CUDALAUNCH(device_tea_leaf_ppcg_store_r,
+        vector_r, vector_r_store);
+}
+
+/* New ppcg_update_z */ 
+void TealeafCudaChunk::ppcg_update_z()
+{
+        CUDALAUNCH(device_tea_leaf_ppcg_update_z, vector_z, vector_utemp);
+}
+
+/* New ppcg_calc_rrn */ 
+void TealeafCudaChunk::tea_leaf_ppcg_calc_rrn_kernel(double* norm)
+{
+
+    // norm of (r-rstore)*z
+    CUDALAUNCH(device_tea_leaf_calc_rrn, vector_r_store, vector_r, vector_z, reduce_buf_1);
+
+    CUDA_ERR_CHECK;
+    ReduceToHost<double>::sum(reduce_buf_1, norm, num_blocks);
 }
 
 void TealeafCudaChunk::ppcg_inner
@@ -387,17 +468,49 @@ void TealeafCudaChunk::ppcg_inner
     TIME_KERNEL_BEGIN;
     device_tea_leaf_ppcg_solve_update_r
     <<<matrix_power_grid_dim, block_shape>>>
-    (kernel_info, u, vector_r, vector_Kx, vector_Ky, vector_sd);
-    CUDA_ERR_CHECK; \
+    (kernel_info, vector_rtemp, vector_Kx, vector_Ky, vector_sd);
+    CUDA_ERR_CHECK;
     TIME_KERNEL_END(device_tea_leaf_ppcg_solve_update_r);
-
+        
     TIME_KERNEL_BEGIN;
-    device_tea_leaf_ppcg_solve_calc_sd
+    device_tea_leaf_ppcg_solve_calc_sd_new
     <<<matrix_power_grid_dim, block_shape>>>
     (kernel_info,
-        vector_r, vector_sd, vector_z, tri_cp, tri_bfp,
+        vector_r, vector_sd, vector_z, vector_rtemp, vector_utemp,
+        tri_cp, tri_bfp,
         vector_Mi, vector_Kx, vector_Ky,
         ch_alphas_device, ch_betas_device, ppcg_cur_step - 1);
-    TIME_KERNEL_END(device_tea_leaf_ppcg_solve_calc_sd);
+    CUDA_ERR_CHECK;        
+    TIME_KERNEL_END(device_tea_leaf_ppcg_solve_calc_sd_new);
+    
 }
+
+extern "C" void tea_leaf_ppcg_calc_2norm_kernel_cuda_
+(double* norm)
+{
+    cuda_chunk.tea_leaf_ppcg_calc_2norm_kernel(norm);
+}
+
+
+void TealeafCudaChunk::tea_leaf_ppcg_calc_2norm_kernel
+(double* norm)
+{
+    CUDALAUNCH(device_tea_leaf_calc_2norm, vector_r, vector_z, reduce_buf_1);
+    CUDA_ERR_CHECK;
+    ReduceToHost<double>::sum(reduce_buf_1, norm, num_blocks);
+}
+
+extern "C" void tea_leaf_ppcg_calc_p_kernel_cuda_
+(double * beta)
+{
+    cuda_chunk.tea_leaf_kernel_ppcg_calc_p(*beta);
+}
+
+void TealeafCudaChunk::tea_leaf_kernel_ppcg_calc_p
+(double beta)
+{
+    CUDALAUNCH(device_tea_leaf_ppcg_solve_calc_p, beta, vector_p, vector_z);
+}
+
+
 

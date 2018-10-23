@@ -1,3 +1,6 @@
+/*
+ *  Kernels used for Chebyshev method
+ */
 
 __global__ void device_tea_leaf_cheby_solve_init_p
 (kernel_info_t kernel_info,
