@@ -287,7 +287,7 @@ void TealeafCudaChunk::initSizes
     kernel_info_map["device_tea_leaf_block_init"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
     kernel_info_map["device_tea_leaf_block_solve"] = kernel_info_t(kernel_info_generic, 0, 0, 0, 0);
 
-    kernel_info_map["device_tea_leaf_init_common"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
+    kernel_info_map["device_tea_leaf_init_common"] = kernel_info_t(kernel_info_generic, 0, halo_exchange_depth,0, halo_exchange_depth);
     kernel_info_map["device_tea_leaf_zero_boundaries"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
     kernel_info_map["device_tea_leaf_init_jac_diag"] = kernel_info_t(kernel_info_generic, -halo_exchange_depth, halo_exchange_depth, -halo_exchange_depth, halo_exchange_depth);
 }
