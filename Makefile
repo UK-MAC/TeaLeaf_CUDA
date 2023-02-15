@@ -61,7 +61,7 @@
 
 # Add home directory
 
-CUDA_HOME=/usr/local/cuda-9.2/
+#CUDA_HOME=/usr/local/cuda-9.2/
 
 ifndef COMPILER
   MESSAGE=select a compiler to compile in OpenMP, e.g. make COMPILER=INTEL
@@ -80,7 +80,7 @@ FLAGS_INTEL     = -O3 -fpp -no-prec-div
 FLAGS_SUN       = -fast -xipo=2 -Xlistv4
 FLAGS_GNU       = -O3 -march=native -funroll-loops -cpp
 FLAGS_CRAY      = -em -ra -h acc_model=fast_addr:no_deep_copy:auto_async_all
-FLAGS_PGI       = -fastsse -gopt -Mipa=fast -Mlist
+FLAGS_PGI       = -fastsse -gopt -Mlist
 FLAGS_PATHSCALE = -O3
 FLAGS_XL       = -O5 -qipa=partition=large -g -qfullpath -Q -qsigtrap -qextname=flush:ideal_gas_kernel_c:viscosity_kernel_c:pdv_kernel_c:revert_kernel_c:accelerate_kernel_c:flux_calc_kernel_c:advec_cell_kernel_c:advec_mom_kernel_c:reset_field_kernel_c:timer_c:unpack_top_bottom_buffers_c:pack_top_bottom_buffers_c:unpack_left_right_buffers_c:pack_left_right_buffers_c:field_summary_kernel_c:update_halo_kernel_c:generate_chunk_kernel_c:initialise_chunk_kernel_c:calc_dt_kernel_c -qlistopt -qattr=full -qlist -qreport -qxref=full -qsource -qsuppress=1506-224:1500-036
 FLAGS_          = -O3
@@ -88,7 +88,7 @@ CFLAGS_INTEL     = -O3 -no-prec-div -restrict -fno-alias
 CFLAGS_SUN       = -fast -xipo=2
 CFLAGS_GNU       = -O3 -march=native -funroll-loops
 CFLAGS_CRAY      = -em -h list=a
-CFLAGS_PGI       = -fastsse -gopt -Mipa=fast -Mlist
+CFLAGS_PGI       = -fastsse -gopt -Mlist
 CFLAGS_PATHSCALE = -O3
 CFLAGS_XL       = -O5 -qipa=partition=large -g -qfullpath -Q -qlistopt -qattr=full -qlist -qreport -qxref=full -qsource -qsuppress=1506-224:1500-036 -qsrcmsg
 CFLAGS_          = -O3
@@ -124,13 +124,15 @@ endif
 
 # flags for nvcc
 # set NV_ARCH to select the correct one
-NV_ARCH=VOLTA
+#NV_ARCH=VOLTA
 CODE_GEN_FERMI=-gencode arch=compute_20,code=sm_21
 CODE_GEN_KEPLER=-gencode arch=compute_35,code=sm_35
 CODE_GEN_KEPLER_CONSUMER=-gencode arch=compute_30,code=sm_30
 CODE_GEN_MAXWELL=-gencode arch=compute_50,code=sm_50
 CODE_GEN_PASCAL=-gencode arch=compute_60,code=sm_60
 CODE_GEN_VOLTA=-gencode arch=compute_70,code=sm_70
+CODE_GEN_AMPERE=-gencode arch=compute_80,code=sm_80
+
 LDLIBS+=-lstdc++ -lcudart
 
 FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS) -g
